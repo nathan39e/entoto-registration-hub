@@ -92,7 +92,8 @@ const Auth = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Account created successfully!");
+      toast.success("Account created successfully! Please login.");
+      handleFlip(); // Switch to login form
     }
 
     setLoading(false);

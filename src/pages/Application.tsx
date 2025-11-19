@@ -6,11 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const Application = () => {
+  const navigate = useNavigate();
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Application submitted successfully! You will receive a confirmation email shortly.");
+    toast.success("Application submitted successfully! Proceeding to psychometric exam.");
+    setTimeout(() => {
+      navigate("/psychometric-exam");
+    }, 1500);
   };
 
   return (

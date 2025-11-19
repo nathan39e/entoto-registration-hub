@@ -1,14 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isFlipping, setIsFlipping] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/application");
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && event === "SIGNED_IN") {
+        navigate("/application");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const handleFlip = () => {
     setIsFlipping(true);
@@ -16,6 +38,64 @@ const Auth = () => {
       setIsLogin(!isLogin);
       setIsFlipping(false);
     }, 300);
+  };
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Logged in successfully!");
+    }
+
+    setLoading(false);
+  };
+
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const fullname = formData.get("fullname") as string;
+    const email = formData.get("signup-email") as string;
+    const password = formData.get("signup-password") as string;
+    const confirmPassword = formData.get("confirm-password") as string;
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullname,
+        },
+        emailRedirectTo: `${window.location.origin}/application`,
+      },
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Account created successfully!");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -34,17 +114,17 @@ const Auth = () => {
             {isLogin ? (
               <div>
                 <h2 className="text-2xl font-bold text-center mb-6">Welcome Back</h2>
-                <form className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
                   <div>
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="your.email@example.com" />
+                    <Input id="email" name="email" type="email" placeholder="your.email@example.com" required />
                   </div>
                   <div>
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" placeholder="••••••••" />
+                    <Input id="password" name="password" type="password" placeholder="••••••••" required />
                   </div>
-                  <Button className="w-full" size="lg">
-                    Login
+                  <Button className="w-full" size="lg" disabled={loading}>
+                    {loading ? "Logging in..." : "Login"}
                   </Button>
                 </form>
                 <p className="text-center mt-4 text-sm text-muted-foreground">
@@ -57,25 +137,25 @@ const Auth = () => {
             ) : (
               <div>
                 <h2 className="text-2xl font-bold text-center mb-6">Create Account</h2>
-                <form className="space-y-4">
+                <form onSubmit={handleSignup} className="space-y-4">
                   <div>
                     <Label htmlFor="fullname">Full Name</Label>
-                    <Input id="fullname" type="text" placeholder="John Doe" />
+                    <Input id="fullname" name="fullname" type="text" placeholder="John Doe" required />
                   </div>
                   <div>
                     <Label htmlFor="signup-email">Email</Label>
-                    <Input id="signup-email" type="email" placeholder="your.email@example.com" />
+                    <Input id="signup-email" name="signup-email" type="email" placeholder="your.email@example.com" required />
                   </div>
                   <div>
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input id="signup-password" type="password" placeholder="••••••••" />
+                    <Input id="signup-password" name="signup-password" type="password" placeholder="••••••••" required minLength={6} />
                   </div>
                   <div>
                     <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <Input id="confirm-password" type="password" placeholder="••••••••" />
+                    <Input id="confirm-password" name="confirm-password" type="password" placeholder="••••••••" required minLength={6} />
                   </div>
-                  <Button className="w-full" size="lg">
-                    Sign Up
+                  <Button className="w-full" size="lg" disabled={loading}>
+                    {loading ? "Creating account..." : "Sign Up"}
                   </Button>
                 </form>
                 <p className="text-center mt-4 text-sm text-muted-foreground">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import gallery1 from "@/assets/gallery-1.jpg";
+import collegeEntrance from "@/assets/college-entrance.jpg";
 import gallery2 from "@/assets/gallery-2.jpg";
 import gallery3 from "@/assets/gallery-3.jpg";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 const Gallery = () => {
   const images = [
-    { src: gallery1, title: "Modern Learning Facilities" },
+    { src: collegeEntrance, title: "Tafari Makonnen Polytechnic College Entrance" },
     { src: gallery2, title: "Practical Engineering Labs" },
     { src: gallery3, title: "State-of-the-Art Computer Labs" },
   ];

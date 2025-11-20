@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 const Gallery = () => {
   const images = [
     { src: collegeEntrance, title: "Tafari Makonnen Polytechnic College Entrance" },
-    { src: gallery2, title: "Practical Engineering Labs" },
-    { src: gallery3, title: "State-of-the-Art Computer Labs" },
+    { src: gallery2, title: "Our Vibrant Student Community" },
+    { src: gallery3, title: "Students at Campus" },
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);

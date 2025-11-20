@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* About */}
           <div>
-            <img src={logo} alt="Teferi Mekonnen Polytechnic College" className="h-16 w-auto mb-4 brightness-0 invert" />
+            <img src={logo} alt="Teferi Mekonnen Polytechnic College" className="h-16 w-auto mb-4" />
             <p className="text-sm opacity-90">
               Empowering students with quality technical education for a brighter future.
             </p>
@@ -52,7 +52,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-2 text-sm opacity-90">
                 <Phone className="h-4 w-4 flex-shrink-0" />
-                <span>+251 11 123 4567</span>
+                <span>+251945753837</span>
               </li>
               <li className="flex items-center gap-2 text-sm opacity-90">
                 <Mail className="h-4 w-4 flex-shrink-0" />

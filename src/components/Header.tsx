@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { NavLink } from "@/components/NavLink";
 import logo from "@/assets/logo.png";
 
 const Header = () => {
@@ -18,24 +19,24 @@ const Header = () => {
               <h1 className="text-xl font-bold text-primary">Teferi Mekonnen Polytechnic College</h1>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
-              <Link to="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <NavLink to="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 Home
-              </Link>
-              <Link to="/about" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </NavLink>
+              <NavLink to="/about" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 About Us
-              </Link>
-              <Link to="/departments" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </NavLink>
+              <NavLink to="/departments" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 Departments
-              </Link>
-              <Link to="/application" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </NavLink>
+              <NavLink to="/application" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 Apply Now
-              </Link>
-              <Link to="/news" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </NavLink>
+              <NavLink to="/news" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 News
-              </Link>
-              <Link to="/contact" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </NavLink>
+              <NavLink to="/contact" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 Contact
-              </Link>
+              </NavLink>
             </nav>
           </div>
 

@@ -9,13 +9,13 @@ const Header = () => {
         <div className="flex items-center justify-between h-20">
           {/* Left Logo */}
           <Link to="/" className="flex items-center">
-            <img src={logo} alt="Entoto Polytechnic College" className="h-14 w-auto" />
+            <img src={logo} alt="Teferi Mekonnen Polytechnic College" className="h-14 w-auto" />
           </Link>
 
           {/* Center - College Name and Navigation */}
           <div className="flex flex-col items-center">
             <Link to="/" className="mb-2">
-              <h1 className="text-xl font-bold text-primary">Entoto Polytechnic College</h1>
+              <h1 className="text-xl font-bold text-primary">Teferi Mekonnen Polytechnic College</h1>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link to="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
@@ -52,7 +52,7 @@ const Header = () => {
               </Button>
             </Link>
             <Link to="/" className="flex items-center">
-              <img src={logo} alt="Entoto Polytechnic College" className="h-14 w-auto" />
+              <img src={logo} alt="Teferi Mekonnen Polytechnic College" className="h-14 w-auto" />
             </Link>
           </div>
         </div>

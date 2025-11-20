@@ -8,7 +8,7 @@ const Testimonials = () => {
       name: "Abebe Tadesse",
       program: "Software Engineering",
       year: "2023 Graduate",
-      content: "Entoto Polytechnic College provided me with the skills and knowledge I needed to launch my career in tech. The hands-on approach and dedicated instructors made all the difference.",
+      content: "Teferi Mekonnen Polytechnic College provided me with the skills and knowledge I needed to launch my career in tech. The hands-on approach and dedicated instructors made all the difference.",
       rating: 5,
     },
     {
@@ -33,7 +33,7 @@ const Testimonials = () => {
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-foreground mb-4">Student Testimonials</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Hear from our students and graduates about their experiences at Entoto Polytechnic College
+            Hear from our students and graduates about their experiences at Teferi Mekonnen Polytechnic College
           </p>
         </div>
 

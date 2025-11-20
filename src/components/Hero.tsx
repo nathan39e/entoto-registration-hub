@@ -25,7 +25,7 @@ const Hero = () => {
             Build Your Future with Excellence
           </h2>
           <p className="text-xl md:text-2xl mb-8 opacity-95 animate-slide-up">
-            Join Entoto Polytechnic College and embark on a journey of quality technical education that transforms lives
+            Join Teferi Mekonnen Polytechnic College and embark on a journey of quality technical education that transforms lives
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
             <Link to="/application">

@@ -8,7 +8,7 @@ const About = () => {
       <main className="flex-grow">
         <section className="py-20 bg-gradient-hero">
           <div className="container mx-auto px-4">
-            <h1 className="text-5xl font-bold text-center mb-8">About Entoto Polytechnic College</h1>
+            <h1 className="text-5xl font-bold text-center mb-8">About Teferi Mekonnen Polytechnic College</h1>
             <p className="text-xl text-center text-muted-foreground max-w-3xl mx-auto">
               Committed to excellence in technical education since our establishment
             </p>
@@ -37,8 +37,8 @@ const About = () => {
               <div>
                 <h2 className="text-3xl font-bold mb-4">Our History</h2>
                 <p className="text-lg text-muted-foreground">
-                  Established with a vision to bridge the gap between education and industry, Entoto Polytechnic College has 
-                  grown to become one of Ethiopia's premier institutions for technical education. Our modern facilities, 
+                  Established with a vision to bridge the gap between education and industry, Teferi Mekonnen Polytechnic College has 
+                  grown to become one of Ethiopia's premier institutions for technical education. Our modern facilities,
                   experienced faculty, and industry partnerships ensure that our students receive practical, relevant training 
                   that prepares them for successful careers.
                 </p>

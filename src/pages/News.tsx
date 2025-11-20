@@ -45,7 +45,7 @@ const News = () => {
           <div className="container mx-auto px-4">
             <h1 className="text-5xl font-bold text-center mb-8">News & Events</h1>
             <p className="text-xl text-center text-muted-foreground max-w-3xl mx-auto">
-              Stay updated with the latest happenings at Entoto Polytechnic College
+              Stay updated with the latest happenings at Teferi Mekonnen Polytechnic College
             </p>
           </div>
         </section>

@@ -103,7 +103,7 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero px-4">
       <div className="w-full max-w-md">
         <Link to="/" className="flex justify-center mb-8">
-          <img src={logo} alt="Entoto Polytechnic College" className="h-20 w-auto" />
+          <img src={logo} alt="Teferi Mekonnen Polytechnic College" className="h-20 w-auto" />
         </Link>
 
         <div className="perspective-1000">

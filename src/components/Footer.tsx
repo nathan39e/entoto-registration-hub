@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* About */}
           <div>
-            <img src={logo} alt="Entoto Polytechnic College" className="h-16 w-auto mb-4 brightness-0 invert" />
+            <img src={logo} alt="Teferi Mekonnen Polytechnic College" className="h-16 w-auto mb-4 brightness-0 invert" />
             <p className="text-sm opacity-90">
               Empowering students with quality technical education for a brighter future.
             </p>
@@ -83,7 +83,7 @@ const Footer = () => {
 
         <div className="border-t border-primary-foreground/20 pt-8">
           <p className="text-center text-sm opacity-90">
-            © {new Date().getFullYear()} Entoto Polytechnic College. All rights reserved.
+            © {new Date().getFullYear()} Teferi Mekonnen Polytechnic College. All rights reserved.
           </p>
         </div>
       </div>

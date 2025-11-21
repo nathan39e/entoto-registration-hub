@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo.png";
+import isoLogo from "@/assets/iso-logo.jpg";
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 
 const Footer = () => {
@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* About */}
           <div>
-            <img src={logo} alt="Teferi Mekonnen Polytechnic College" className="h-16 w-auto mb-4" />
+            <img src={isoLogo} alt="ISO 21001:2018 Certified" className="h-24 w-auto mb-4" />
             <p className="text-sm opacity-90">
               Empowering students with quality technical education for a brighter future.
             </p>

@@ -134,8 +134,11 @@ const StudentDashboard = () => {
             </Card>
 
             {/* Action Buttons */}
-            <div className="mt-8 flex gap-4 justify-center">
-              <Button size="lg">Proceed to Payment</Button>
+            <div className="mt-8 flex flex-wrap gap-4 justify-center">
+              <Button size="lg" onClick={() => navigate("/payment")}>Proceed to Payment</Button>
+              <Button size="lg" variant="outline" onClick={() => navigate("/portfolio")}>
+                View Portfolio
+              </Button>
               <Button size="lg" variant="outline" onClick={() => navigate("/departments")}>
                 View All Departments
               </Button>

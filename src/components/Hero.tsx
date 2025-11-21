@@ -15,7 +15,7 @@ const Hero = () => {
           backgroundPosition: "center",
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary-light/80" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/40 to-primary-light/30" />
       </div>
 
       {/* Content */}

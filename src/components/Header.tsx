@@ -40,7 +40,7 @@ const Header = () => {
             </nav>
           </div>
 
-          {/* Right Logo and Auth Buttons */}
+          {/* Right Auth Buttons */}
           <div className="flex items-center gap-4">
             <Link to="/auth" className="hidden sm:block">
               <Button variant="outline" size="sm">
@@ -51,9 +51,6 @@ const Header = () => {
               <Button size="sm">
                 Sign Up
               </Button>
-            </Link>
-            <Link to="/" className="flex items-center">
-              <img src={logo} alt="Teferi Mekonnen Polytechnic College" className="h-14 w-auto" />
             </Link>
           </div>
         </div>

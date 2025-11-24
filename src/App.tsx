@@ -14,6 +14,7 @@ import PsychometricExam from "./pages/PsychometricExam";
 import StudentDashboard from "./pages/StudentDashboard";
 import Payment from "./pages/Payment";
 import Portfolio from "./pages/Portfolio";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/portfolio" element={<Portfolio />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/news" element={<News />} />
           <Route path="/contact" element={<Contact />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

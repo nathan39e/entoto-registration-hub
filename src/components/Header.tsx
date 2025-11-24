@@ -1,9 +1,48 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 
 const Header = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    // Check initial auth state
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        checkAdminStatus(user.id);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkAdminStatus(session.user.id);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkAdminStatus = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    setIsAdmin(!!data && !error);
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="container mx-auto px-4">
@@ -37,6 +76,11 @@ const Header = () => {
               <NavLink to="/contact" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 Contact
               </NavLink>
+              {isAdmin && (
+                <NavLink to="/admin-dashboard" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
+                  Admin Dashboard
+                </NavLink>
+              )}
             </nav>
           </div>
 

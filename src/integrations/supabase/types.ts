@@ -127,7 +127,7 @@ export type Database = {
           id: string
           phone: string | null
           profile_picture_url: string | null
-          student_code: string | null
+          student_code: string
           updated_at: string
         }
         Insert: {
@@ -137,7 +137,7 @@ export type Database = {
           id: string
           phone?: string | null
           profile_picture_url?: string | null
-          student_code?: string | null
+          student_code: string
           updated_at?: string
         }
         Update: {
@@ -147,7 +147,7 @@ export type Database = {
           id?: string
           phone?: string | null
           profile_picture_url?: string | null
-          student_code?: string | null
+          student_code?: string
           updated_at?: string
         }
         Relationships: []

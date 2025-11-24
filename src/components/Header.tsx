@@ -1,9 +1,56 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 
 const Header = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkAdminStatus(session.user.id);
+      }
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setTimeout(() => {
+          checkAdminStatus(session.user.id);
+        }, 0);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkAdminStatus = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    
+    setIsAdmin(!!data);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="container mx-auto px-4">
@@ -37,21 +84,41 @@ const Header = () => {
               <NavLink to="/contact" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 Contact
               </NavLink>
+              {isAdmin && (
+                <NavLink to="/admin-dashboard" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
+                  Admin Dashboard
+                </NavLink>
+              )}
             </nav>
           </div>
 
           {/* Right Auth Buttons */}
           <div className="flex items-center gap-4">
-            <Link to="/auth" className="hidden sm:block">
-              <Button variant="outline" size="sm">
-                Login
-              </Button>
-            </Link>
-            <Link to="/auth?mode=signup" className="hidden sm:block">
-              <Button size="sm">
-                Sign Up
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to="/student-dashboard" className="hidden sm:block">
+                  <Button variant="outline" size="sm">
+                    Dashboard
+                  </Button>
+                </Link>
+                <Button variant="outline" size="sm" onClick={handleLogout} className="hidden sm:block">
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth" className="hidden sm:block">
+                  <Button variant="outline" size="sm">
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/auth?mode=signup" className="hidden sm:block">
+                  <Button size="sm">
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

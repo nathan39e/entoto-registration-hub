@@ -11,6 +11,8 @@ import { toast } from "sonner";
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const [studentCode, setStudentCode] = useState<string>("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -19,6 +21,22 @@ const StudentDashboard = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        
+        // Fetch the student code from the profiles table
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("student_code")
+          .eq("id", session.user.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching profile:", error);
+          toast.error("Failed to load student information");
+        } else if (profile) {
+          setStudentCode(profile.student_code);
+        }
+        
+        setLoading(false);
       }
     };
 
@@ -35,8 +53,6 @@ const StudentDashboard = () => {
     }
   };
 
-  // Mock data - in real app this would come from database
-  const studentCode = "EPC" + Math.random().toString(36).substr(2, 8).toUpperCase();
   const recommendedDepartments = [
     { name: "Software Engineering", match: "95%", reason: "Strong analytical and technical skills" },
     { name: "Computer Engineering", match: "88%", reason: "Good problem-solving abilities" },

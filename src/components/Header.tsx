@@ -55,7 +55,7 @@ const Header = () => {
           {/* Center - College Name and Navigation */}
           <div className="flex flex-col items-center">
             <Link to="/" className="mb-2">
-              <h1 className="text-xl font-bold text-primary">Teferi Mekonnen Polytechnic College</h1>
+              <h1 className="text-xl font-bold text-primary">Tafari Makonnen Polytechnic College</h1>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <NavLink to="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">

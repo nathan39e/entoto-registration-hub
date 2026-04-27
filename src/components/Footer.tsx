@@ -79,7 +79,7 @@ const Footer = () => {
 
         <div className="border-t border-primary-foreground/20 pt-8">
           <p className="text-center text-sm opacity-90">
-            © {new Date().getFullYear()} Teferi Mekonnen Polytechnic College. All rights reserved.
+            © {new Date().getFullYear()} Tafari Makonnen Polytechnic College. All rights reserved.
           </p>
         </div>
       </div>

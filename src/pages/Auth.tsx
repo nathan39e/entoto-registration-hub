@@ -10,6 +10,7 @@ import logo from "@/assets/logo.png";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgot, setIsForgot] = useState(false);
   const [isFlipping, setIsFlipping] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();

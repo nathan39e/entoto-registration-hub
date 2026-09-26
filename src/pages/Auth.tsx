@@ -16,17 +16,17 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in
+    if (new URLSearchParams(window.location.search).get("mode") === "signup") setIsLogin(false);
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/student-dashboard");
-      }
+      if (session) navigate("/student-dashboard");
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session && event === "SIGNED_IN") {
-        navigate("/student-dashboard");
+        if (sessionStorage.getItem("postSignup")) {
+          sessionStorage.removeItem("postSignup");
+          navigate("/application");
+        } else navigate("/student-dashboard");
       }
     });
 
@@ -100,22 +100,25 @@ const Auth = () => {
       return;
     }
 
-    const { error } = await supabase.auth.signUp({
+    sessionStorage.setItem("postSignup", "1");
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          full_name: fullname,
-        },
-        emailRedirectTo: `${window.location.origin}/student-dashboard`,
+        data: { full_name: fullname },
+        emailRedirectTo: `${window.location.origin}/application`,
       },
     });
 
     if (error) {
+      sessionStorage.removeItem("postSignup");
       toast.error(error.message);
+    } else if (data.session) {
+      toast.success("Account created! Please fill in the registration form.");
+      navigate("/application");
     } else {
-      toast.success("Account created successfully! Please login.");
-      handleFlip(); // Switch to login form
+      toast.success("Account created! Check your email to confirm — the link opens the registration form.");
+      handleFlip();
     }
 
     setLoading(false);

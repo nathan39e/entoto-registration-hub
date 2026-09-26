@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Users, FileText, CreditCard, TrendingUp } from "lucide-react";
+import StudentsTab from "@/components/admin/StudentsTab";
+import ExamFormsTab from "@/components/admin/ExamFormsTab";
 
 interface Application {
   id: string;
@@ -198,12 +200,18 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        <Tabs defaultValue="applications" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="applications">Applications</TabsTrigger>
-            <TabsTrigger value="results">Test Results</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
+        <Tabs defaultValue="students" className="w-full">
+          <TabsList className="flex flex-wrap h-auto w-full">
+            <TabsTrigger value="students" className="flex-1">Students</TabsTrigger>
+            <TabsTrigger value="applications" className="flex-1">Applications</TabsTrigger>
+            <TabsTrigger value="results" className="flex-1">Test Results</TabsTrigger>
+            <TabsTrigger value="exams" className="flex-1">Exams</TabsTrigger>
+            <TabsTrigger value="payments" className="flex-1">Payments</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="students" className="mt-6"><StudentsTab /></TabsContent>
+          <TabsContent value="exams" className="mt-6"><ExamFormsTab /></TabsContent>
+
 
           <TabsContent value="applications" className="mt-6">
             <Card>

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,7 @@ import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 
 const Header = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -86,16 +87,25 @@ const Header = () => {
 
           {/* Right Auth Buttons */}
           <div className="flex items-center gap-4">
-            <Link to="/auth" className="hidden sm:block">
-              <Button variant="outline" size="sm">
-                Login
-              </Button>
-            </Link>
-            <Link to="/auth?mode=signup" className="hidden sm:block">
-              <Button size="sm">
-                Sign Up
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to="/student-dashboard" className="hidden sm:block">
+                  <Button variant="outline" size="sm">Dashboard</Button>
+                </Link>
+                <Button size="sm" onClick={async () => { await supabase.auth.signOut(); navigate("/"); }}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/auth" className="hidden sm:block">
+                  <Button variant="outline" size="sm">Login</Button>
+                </Link>
+                <Link to="/auth?mode=signup" className="hidden sm:block">
+                  <Button size="sm">Sign Up</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

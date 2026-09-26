@@ -26,6 +26,8 @@ const schema = z.object({
   country: text(), city: text(),
   subcity: text(), wereda: text(), kebele: text(10), houseNumber: text(30),
   specificPlace: z.string().trim().max(300).optional(),
+  emergencyName: text(), emergencyRelation: text(50),
+  emergencyPhone: z.string().trim().regex(/^\+?[0-9]{9,15}$/, "Invalid emergency phone number"),
   grade12: z.coerce.number().min(0).max(700),
   choice1: text(), choice2: text(), choice3: text(),
 });
@@ -189,6 +191,15 @@ const Application = () => {
                         })}
                       </div>
                     )}
+                  </div>
+
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                    <h3 className="text-xl font-semibold mb-4">Emergency Contact</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {field("emergencyName", "Full Name", { maxLength: 100 })}
+                      {field("emergencyRelation", "Relationship", { maxLength: 50, placeholder: "e.g., Mother" })}
+                      {field("emergencyPhone", "Phone Number", { type: "tel", placeholder: "+2519..." })}
+                    </div>
                   </div>
 
                   <div>

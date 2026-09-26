@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -128,6 +129,18 @@ const PsychometricExam = () => {
   const navigate = useNavigate();
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [exam, setExam] = useState<{ title: string; form_url: string } | null>(null);
+  const [studentCode, setStudentCode] = useState("");
+
+  useEffect(() => {
+    supabase.from("exam_forms").select("title, form_url").eq("is_active", true)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => setExam(data));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) supabase.from("profiles").select("student_code").eq("id", user.id).maybeSingle()
+        .then(({ data }) => setStudentCode(data?.student_code ?? ""));
+    });
+  }, []);
 
   const handleAnswerChange = (questionId: number, value: string) => {
     setAnswers({ ...answers, [questionId]: value });
@@ -176,6 +189,31 @@ const PsychometricExam = () => {
   };
 
   const progress = ((currentQuestion + 1) / questions.length) * 100;
+
+  if (exam) {
+    const embed = exam.form_url.includes("docs.google.com/forms")
+      ? exam.form_url.replace(/\/viewform.*$/, "/viewform") + "?embedded=true" : null;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-10">
+          <h1 className="text-3xl md:text-4xl font-bold text-center mb-2">{exam.title}</h1>
+          {studentCode && (
+            <p className="text-center mb-6">Your student code: <span className="font-mono font-bold text-primary">{studentCode}</span> — enter it in the exam.</p>
+          )}
+          {embed ? (
+            <iframe src={embed} title={exam.title} className="w-full max-w-3xl mx-auto block h-[75vh] border rounded-lg" />
+          ) : (
+            <p className="text-center"><a href={exam.form_url} target="_blank" rel="noreferrer" className="text-primary underline">Open the exam</a></p>
+          )}
+          <div className="text-center mt-6">
+            <Button onClick={() => navigate("/student-dashboard")}>I've submitted the exam</Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

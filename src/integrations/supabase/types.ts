@@ -47,6 +47,30 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_forms: {
+        Row: {
+          created_at: string
+          form_url: string
+          id: string
+          is_active: boolean
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          form_url: string
+          id?: string
+          is_active?: boolean
+          title: string
+        }
+        Update: {
+          created_at?: string
+          form_url?: string
+          id?: string
+          is_active?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number

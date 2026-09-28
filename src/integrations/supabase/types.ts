@@ -19,6 +19,7 @@ export type Database = {
           first_choice: string
           grade_12_results: Json
           id: string
+          result_doc_path: string | null
           second_choice: string
           status: string | null
           submitted_at: string
@@ -29,6 +30,7 @@ export type Database = {
           first_choice: string
           grade_12_results: Json
           id?: string
+          result_doc_path?: string | null
           second_choice: string
           status?: string | null
           submitted_at?: string
@@ -39,6 +41,7 @@ export type Database = {
           first_choice?: string
           grade_12_results?: Json
           id?: string
+          result_doc_path?: string | null
           second_choice?: string
           status?: string | null
           submitted_at?: string

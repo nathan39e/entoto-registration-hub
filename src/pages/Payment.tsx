@@ -12,30 +12,26 @@ import { CreditCard, Phone } from "lucide-react";
 const Payment = () => {
   const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [txId, setTxId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const paymentAmount = 1500; // ETB
 
   const handleTelebirrPayment = async () => {
-    if (!phoneNumber || phoneNumber.length < 10) {
-      toast.error("Please enter a valid phone number");
-      return;
-    }
-
+    if (!/^0[79][0-9]{8}$/.test(phoneNumber)) return toast.error("Please enter a valid phone number (09XXXXXXXX)");
+    const tx = txId.trim();
+    if (!/^[A-Za-z0-9]{6,30}$/.test(tx)) return toast.error("Please enter the Telebirr transaction ID from your SMS");
     setIsProcessing(true);
-    
     try {
-      // Simulate Telebirr payment processing
-      // In production, this would call a backend API that integrates with Telebirr
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast.success("Payment initiated successfully! Please complete the payment on your Telebirr app.");
-      
-      // Redirect to dashboard after successful payment initiation
-      setTimeout(() => {
-        navigate("/student-dashboard");
-      }, 2000);
-    } catch (error) {
-      toast.error("Payment failed. Please try again.");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { navigate("/auth"); return; }
+      const { error } = await supabase.from("payments").insert({
+        user_id: user.id, amount: paymentAmount, transaction_id: tx, payment_method: "telebirr",
+      });
+      if (error) throw error;
+      toast.success("Payment submitted! An admin will verify it shortly.");
+      setTimeout(() => navigate("/student-dashboard"), 1200);
+    } catch {
+      toast.error("Could not submit payment. Please try again.");
     } finally {
       setIsProcessing(false);
     }

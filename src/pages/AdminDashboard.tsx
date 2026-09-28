@@ -23,6 +23,7 @@ interface Application {
   third_choice: string;
   status: string;
   submitted_at: string;
+  result_doc_path?: string | null;
   profiles: { full_name: string; email: string; student_code: string };
 }
 

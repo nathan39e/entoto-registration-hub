@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { CreditCard, Phone } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -105,14 +106,20 @@ const Payment = () => {
                   </p>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="tx">Telebirr Transaction ID</Label>
+                  <Input id="tx" placeholder="e.g., CHK12AB34CD" value={txId} maxLength={30}
+                    onChange={(e) => setTxId(e.target.value)} />
+                </div>
+
                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                   <h4 className="font-semibold text-sm">Payment Instructions:</h4>
                   <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                    <li>Enter your Telebirr phone number</li>
-                    <li>Click "Pay with Telebirr" button</li>
-                    <li>Check your phone for Telebirr payment notification</li>
-                    <li>Enter your PIN to complete the payment</li>
-                    <li>You will be redirected after successful payment</li>
+                    <li>Send {paymentAmount} ETB to the college's Telebirr account</li>
+                    <li>Copy the transaction ID from the Telebirr SMS</li>
+                    <li>Enter your phone number and the transaction ID above</li>
+                    <li>An admin verifies your payment</li>
+                    <li>Download your registration slip from your dashboard once approved</li>
                   </ol>
                 </div>
 
@@ -123,7 +130,7 @@ const Payment = () => {
                   disabled={isProcessing}
                 >
                   <CreditCard className="mr-2 h-5 w-5" />
-                  {isProcessing ? "Processing..." : `Pay ${paymentAmount} ETB with Telebirr`}
+                  {isProcessing ? "Submitting..." : "Submit Payment"}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">

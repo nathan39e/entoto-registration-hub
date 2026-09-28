@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Users, FileText, CreditCard, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import StudentsTab from "@/components/admin/StudentsTab";
 import ExamFormsTab from "@/components/admin/ExamFormsTab";
 
@@ -93,34 +95,48 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [appsResponse, resultsResponse, paymentsResponse] = await Promise.all([
-        supabase
-          .from("applications")
-          .select("*, profiles(full_name, email, student_code)")
-          .order("submitted_at", { ascending: false }),
-        supabase
-          .from("psychometric_results")
-          .select("*, profiles(full_name, email, student_code)")
-          .order("completed_at", { ascending: false }),
-        supabase
-          .from("payments")
-          .select("*, profiles(full_name, email, student_code)")
-          .order("created_at", { ascending: false }),
+      const [appsResponse, resultsResponse, paymentsResponse, profilesResponse] = await Promise.all([
+        supabase.from("applications").select("*").order("submitted_at", { ascending: false }),
+        supabase.from("psychometric_results").select("*").order("completed_at", { ascending: false }),
+        supabase.from("payments").select("*").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("id, full_name, email, student_code"),
       ]);
-
-      if (appsResponse.data) setApplications(appsResponse.data as any);
-      if (resultsResponse.data) setResults(resultsResponse.data as any);
-      if (paymentsResponse.data) setPayments(paymentsResponse.data as any);
+      const map = new Map((profilesResponse.data ?? []).map((p) => [p.id, p]));
+      const empty = { full_name: "Unknown", email: "", student_code: "-" };
+      const attach = (rows: any[] | null) => (rows ?? []).map((r) => ({ ...r, profiles: map.get(r.user_id) ?? empty }));
+      setApplications(attach(appsResponse.data));
+      setResults(attach(resultsResponse.data));
+      setPayments(attach(paymentsResponse.data));
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard data.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to load dashboard data.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
+  };
+
+  const [docUrl, setDocUrl] = useState<string | null>(null);
+
+  const setAppStatus = async (id: string, status: string) => {
+    const { error } = await supabase.from("applications").update({ status }).eq("id", id);
+    if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
+    setApplications((a) => a.map((x) => (x.id === id ? { ...x, status } : x)));
+    toast({ title: `Application ${status}` });
+  };
+
+  const setPaymentStatus = async (id: string, status: string) => {
+    const paid_at = status === "completed" ? new Date().toISOString() : null;
+    const { error } = await supabase.from("payments").update({ status, paid_at }).eq("id", id);
+    if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
+    setPayments((p) => p.map((x) => (x.id === id ? { ...x, status, paid_at } : x)));
+    toast({ title: status === "completed" ? "Payment verified" : "Payment rejected" });
+  };
+
+  const viewDoc = async (path?: string | null) => {
+    if (!path) return toast({ title: "No document", description: "This application has no uploaded result photo." });
+    const { data, error } = await supabase.storage.from("result-docs").createSignedUrl(path, 600);
+    if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
+    setDocUrl(data.signedUrl);
   };
 
   const getStatusColor = (status: string) => {
@@ -231,6 +247,7 @@ const AdminDashboard = () => {
                         <TableHead>Third Choice</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Submitted</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -252,6 +269,13 @@ const AdminDashboard = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>{new Date(app.submitted_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="outline" onClick={() => viewDoc(app.result_doc_path)}>Photo</Button>
+                              <Button size="sm" disabled={app.status === "approved"} onClick={() => setAppStatus(app.id, "approved")}>Approve</Button>
+                              <Button size="sm" variant="destructive" disabled={app.status === "rejected"} onClick={() => setAppStatus(app.id, "rejected")}>Reject</Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -326,6 +350,7 @@ const AdminDashboard = () => {
                         <TableHead>Transaction ID</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Date</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -347,6 +372,12 @@ const AdminDashboard = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>{new Date(payment.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button size="sm" disabled={payment.status === "completed"} onClick={() => setPaymentStatus(payment.id, "completed")}>Verify</Button>
+                              <Button size="sm" variant="destructive" disabled={payment.status === "rejected"} onClick={() => setPaymentStatus(payment.id, "rejected")}>Reject</Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -356,6 +387,12 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
+        <Dialog open={!!docUrl} onOpenChange={(o) => !o && setDocUrl(null)}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader><DialogTitle>Grade 12 Result Document</DialogTitle></DialogHeader>
+            {docUrl && <img src={docUrl} alt="Grade 12 result" className="w-full max-h-[75vh] object-contain" />}
+          </DialogContent>
+        </Dialog>
       </main>
       <Footer />
     </div>

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import ApplicationSummary from "@/components/ApplicationSummary";
 
 const DEPARTMENTS = [
   "ICT", "Hotel and Tourism", "Garment and Textile", "Automotive Technology", "Business and Finance",
@@ -43,10 +44,16 @@ const Application = () => {
   const [resultDoc, setResultDoc] = useState<File | null>(null);
   const set = (k: string) => (val: string) => setV((p) => ({ ...p, [k]: val }));
 
+  const [existing, setExisting] = useState<any>(null);
+  const [checking, setChecking] = useState(true);
+
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) navigate("/auth");
-      else setV((p) => ({ ...p, email: p.email ?? user.email ?? "" }));
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return navigate("/auth");
+      setV((p) => ({ ...p, email: p.email ?? user.email ?? "" }));
+      const { data } = await supabase.from("applications").select("*").eq("user_id", user.id).maybeSingle();
+      setExisting(data);
+      setChecking(false);
     });
   }, [navigate]);
 
@@ -80,13 +87,22 @@ const Application = () => {
       if (!ver.isDocument) throw new Error("The uploaded file doesn't look like a Grade 12 result document.");
       if (!ver.match) throw new Error(`Entered result (${parsed.data.grade12}) does not match the document (${ver.extracted ?? "unreadable"}).`);
 
+      const ext = resultDoc.name.split(".").pop() || "jpg";
+      const path = `${user.id}/grade12-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("result-docs").upload(path, resultDoc, { contentType: resultDoc.type });
+      if (upErr) throw upErr;
+
       const { choice1: c1, choice2: c2, choice3: c3, grade12, ...personal } = parsed.data;
       const { error } = await supabase.from("applications").insert({
         user_id: user.id,
         grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: personal },
         first_choice: c1, second_choice: c2, third_choice: c3,
+        result_doc_path: path,
       });
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23505") throw new Error("You have already submitted an application.");
+        throw error;
+      }
       toast.success("Application submitted! Proceeding to psychometric exam.");
       setTimeout(() => navigate("/psychometric-exam"), 1200);
     } catch (err) {
@@ -111,6 +127,12 @@ const Application = () => {
       </Select>
     </div>
   );
+
+  if (checking) return (
+    <div className="min-h-screen flex flex-col"><Header />
+      <main className="flex-grow flex items-center justify-center text-muted-foreground">Loading...</main><Footer /></div>
+  );
+  if (existing) return <ApplicationSummary app={existing} />;
 
   return (
     <div className="min-h-screen flex flex-col">

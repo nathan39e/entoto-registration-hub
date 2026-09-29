@@ -1,0 +1,3 @@
+CREATE POLICY "Sub admins view profiles" ON public.profiles FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'sub_admin'));
+CREATE POLICY "Sub admins view applications" ON public.applications FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'sub_admin'));
+CREATE POLICY "Sub admins read result docs" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'result-docs' AND public.has_role(auth.uid(), 'sub_admin'));

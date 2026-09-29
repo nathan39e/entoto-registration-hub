@@ -112,11 +112,9 @@ const PsychometricExam = () => {
             <Card className="max-w-3xl mx-auto">
               <CardHeader>
                 <CardTitle>Question {current + 1} of {questions.length}</CardTitle>
-                <CardDescription asChild>
-                  <div className="w-full bg-muted rounded-full h-2 mt-2">
-                    <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
-                  </div>
-                </CardDescription>
+                <div className="w-full bg-muted rounded-full h-2 mt-2">
+                  <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <Badge variant="secondary">{q.dept}</Badge>

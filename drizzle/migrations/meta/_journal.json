@@ -15,6 +15,20 @@
       "when": 1790575003114,
       "tag": "0001_approvals_and_docs",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790704797694,
+      "tag": "0002_add_sub_admin_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790704806643,
+      "tag": "0003_sub_admin_policies",
+      "breakpoints": true
     }
   ]
 }

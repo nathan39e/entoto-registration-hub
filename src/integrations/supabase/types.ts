@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       applications: {
         Row: {
+          documents: Json
           first_choice: string
           grade_12_results: Json
           id: string
@@ -27,6 +28,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          documents?: Json
           first_choice: string
           grade_12_results: Json
           id?: string
@@ -38,6 +40,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          documents?: Json
           first_choice?: string
           grade_12_results?: Json
           id?: string
@@ -239,7 +242,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "student"
+      app_role: "admin" | "student" | "sub_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -367,7 +370,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "student"],
+      app_role: ["admin", "student", "sub_admin"],
     },
   },
 } as const

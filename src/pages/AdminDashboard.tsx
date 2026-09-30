@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import StudentsTab from "@/components/admin/StudentsTab";
 import ExamFormsTab from "@/components/admin/ExamFormsTab";
+import SubAdminsTab from "@/components/admin/SubAdminsTab";
 
 interface Application {
   id: string;
@@ -220,6 +221,7 @@ const AdminDashboard = () => {
         <Tabs defaultValue="students" className="w-full">
           <TabsList className="flex flex-wrap h-auto w-full">
             <TabsTrigger value="students" className="flex-1">Students</TabsTrigger>
+            <TabsTrigger value="subadmins" className="flex-1">Sub Admins</TabsTrigger>
             <TabsTrigger value="applications" className="flex-1">Applications</TabsTrigger>
             <TabsTrigger value="results" className="flex-1">Test Results</TabsTrigger>
             <TabsTrigger value="exams" className="flex-1">Exams</TabsTrigger>
@@ -227,6 +229,7 @@ const AdminDashboard = () => {
           </TabsList>
 
           <TabsContent value="students" className="mt-6"><StudentsTab /></TabsContent>
+          <TabsContent value="subadmins" className="mt-6"><SubAdminsTab /></TabsContent>
           <TabsContent value="exams" className="mt-6"><ExamFormsTab /></TabsContent>
 
 

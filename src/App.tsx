@@ -15,6 +15,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import Payment from "./pages/Payment";
 import Portfolio from "./pages/Portfolio";
 import AdminDashboard from "./pages/AdminDashboard";
+import StaffDashboard from "./pages/StaffDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/payment" element={<Payment />} />
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/staff" element={<StaffDashboard />} />
           <Route path="/news" element={<News />} />
           <Route path="/contact" element={<Contact />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

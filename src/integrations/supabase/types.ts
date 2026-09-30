@@ -153,30 +153,36 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          exam_required: boolean
           full_name: string
           id: string
           phone: string | null
           profile_picture_url: string | null
+          registered_by: string | null
           student_code: string
           updated_at: string
         }
         Insert: {
           created_at?: string
           email: string
+          exam_required?: boolean
           full_name: string
           id: string
           phone?: string | null
           profile_picture_url?: string | null
+          registered_by?: string | null
           student_code: string
           updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string
+          exam_required?: boolean
           full_name?: string
           id?: string
           phone?: string | null
           profile_picture_url?: string | null
+          registered_by?: string | null
           student_code?: string
           updated_at?: string
         }

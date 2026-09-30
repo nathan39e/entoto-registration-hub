@@ -29,12 +29,16 @@ const StudentDashboard = () => {
       if (!session) return navigate("/auth");
       const uid = session.user.id;
       const [p, a, pay, r] = await Promise.all([
-        supabase.from("profiles").select("full_name, student_code").eq("id", uid).maybeSingle(),
+        supabase.from("profiles").select("full_name, student_code, exam_required").eq("id", uid).maybeSingle(),
         supabase.from("applications").select("*").eq("user_id", uid).maybeSingle(),
         supabase.from("payments").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("psychometric_results").select("*").eq("user_id", uid).order("completed_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       if (p.error) toast.error("Failed to load student information");
+      if (p.data?.exam_required && !r.data) {
+        toast.info("Please take your psychometric exam first.");
+        return navigate("/psychometric-exam");
+      }
       setProfile(p.data); setApp(a.data); setPayment(pay.data); setResult(r.data);
     })();
   }, [navigate]);

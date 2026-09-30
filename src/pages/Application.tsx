@@ -29,6 +29,7 @@ const schema = z.object({
   emergencyAddress: text(300),
   grade12: z.coerce.number().min(0).max(700),
   grade12Year: z.coerce.number().int().min(1990).max(currentYear),
+  program: z.enum(["Regular", "Extension", "Weekend"], { errorMap: () => ({ message: "Please select a program" }) }),
   choice1: text(), choice2: text(), choice3: text(),
   field1: text(200), field2: text(200), field3: text(200),
 });
@@ -277,6 +278,7 @@ const Application = () => {
                   <div>
                     <h3 className="text-xl font-semibold mb-4">Department Preferences</h3>
                     <div className="space-y-4">
+                      <div className="max-w-sm">{pick("program", "Program", ["Regular", "Extension", "Weekend"], "Select program")}</div>
                       {deptSelect(1, "First Choice")}
                       {deptSelect(2, "Second Choice")}
                       {deptSelect(3, "Third Choice")}

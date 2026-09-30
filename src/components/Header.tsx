@@ -10,6 +10,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
 
   useEffect(() => {
     // Check initial auth state
@@ -34,14 +35,10 @@ const Header = () => {
   }, []);
 
   const checkAdminStatus = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    setIsAdmin(!!data && !error);
+    const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+    const roles = (data ?? []).map((r) => r.role);
+    setIsAdmin(roles.includes("admin"));
+    setIsStaff(roles.includes("sub_admin"));
   };
 
   return (
@@ -80,6 +77,11 @@ const Header = () => {
               {isAdmin && (
                 <NavLink to="/admin-dashboard" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                   Admin Dashboard
+                </NavLink>
+              )}
+              {(isAdmin || isStaff) && (
+                <NavLink to="/staff" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
+                  Staff
                 </NavLink>
               )}
             </nav>

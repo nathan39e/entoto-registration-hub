@@ -84,6 +84,7 @@ export type Database = {
           id: string
           paid_at: string | null
           payment_method: string | null
+          receipt_path: string | null
           status: string | null
           transaction_id: string | null
           user_id: string
@@ -94,6 +95,7 @@ export type Database = {
           id?: string
           paid_at?: string | null
           payment_method?: string | null
+          receipt_path?: string | null
           status?: string | null
           transaction_id?: string | null
           user_id: string
@@ -104,6 +106,7 @@ export type Database = {
           id?: string
           paid_at?: string | null
           payment_method?: string | null
+          receipt_path?: string | null
           status?: string | null
           transaction_id?: string | null
           user_id?: string

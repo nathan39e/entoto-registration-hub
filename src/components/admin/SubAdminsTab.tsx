@@ -12,6 +12,7 @@ const SubAdminsTab = () => {
   const [rows, setRows] = useState<Row[]>([]);
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const [nw, setNw] = useState({ full_name: "", email: "", password: "" });
 
   const load = async () => {
     const [{ data: roles }, { data: profs }] = await Promise.all([
@@ -31,17 +32,23 @@ const SubAdminsTab = () => {
     const { data, error } = await supabase.functions.invoke("manage-users", { body });
     setBusy(false);
     if (error || data?.error) return toast.error(data?.error || error?.message);
-    toast.success(msg); setEmail(""); load();
+    toast.success(msg); setEmail(""); setNw({ full_name: "", email: "", password: "" }); load();
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Sub Admins ({rows.length})</CardTitle>
-        <CardDescription>Sub admins can look up students by code, view their documents and register new students. The person must already have an account.</CardDescription>
+        <CardDescription>Sub admins can look up students by code, view their documents and register new students. Create a new staff account below, or promote an existing account by email.</CardDescription>
+        <form className="flex flex-wrap gap-2 mt-2" onSubmit={(e) => { e.preventDefault(); call({ action: "create_sub_admin", ...nw }, "Sub admin account created"); }}>
+          <Input required placeholder="Full name" value={nw.full_name} onChange={(e) => setNw({ ...nw, full_name: e.target.value })} className="max-w-[200px]" />
+          <Input type="email" required placeholder="Email" value={nw.email} onChange={(e) => setNw({ ...nw, email: e.target.value })} className="max-w-[220px]" />
+          <Input required minLength={8} placeholder="Password (min 8)" value={nw.password} onChange={(e) => setNw({ ...nw, password: e.target.value })} className="max-w-[180px]" />
+          <Button type="submit" disabled={busy}>Create Sub Admin</Button>
+        </form>
         <form className="flex flex-wrap gap-2 mt-2" onSubmit={(e) => { e.preventDefault(); call({ action: "set_sub_admin", email }, "Sub admin added"); }}>
           <Input type="email" required placeholder="Email of the account" value={email} onChange={(e) => setEmail(e.target.value)} className="max-w-sm" />
-          <Button type="submit" disabled={busy}>Make Sub Admin</Button>
+          <Button type="submit" disabled={busy}>Promote Existing Account</Button>
         </form>
       </CardHeader>
       <CardContent>

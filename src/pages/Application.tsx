@@ -41,7 +41,7 @@ const MAX = 5 * 1024 * 1024;
 const isImg = (f: File) => f.type.startsWith("image/");
 const isDoc = (f: File) => isImg(f) || f.type === "application/pdf";
 
-const Application = () => {
+const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [v, setV] = useState<Record<string, string>>({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa" });
@@ -59,16 +59,22 @@ const Application = () => {
 
   const [existing, setExisting] = useState<any>(null);
   const [checking, setChecking] = useState(true);
+  const [newCode, setNewCode] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return navigate("/auth");
+      if (staffMode) {
+        const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin"]);
+        if (!r?.length) { toast.error("Access denied"); return navigate("/"); }
+        setChecking(false); return;
+      }
       setV((p) => ({ ...p, email: p.email ?? user.email ?? "" }));
       const { data } = await supabase.from("applications").select("*").eq("user_id", user.id).maybeSingle();
       setExisting(data);
       setChecking(false);
     });
-  }, [navigate]);
+  }, [navigate, staffMode]);
 
   const inEthiopia = v.country?.trim().toLowerCase() === "ethiopia";
   const inAddis = inEthiopia && v.city === "Addis Ababa";
@@ -89,6 +95,7 @@ const Application = () => {
     if (!resultDoc || !isImg(resultDoc) || resultDoc.size > MAX) return toast.error("Grade 12 result must be an image (JPG/PNG) under 5MB.");
     if (!grade8 || !isDoc(grade8) || grade8.size > MAX) return toast.error("Please upload your Grade 8 result (image or PDF under 5MB).");
     if (!transcript || !isDoc(transcript) || transcript.size > MAX) return toast.error("Please upload your Grade 9–12 transcript (image or PDF under 5MB).");
+    if (staffMode && (v.password ?? "").length < 8) return toast.error("Password must be at least 8 characters.");
 
     setLoading(true);
     try {
@@ -104,9 +111,20 @@ const Application = () => {
       if (!ver.isDocument) throw new Error("The uploaded file doesn't look like a Grade 12 result document.");
       if (!ver.match) throw new Error(`Entered result (${parsed.data.grade12}) does not match the document (${ver.extracted ?? "unreadable"}).`);
 
+      let ownerId = user.id;
+      if (staffMode) {
+        const d = parsed.data;
+        const { data: reg, error: regErr } = await supabase.functions.invoke("manage-users", { body: {
+          action: "register_student", full_name: `${d.firstName} ${d.middleName} ${d.lastName}`, email: d.email,
+          password: v.password, phone: d.phone, program: d.program,
+        } });
+        if (regErr || reg?.error) throw new Error(reg?.error || "Could not create the student account");
+        ownerId = reg.id;
+        setNewCode(reg.student_code);
+      }
       const upload = async (f: File, name: string) => {
         const ext = f.name.split(".").pop() || "jpg";
-        const p = `${user.id}/${name}-${Date.now()}.${ext}`;
+        const p = `${ownerId}/${name}-${Date.now()}.${ext}`;
         const { error } = await supabase.storage.from("result-docs").upload(p, f, { contentType: f.type });
         if (error) throw error;
         return p;
@@ -120,13 +138,22 @@ const Application = () => {
       };
 
       const { choice1: c1, choice2: c2, choice3: c3, field1, field2, field3, grade12, ...personal } = parsed.data;
-      const { error } = await supabase.from("applications").insert({
-        user_id: user.id,
-        grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: personal, sub_fields: [field1, field2, field3] },
+      const appRow = {
+        grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: personal, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
         first_choice: `${c1} — ${field1}`, second_choice: `${c2} — ${field2}`, third_choice: `${c3} — ${field3}`,
         result_doc_path: path,
         documents,
-      });
+      };
+      if (staffMode) {
+        const { data: sa, error: saErr } = await supabase.functions.invoke("manage-users", { body: { action: "staff_application", id: ownerId, application: appRow } });
+        if (saErr || sa?.error) throw new Error(sa?.error || "Could not save the application");
+        toast.success("Student registered. They will take the exam when they log in.");
+        setV({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa" });
+        (e.target as HTMLFormElement).reset();
+        setPhoto(null); setResultDoc(null); setGrade8(null); setTranscript(null);
+        return;
+      }
+      const { error } = await supabase.from("applications").insert({ user_id: user.id, ...appRow });
       if (error) {
         if (error.code === "23505") throw new Error("You have already submitted an application.");
         throw error;
@@ -194,7 +221,8 @@ const Application = () => {
             <Card className="max-w-4xl mx-auto">
               <CardHeader>
                 <CardTitle className="text-2xl md:text-3xl">Student Registration Form</CardTitle>
-                <CardDescription>Fields marked with * are mandatory.</CardDescription>
+                <CardDescription>Fields marked with * are mandatory.{staffMode && " You are registering a student — they log in with the email and password below."}</CardDescription>
+                {staffMode && newCode && <p className="text-sm mt-2">Last registered student code: <b className="text-primary">{newCode}</b></p>}
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-8">
@@ -205,6 +233,7 @@ const Application = () => {
                       {field("middleName", "Middle Name", { maxLength: 100 })}
                       {field("lastName", "Last Name", { maxLength: 100 })}
                       {field("email", "Email Address", { type: "email", maxLength: 255 })}
+                      {staffMode && field("password", "Student Password (min 8)", { type: "text", minLength: 8 })}
                       {field("phone", "Phone Number", { type: "tel", placeholder: "+2519..." })}
                       {field("dob", "Date of Birth", { type: "date" })}
                       <div>

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import RegisterStudentForm from "./RegisterStudentForm";
+import { useNavigate } from "react-router-dom";
 
 type Profile = { id: string; full_name: string; email: string; phone: string | null; student_code: string; created_at: string; registered_by: string | null };
 
@@ -20,6 +20,29 @@ const StudentsTab = () => {
   const [edit, setEdit] = useState<Profile | null>(null);
   const [del, setDel] = useState<Profile | null>(null);
   const [busy, setBusy] = useState(false);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [docs, setDocs] = useState<{ name: string; links: [string, string][] } | null>(null);
+  const navigate = useNavigate();
+
+  const inRange = (d: string) => {
+    const day = d.slice(0, 10);
+    return (!from || day >= from) && (!to || day <= to);
+  };
+
+  const showDocs = async (p: Profile) => {
+    const { data: a } = await supabase.from("applications").select("documents, result_doc_path").eq("user_id", p.id).maybeSingle();
+    const d: Record<string, string> = { ...((a?.documents as Record<string, string>) ?? {}) };
+    if (!d.grade12 && a?.result_doc_path) d.grade12 = a.result_doc_path;
+    const labels: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript (9–12)"]];
+    const links: [string, string][] = [];
+    for (const [k, l] of labels) {
+      if (!d[k]) { links.push([l, ""]); continue; }
+      const { data } = await supabase.storage.from("result-docs").createSignedUrl(d[k], 600);
+      links.push([l, data?.signedUrl ?? ""]);
+    }
+    setDocs({ name: p.full_name, links });
+  };
 
   const load = () => supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by")
     .order("created_at", { ascending: false }).then(({ data }) => setStudents((data as Profile[]) ?? []));
@@ -49,7 +72,9 @@ const StudentsTab = () => {
       return data?.signedUrl ?? "";
     };
     const rows = [];
-    for (const s of students) {
+    const list = students.filter((s) => inRange(s.created_at));
+    if (!list.length) return toast.error("No students registered in that date range.");
+    for (const s of list) {
       const a: any = byUser.get(s.id);
       const g = a?.grade_12_results ?? {};
       const pi = g.personal_info ?? {};
@@ -73,24 +98,29 @@ const StudentsTab = () => {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Students");
-    XLSX.writeFile(wb, `students-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.writeFile(wb, `students-${from || "start"}-to-${to || new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   const s = q.trim().toLowerCase();
-  const filtered = students.filter((p) =>
-    !s || p.full_name.toLowerCase().includes(s) || p.email.toLowerCase().includes(s) || p.student_code.toLowerCase().includes(s));
+  const filtered = students.filter((p) => inRange(p.created_at) && (
+    !s || p.full_name.toLowerCase().includes(s) || p.email.toLowerCase().includes(s) || p.student_code.toLowerCase().includes(s)));
 
   return (
     <div className="space-y-6">
-      <RegisterStudentForm onDone={load} />
       <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>Registered Students ({students.length})</CardTitle>
-            <Button onClick={exportExcel}>Download Excel</Button>
+            <div className="flex gap-2"><Button variant="outline" onClick={() => navigate("/staff/apply")}>Register Student</Button><Button onClick={exportExcel}>Download Excel</Button></div>
           </div>
           <CardDescription>Search by name, email or student code. The Excel file includes the application form and document links.</CardDescription>
-          <Input placeholder="Search..." value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm mt-2" />
+          <div className="flex flex-wrap items-end gap-3 mt-2">
+            <Input placeholder="Search..." value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm" />
+            <div><Label htmlFor="from">Registered from</Label><Input id="from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+            <div><Label htmlFor="to">to</Label><Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+            {(from || to) && <Button variant="ghost" onClick={() => { setFrom(""); setTo(""); }}>Clear dates</Button>}
+          </div>
+          <p className="text-xs text-muted-foreground">The list and the Excel download only include students registered in the chosen dates.</p>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[500px]">
@@ -110,6 +140,7 @@ const StudentsTab = () => {
                     <TableCell>{p.phone || "—"}</TableCell>
                     <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" onClick={() => showDocs(p)}>Documents</Button>
                       <Button size="sm" variant="outline" onClick={() => setEdit({ ...p })}>Edit</Button>
                       <Button size="sm" variant="outline" onClick={() => sendReset(p.email)}>Reset email</Button>
                       <Button size="sm" variant="destructive" onClick={() => setDel(p)}>Delete</Button>
@@ -139,6 +170,17 @@ const StudentsTab = () => {
               }
             }}>Save</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!docs} onOpenChange={(o) => !o && setDocs(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Documents — {docs?.name}</DialogTitle></DialogHeader>
+          <div className="grid gap-2">
+            {docs?.links.map(([l, u]) => (
+              <Button key={l} variant="outline" disabled={!u} onClick={() => window.open(u, "_blank")}>{l}{!u && " (not uploaded)"}</Button>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
 

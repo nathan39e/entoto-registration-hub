@@ -42,10 +42,42 @@ Deno.serve(async (req) => {
         });
       }
       const { data: prof } = await admin.from("profiles").select("student_code").eq("id", id).maybeSingle();
-      return json({ ok: true, student_code: prof?.student_code });
+      return json({ ok: true, id, student_code: prof?.student_code });
+    }
+
+    if (action === "staff_application") {
+      if (!isAdmin && !isSub) return json({ error: "Not allowed" }, 403);
+      const id = str(body.id, 64);
+      const { data: p } = await admin.from("profiles").select("registered_by").eq("id", id).maybeSingle();
+      if (!p || (!isAdmin && p.registered_by !== user.id)) return json({ error: "Not allowed for this student" }, 403);
+      const a = body.application ?? {};
+      const docs = a.documents ?? {};
+      for (const v of Object.values(docs)) {
+        if (typeof v !== "string" || !v.startsWith(`${id}/`)) return json({ error: "Invalid document path" }, 400);
+      }
+      const { error } = await admin.from("applications").insert({
+        user_id: id, grade_12_results: a.grade_12_results ?? {},
+        first_choice: str(a.first_choice, 300), second_choice: str(a.second_choice, 300), third_choice: str(a.third_choice, 300),
+        result_doc_path: docs.grade12 ?? null, documents: docs,
+      });
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
     }
 
     if (!isAdmin) return json({ error: "Admins only" }, 403);
+
+    if (action === "create_sub_admin") {
+      const full_name = str(body.full_name, 100), email = str(body.email, 255).toLowerCase();
+      const password = typeof body.password === "string" ? body.password : "";
+      if (!full_name || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8)
+        return json({ error: "Name, valid email and a password of at least 8 characters are required." }, 400);
+      const { data: created, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name } });
+      if (error) return json({ error: error.message }, 400);
+      const id = created.user.id;
+      await admin.from("user_roles").delete().eq("user_id", id).eq("role", "student");
+      await admin.from("user_roles").upsert({ user_id: id, role: "sub_admin" }, { onConflict: "user_id,role" });
+      return json({ ok: true });
+    }
 
     if (action === "update_student") {
       const id = str(body.id, 64);

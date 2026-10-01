@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import RegisterStudentForm from "@/components/admin/RegisterStudentForm";
+
 
 const DOCS: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript"]];
 
@@ -18,6 +18,7 @@ const StaffDashboard = () => {
   const [code, setCode] = useState("");
   const [found, setFound] = useState<{ profile: any; app: any; result: any } | null>(null);
   const [searched, setSearched] = useState(false);
+  const [mine, setMine] = useState<{ full_name: string; student_code: string; created_at: string }[]>([]);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -25,6 +26,8 @@ const StaffDashboard = () => {
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin"]);
       if (!data?.length) { toast.error("Access denied"); return navigate("/"); }
       setOk(true);
+      const { data: m } = await supabase.from("profiles").select("full_name, student_code, created_at").eq("registered_by", user.id).order("created_at", { ascending: false });
+      setMine(m ?? []);
     });
   }, [navigate]);
 
@@ -92,7 +95,24 @@ const StaffDashboard = () => {
             )}
           </CardContent>
         </Card>
-        <RegisterStudentForm />
+        <Card>
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle>Students I Registered ({mine.length})</CardTitle>
+              <Button onClick={() => navigate("/staff/apply")}>Register a New Student</Button>
+            </div>
+            <CardDescription>Registering opens the full application form.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {mine.length === 0 && <p className="text-muted-foreground text-sm">No students registered yet.</p>}
+            {mine.map((m) => (
+              <div key={m.student_code} className="flex justify-between border-b py-2 text-sm">
+                <span>{m.full_name} <span className="text-muted-foreground">· {m.student_code}</span></span>
+                <span className="text-muted-foreground">{new Date(m.created_at).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </main>
       <Footer />
     </div>

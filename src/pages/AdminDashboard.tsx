@@ -44,6 +44,7 @@ interface Payment {
   status: string;
   payment_method: string;
   transaction_id: string;
+  receipt_path?: string | null;
   paid_at: string;
   created_at: string;
   profiles: { full_name: string; email: string; student_code: string };
@@ -378,6 +379,7 @@ const AdminDashboard = () => {
                           <TableCell>{new Date(payment.created_at).toLocaleDateString()}</TableCell>
                           <TableCell>
                             <div className="flex gap-1">
+                              <Button size="sm" variant="outline" disabled={!payment.receipt_path} onClick={() => viewDoc(payment.receipt_path)}>Receipt</Button>
                               <Button size="sm" disabled={payment.status === "completed"} onClick={() => setPaymentStatus(payment.id, "completed")}>Verify</Button>
                               <Button size="sm" variant="destructive" disabled={payment.status === "rejected"} onClick={() => setPaymentStatus(payment.id, "rejected")}>Reject</Button>
                             </div>
@@ -393,8 +395,8 @@ const AdminDashboard = () => {
         </Tabs>
         <Dialog open={!!docUrl} onOpenChange={(o) => !o && setDocUrl(null)}>
           <DialogContent className="max-w-3xl">
-            <DialogHeader><DialogTitle>Grade 12 Result Document</DialogTitle></DialogHeader>
-            {docUrl && <img src={docUrl} alt="Grade 12 result" className="w-full max-h-[75vh] object-contain" />}
+            <DialogHeader><DialogTitle>Document</DialogTitle></DialogHeader>
+            {docUrl && <img src={docUrl} alt="Uploaded document" className="w-full max-h-[75vh] object-contain" />}
           </DialogContent>
         </Dialog>
       </main>

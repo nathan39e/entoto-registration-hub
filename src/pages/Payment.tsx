@@ -15,21 +15,27 @@ const Payment = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [txId, setTxId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [receipt, setReceipt] = useState<File | null>(null);
   const paymentAmount = 1500; // ETB
 
   const handleTelebirrPayment = async () => {
     if (!/^0[79][0-9]{8}$/.test(phoneNumber)) return toast.error("Please enter a valid phone number (09XXXXXXXX)");
     const tx = txId.trim();
     if (!/^[A-Za-z0-9]{6,30}$/.test(tx)) return toast.error("Please enter the Telebirr transaction ID from your SMS");
+    if (!receipt || !receipt.type.startsWith("image/") || receipt.size > 5 * 1024 * 1024) return toast.error("Please upload a photo/screenshot of your receipt (image under 5MB).");
     setIsProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
+      const ext = receipt.name.split(".").pop() || "jpg";
+      const receipt_path = `${user.id}/receipt-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("result-docs").upload(receipt_path, receipt, { contentType: receipt.type });
+      if (upErr) throw upErr;
       const { error } = await supabase.from("payments").insert({
-        user_id: user.id, amount: paymentAmount, transaction_id: tx, payment_method: "telebirr",
+        user_id: user.id, receipt_path, amount: paymentAmount, transaction_id: tx, payment_method: "telebirr",
       });
       if (error) throw error;
-      toast.success("Payment submitted! An admin will verify it shortly.");
+      toast.success("Receipt submitted! An admin will verify it shortly.");
       setTimeout(() => navigate("/student-dashboard"), 1200);
     } catch {
       toast.error("Could not submit payment. Please try again.");
@@ -85,8 +91,8 @@ const Payment = () => {
                     <Phone className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <CardTitle>Pay with Telebirr</CardTitle>
-                    <CardDescription>Secure mobile payment</CardDescription>
+                    <CardTitle>Payment Receipt Verification</CardTitle>
+                    <CardDescription>Upload the receipt of the payment you made</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -112,13 +118,19 @@ const Payment = () => {
                     onChange={(e) => setTxId(e.target.value)} />
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="receipt">Receipt Photo *</Label>
+                  <Input id="receipt" type="file" accept="image/*" onChange={(e) => setReceipt(e.target.files?.[0] ?? null)} />
+                  <p className="text-sm text-muted-foreground">A clear photo or screenshot of the Telebirr / bank receipt (under 5MB).</p>
+                </div>
+
                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                   <h4 className="font-semibold text-sm">Payment Instructions:</h4>
                   <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
                     <li>Send {paymentAmount} ETB to the college's Telebirr account</li>
                     <li>Copy the transaction ID from the Telebirr SMS</li>
-                    <li>Enter your phone number and the transaction ID above</li>
-                    <li>An admin verifies your payment</li>
+                    <li>Enter your phone number, the transaction ID and upload the receipt photo</li>
+                    <li>An admin checks the receipt and verifies your payment</li>
                     <li>Download your registration slip from your dashboard once approved</li>
                   </ol>
                 </div>
@@ -130,11 +142,11 @@ const Payment = () => {
                   disabled={isProcessing}
                 >
                   <CreditCard className="mr-2 h-5 w-5" />
-                  {isProcessing ? "Submitting..." : "Submit Payment"}
+                  {isProcessing ? "Submitting..." : "Submit Receipt"}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  By clicking "Pay with Telebirr", you agree to our terms and conditions
+                  By submitting, you agree to our terms and conditions
                 </p>
               </CardContent>
             </Card>

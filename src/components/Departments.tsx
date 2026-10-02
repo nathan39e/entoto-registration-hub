@@ -76,11 +76,6 @@ const Departments = () => {
       color: "bg-gray-600",
     },
   ];
-  return (
-              <Card 
-                key={index} 
-                className="hover:shadow-elevated transition-all duration-300 hover:-translate-y-1"
-              >
                 <CardHeader>
                   <div className={`${dept.color} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
                     <Icon className="h-6 w-6 text-white" />

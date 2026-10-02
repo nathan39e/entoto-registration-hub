@@ -22,6 +22,29 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const action = body.action;
 
+    if (action === "upload_student_document") {
+      if (!isAdmin && !isSub) return json({ error: "Not allowed" }, 403);
+      const id = str(body.id, 64);
+      const name = str(body.name, 24);
+      const allowed = ["photo", "grade12", "grade8", "transcript"];
+      const mime = str(body.mime, 40);
+      if (!allowed.includes(name) || !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(mime) ||
+          ((name === "photo" || name === "grade12") && mime === "application/pdf"))
+        return json({ error: "Unsupported document type" }, 400);
+      const { data: owner } = await admin.from("profiles").select("registered_by").eq("id", id).maybeSingle();
+      if (!owner || (!isAdmin && owner.registered_by !== user.id)) return json({ error: "Not allowed for this student" }, 403);
+      const encoded = typeof body.content === "string" ? body.content : "";
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length > 7_000_000 || encoded.length < 4)
+        return json({ error: "Invalid or oversized document" }, 400);
+      const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
+      if (bytes.length > 5 * 1024 * 1024) return json({ error: "Document exceeds 5MB" }, 400);
+      const ext = mime === "application/pdf" ? "pdf" : mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+      const path = `${id}/${name}-${crypto.randomUUID()}.${ext}`;
+      const { error } = await admin.storage.from("result-docs").upload(path, bytes, { contentType: mime });
+      if (error) return json({ error: error.message }, 400);
+      return json({ path });
+    }
+
     if (action === "register_student") {
       if (!isAdmin && !isSub) return json({ error: "Not allowed" }, 403);
       const full_name = str(body.full_name, 100), email = str(body.email, 255).toLowerCase();

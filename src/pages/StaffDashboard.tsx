@@ -106,8 +106,8 @@ const StaffDashboard = () => {
           <CardContent className="space-y-1">
             {mine.length === 0 && <p className="text-muted-foreground text-sm">No students registered yet.</p>}
             {mine.map((m) => (
-              <div key={m.student_code} className="flex justify-between border-b py-2 text-sm">
-                <span>{m.full_name} <span className="text-muted-foreground">· {m.student_code}</span></span>
+              <div key={m.student_code} className="flex flex-wrap justify-between gap-2 border-b py-2 text-sm">
+                <span className="break-words">{m.full_name} <span className="text-muted-foreground">· {m.student_code}</span></span>
                 <span className="text-muted-foreground">{new Date(m.created_at).toLocaleDateString()}</span>
               </div>
             ))}

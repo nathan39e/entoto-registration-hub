@@ -76,13 +76,7 @@ const Departments = () => {
       color: "bg-gray-600",
     },
   ];
-
-  return (
-    <section className="py-20 bg-secondary/30">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {departments.map((dept, index) => {
-            const Icon = dept.icon;
-            return (
+      return (
               <Card 
                 key={index} 
                 className="hover:shadow-elevated transition-all duration-300 hover:-translate-y-1"

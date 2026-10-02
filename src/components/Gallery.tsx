@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 const Gallery = () => {
   const images = [
     { src: collegeEntrance, title: "Tafari Makonnen Polytechnic College Entrance" },
-    { src: gallery2, title: "Our Vibrant Student Community" },
+    { src: gallery2, title: "Devlopers Of The Tafati Makonnen Pollytechnic College Website" },
     { src: gallery3, title: "Students at Campus" },
   ];
 

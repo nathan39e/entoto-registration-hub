@@ -1,0 +1,3 @@
+- Use the existing shared Application page for both self-service and staff registration, because both require identical personal, academic, preference, and document fields.
+- Route staff uploads for a newly created student through the authenticated manage-users function, because storage ownership policies prevent staff from writing directly into another user's folder.
+- Treat submitted receipts as pending until an admin reviews the image and explicitly verifies or rejects the payment; notify admins in the dashboard through polling while it is open.

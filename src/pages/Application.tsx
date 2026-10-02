@@ -123,6 +123,14 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         setNewCode(reg.student_code);
       }
       const upload = async (f: File, name: string) => {
+        if (staffMode) {
+          const content = (await toDataUrl(f)).split(",")[1];
+          const { data, error } = await supabase.functions.invoke("manage-users", {
+            body: { action: "upload_student_document", id: ownerId, name, mime: f.type, content },
+          });
+          if (error || data?.error || !data?.path) throw new Error(data?.error || error?.message || "Document upload failed");
+          return data.path as string;
+        }
         const ext = f.name.split(".").pop() || "jpg";
         const p = `${ownerId}/${name}-${Date.now()}.${ext}`;
         const { error } = await supabase.storage.from("result-docs").upload(p, f, { contentType: f.type });
@@ -207,18 +215,18 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow">
-        <section className="py-20 bg-gradient-hero">
+         <section className="py-10 md:py-20 bg-gradient-hero">
           <div className="container mx-auto px-4">
-            <h1 className="text-4xl md:text-5xl font-bold text-center mb-8">Apply Now</h1>
+            <h1 className="text-3xl md:text-5xl font-bold text-center mb-4">{staffMode ? "Register a Student" : "Apply Now"}</h1>
             <p className="text-xl text-center text-muted-foreground max-w-3xl mx-auto">
-              Take the first step towards your future. Complete the application form below.
+              {staffMode ? "Complete the student's full application below." : "Take the first step towards your future. Complete the application form below."}
             </p>
           </div>
         </section>
 
         <section className="py-12 md:py-20 bg-background">
-          <div className="container mx-auto px-4">
-            <Card className="max-w-4xl mx-auto">
+          <div className="container mx-auto px-4 min-w-0">
+            <Card className="max-w-4xl mx-auto min-w-0">
               <CardHeader>
                 <CardTitle className="text-2xl md:text-3xl">Student Registration Form</CardTitle>
                 <CardDescription>Fields marked with * are mandatory.{staffMode && " You are registering a student — they log in with the email and password below."}</CardDescription>
@@ -233,7 +241,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {field("middleName", "Middle Name", { maxLength: 100 })}
                       {field("lastName", "Last Name", { maxLength: 100 })}
                       {field("email", "Email Address", { type: "email", maxLength: 255 })}
-                      {staffMode && field("password", "Student Password (min 8)", { type: "text", minLength: 8 })}
+                      {staffMode && field("password", "Student Password (min 8)", { type: "password", minLength: 8, autoComplete: "new-password" })}
                       {field("phone", "Phone Number", { type: "tel", placeholder: "+2519..." })}
                       {field("dob", "Date of Birth", { type: "date" })}
                       <div>

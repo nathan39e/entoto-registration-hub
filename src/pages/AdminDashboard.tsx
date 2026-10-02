@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
@@ -57,6 +57,7 @@ const AdminDashboard = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [results, setResults] = useState<PsychometricResult[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const knownPaymentIds = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     checkAdminAccess();
@@ -110,6 +111,12 @@ const AdminDashboard = () => {
       setApplications(attach(appsResponse.data));
       setResults(attach(resultsResponse.data));
       setPayments(attach(paymentsResponse.data));
+      const pending = (paymentsResponse.data ?? []).filter((p) => p.status === "pending");
+      if (knownPaymentIds.current) {
+        const newlySubmitted = pending.filter((p) => !knownPaymentIds.current?.has(p.id));
+        if (newlySubmitted.length) toast({ title: "New payment receipt", description: `${newlySubmitted.length} student${newlySubmitted.length > 1 ? "s have" : " has"} submitted a receipt for approval.` });
+      }
+      knownPaymentIds.current = new Set((paymentsResponse.data ?? []).map((p) => p.id));
     } catch (error) {
       console.error("Error fetching data:", error);
       toast({ title: "Error", description: "Failed to load dashboard data.", variant: "destructive" });
@@ -117,6 +124,27 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (loading) return;
+    const refreshPayments = async () => {
+      if (document.visibilityState !== "visible") return;
+      const { data, error } = await supabase.from("payments").select("*").order("created_at", { ascending: false });
+      if (error || !data) return;
+      const newReceipts = data.filter((p) => p.status === "pending" && !knownPaymentIds.current?.has(p.id));
+      if (newReceipts.length) {
+        toast({ title: "New payment receipt", description: `${newReceipts.length} student${newReceipts.length > 1 ? "s have" : " has"} submitted a receipt for approval.` });
+      }
+      knownPaymentIds.current = new Set(data.map((p) => p.id));
+      const ids = data.map((p) => p.user_id);
+      const { data: profiles } = ids.length ? await supabase.from("profiles").select("id, full_name, email, student_code").in("id", ids) : { data: [] };
+      const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+      setPayments(data.map((p) => ({ ...p, profiles: byId.get(p.user_id) ?? { full_name: "Unknown", email: "", student_code: "-" } })));
+    };
+    const timer = window.setInterval(refreshPayments, 15000);
+    document.addEventListener("visibilitychange", refreshPayments);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refreshPayments); };
+  }, [loading, toast]);
 
   const [docUrl, setDocUrl] = useState<string | null>(null);
 
@@ -200,7 +228,7 @@ const AdminDashboard = () => {
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage student applications, test results, and payments</p>
         </div>
 
@@ -220,13 +248,13 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="students" className="w-full">
-          <TabsList className="flex flex-wrap h-auto w-full">
-            <TabsTrigger value="students" className="flex-1">Students</TabsTrigger>
-            <TabsTrigger value="subadmins" className="flex-1">Sub Admins</TabsTrigger>
-            <TabsTrigger value="applications" className="flex-1">Applications</TabsTrigger>
-            <TabsTrigger value="results" className="flex-1">Test Results</TabsTrigger>
-            <TabsTrigger value="exams" className="flex-1">Exams</TabsTrigger>
-            <TabsTrigger value="payments" className="flex-1">Payments</TabsTrigger>
+          <TabsList className="flex flex-wrap h-auto w-full gap-1">
+            <TabsTrigger value="students" className="flex-1 min-w-[7rem]">Students</TabsTrigger>
+            <TabsTrigger value="subadmins" className="flex-1 min-w-[7rem]">Sub Admins</TabsTrigger>
+            <TabsTrigger value="applications" className="flex-1 min-w-[7rem]">Applications</TabsTrigger>
+            <TabsTrigger value="results" className="flex-1 min-w-[7rem]">Test Results</TabsTrigger>
+            <TabsTrigger value="exams" className="flex-1 min-w-[7rem]">Exams</TabsTrigger>
+            <TabsTrigger value="payments" className="flex-1 min-w-[7rem]">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="students" className="mt-6"><StudentsTab /></TabsContent>
@@ -341,10 +369,10 @@ const AdminDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Payment Tracking</CardTitle>
-                <CardDescription>Monitor student payments</CardDescription>
+                <CardDescription>New receipts appear here for your approval. Open each receipt and verify its transaction before approving.</CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[500px]">
+                 <ScrollArea className="h-[500px] w-full">
                   <Table>
                     <TableHeader>
                       <TableRow>

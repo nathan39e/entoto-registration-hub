@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -16,7 +16,16 @@ const Payment = () => {
   const [txId, setTxId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
+  const [submitted, setSubmitted] = useState(false);
   const paymentAmount = 1500; // ETB
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase.from("payments").select("status").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      setSubmitted(data?.status === "pending" || data?.status === "completed");
+    });
+  }, []);
 
   const handleTelebirrPayment = async () => {
     if (!/^0[79][0-9]{8}$/.test(phoneNumber)) return toast.error("Please enter a valid phone number (09XXXXXXXX)");
@@ -27,6 +36,8 @@ const Payment = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
+      const { data: prior } = await supabase.from("payments").select("status").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (prior?.status === "pending" || prior?.status === "completed") { setSubmitted(true); toast.info("Your receipt has already been submitted."); return; }
       const ext = receipt.name.split(".").pop() || "jpg";
       const receipt_path = `${user.id}/receipt-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("result-docs").upload(receipt_path, receipt, { contentType: receipt.type });
@@ -35,6 +46,7 @@ const Payment = () => {
         user_id: user.id, receipt_path, amount: paymentAmount, transaction_id: tx, payment_method: "telebirr",
       });
       if (error) throw error;
+      setSubmitted(true);
       toast.success("Receipt submitted! An admin will verify it shortly.");
       setTimeout(() => navigate("/student-dashboard"), 1200);
     } catch {
@@ -139,10 +151,10 @@ const Payment = () => {
                   className="w-full"
                   size="lg"
                   onClick={handleTelebirrPayment}
-                  disabled={isProcessing}
+                   disabled={isProcessing || submitted}
                 >
                   <CreditCard className="mr-2 h-5 w-5" />
-                  {isProcessing ? "Submitting..." : "Submit Receipt"}
+                   {isProcessing ? "Submitting..." : submitted ? "Receipt awaiting review" : "Submit Receipt"}
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">

@@ -76,7 +76,7 @@ const Departments = () => {
       color: "bg-gray-600",
     },
   ];
-      return (
+  return (
               <Card 
                 key={index} 
                 className="hover:shadow-elevated transition-all duration-300 hover:-translate-y-1"

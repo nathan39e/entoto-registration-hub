@@ -60,16 +60,16 @@ const Payment = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow">
-        <section className="py-20 bg-gradient-hero">
+         <section className="py-12 md:py-20 bg-gradient-hero">
           <div className="container mx-auto px-4">
-            <h1 className="text-5xl font-bold text-center mb-8">Payment</h1>
+             <h1 className="text-3xl md:text-5xl font-bold text-center mb-4 md:mb-8">Payment</h1>
             <p className="text-xl text-center text-muted-foreground max-w-3xl mx-auto">
               Complete your registration by making the payment
             </p>
           </div>
         </section>
 
-        <section className="py-20 bg-background">
+         <section className="py-10 md:py-20 bg-background">
           <div className="container mx-auto px-4 max-w-2xl">
             {/* Payment Summary */}
             <Card className="mb-6">

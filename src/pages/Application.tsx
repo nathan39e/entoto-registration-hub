@@ -215,7 +215,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow">
-        <section className="py-20 bg-gradient-hero">
+         <section className="py-10 md:py-20 bg-gradient-hero">
           <div className="container mx-auto px-4">
             <h1 className="text-3xl md:text-5xl font-bold text-center mb-4">{staffMode ? "Register a Student" : "Apply Now"}</h1>
             <p className="text-xl text-center text-muted-foreground max-w-3xl mx-auto">

@@ -228,7 +228,7 @@ const AdminDashboard = () => {
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage student applications, test results, and payments</p>
         </div>
 
@@ -248,13 +248,13 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="students" className="w-full">
-          <TabsList className="flex flex-wrap h-auto w-full">
-            <TabsTrigger value="students" className="flex-1">Students</TabsTrigger>
-            <TabsTrigger value="subadmins" className="flex-1">Sub Admins</TabsTrigger>
-            <TabsTrigger value="applications" className="flex-1">Applications</TabsTrigger>
-            <TabsTrigger value="results" className="flex-1">Test Results</TabsTrigger>
-            <TabsTrigger value="exams" className="flex-1">Exams</TabsTrigger>
-            <TabsTrigger value="payments" className="flex-1">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
+          <TabsList className="flex flex-wrap h-auto w-full gap-1">
+            <TabsTrigger value="students" className="flex-1 min-w-[7rem]">Students</TabsTrigger>
+            <TabsTrigger value="subadmins" className="flex-1 min-w-[7rem]">Sub Admins</TabsTrigger>
+            <TabsTrigger value="applications" className="flex-1 min-w-[7rem]">Applications</TabsTrigger>
+            <TabsTrigger value="results" className="flex-1 min-w-[7rem]">Test Results</TabsTrigger>
+            <TabsTrigger value="exams" className="flex-1 min-w-[7rem]">Exams</TabsTrigger>
+            <TabsTrigger value="payments" className="flex-1 min-w-[7rem]">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="students" className="mt-6"><StudentsTab /></TabsContent>

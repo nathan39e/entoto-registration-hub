@@ -5,12 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
+import { Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 
 const Header = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     // Check initial auth state
@@ -28,6 +31,7 @@ const Header = () => {
         checkAdminStatus(session.user.id);
       } else {
         setIsAdmin(false);
+        setIsStaff(false);
       }
     });
 
@@ -44,18 +48,18 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between gap-2 min-h-20 py-2">
           {/* Left Logo */}
           <Link to="/" className="flex items-center">
-            <img src={logo} alt="Teferi Mekonnen Polytechnic College" className="h-14 w-auto" />
+            <img src={logo} alt="Teferi Mekonnen Polytechnic College" className="h-12 w-auto sm:h-14" />
           </Link>
 
           {/* Center - College Name and Navigation */}
-          <div className="flex flex-col items-center">
-            <Link to="/" className="mb-2">
-              <h1 className="text-xl font-bold text-primary">Tafari Makonnen Polytechnic College</h1>
+          <div className="hidden lg:flex flex-col items-center min-w-0">
+            <Link to="/" className="mb-2 text-center">
+              <h1 className="text-lg font-bold text-primary">Tafari Makonnen Polytechnic College</h1>
             </Link>
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="flex items-center gap-3 xl:gap-6">
               <NavLink to="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 Home
               </NavLink>
@@ -87,8 +91,12 @@ const Header = () => {
             </nav>
           </div>
 
+          <Link to="/" className="lg:hidden min-w-0 flex-1 text-center text-sm sm:text-base font-bold text-primary leading-tight">
+            Tafari Makonnen Polytechnic College
+          </Link>
+
           {/* Right Auth Buttons */}
-          <div className="flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-3">
             {user ? (
               <>
                 <Link to="/student-dashboard" className="hidden sm:block">
@@ -109,6 +117,18 @@ const Header = () => {
               </>
             )}
           </div>
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild><Button variant="outline" size="icon" className="lg:hidden shrink-0" aria-label="Open navigation menu"><Menu className="h-5 w-5" /></Button></SheetTrigger>
+            <SheetContent side="right" className="w-[min(85vw,22rem)] overflow-y-auto">
+              <SheetHeader><SheetTitle>Menu</SheetTitle></SheetHeader>
+              <nav className="mt-8 flex flex-col gap-1">
+                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(user ? [["/student-dashboard", "Dashboard"]] : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
+                  <SheetClose asChild key={to}><Link to={to} className="block rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{label}</Link></SheetClose>
+                ))}
+                {user && <Button variant="outline" className="mt-3 justify-start" onClick={async () => { setMenuOpen(false); await supabase.auth.signOut(); navigate("/"); }}>Logout</Button>}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>

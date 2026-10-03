@@ -22,6 +22,14 @@ const ApplicationSummary = ({ app }: { app: any }) => {
     ["First Choice", app.first_choice], ["Second Choice", app.second_choice], ["Third Choice", app.third_choice],
     ["Submitted", new Date(app.submitted_at).toLocaleString()],
   ];
+  const statusText = app.status === "waiting_list" ? "Waiting list" : app.status;
+  const reviewMessage = app.status === "approved"
+    ? "Your application and documents were approved."
+    : app.status === "rejected"
+      ? "Your application was not approved after document review."
+      : app.status === "waiting_list"
+        ? "Your Grade 12 result is below the current minimum. An admin can review and approve your application."
+        : "Your documents are waiting for an admin to confirm they are genuine.";
   return (
     <div className="min-h-screen flex flex-col">
       <div className="print:hidden"><Header /></div>
@@ -32,10 +40,10 @@ const ApplicationSummary = ({ app }: { app: any }) => {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle className="text-2xl">Your Submitted Application</CardTitle>
                 <Badge variant={app.status === "rejected" ? "destructive" : app.status === "approved" ? "default" : "secondary"} className="capitalize">
-                  {app.status}
+                  {statusText}
                 </Badge>
               </div>
-              <CardDescription>You have already applied. Each student can submit only one application.</CardDescription>
+              <CardDescription>{reviewMessage} Each student can submit only one application.</CardDescription>
             </CardHeader>
             <CardContent>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">

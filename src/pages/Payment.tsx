@@ -17,17 +17,24 @@ const Payment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [allowed, setAllowed] = useState<boolean | null>(null);
   const paymentAmount = 1500; // ETB
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) return;
-      const { data } = await supabase.from("payments").select("status").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (!user) return navigate("/auth");
+      const [{ data }, { data: app }, { data: result }] = await Promise.all([
+        supabase.from("payments").select("status").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("applications").select("status").eq("user_id", user.id).maybeSingle(),
+        supabase.from("psychometric_results").select("id").eq("user_id", user.id).limit(1).maybeSingle(),
+      ]);
       setSubmitted(data?.status === "pending" || data?.status === "completed");
+      setAllowed(!!app && !!result && !["waiting_list", "rejected"].includes(app.status ?? "pending"));
     });
-  }, []);
+  }, [navigate]);
 
   const handleTelebirrPayment = async () => {
+    if (!allowed) return toast.error("Complete an eligible application and the exam before submitting payment.");
     if (!/^0[79][0-9]{8}$/.test(phoneNumber)) return toast.error("Please enter a valid phone number (09XXXXXXXX)");
     const tx = txId.trim();
     if (!/^[A-Za-z0-9]{6,30}$/.test(tx)) return toast.error("Please enter the Telebirr transaction ID from your SMS");
@@ -55,6 +62,14 @@ const Payment = () => {
       setIsProcessing(false);
     }
   };
+
+  if (allowed === false) return (
+    <div className="min-h-screen flex flex-col"><Header />
+      <main className="flex-grow flex items-center justify-center px-4"><Card className="max-w-lg w-full">
+        <CardHeader><CardTitle>Payment Not Available</CardTitle><CardDescription>Complete an eligible application and the psychometric exam before submitting a receipt.</CardDescription></CardHeader>
+        <CardContent><Button onClick={() => navigate("/student-dashboard")}>Back to Dashboard</Button></CardContent>
+      </Card></main><Footer /></div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col">

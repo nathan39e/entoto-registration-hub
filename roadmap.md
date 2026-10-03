@@ -5,3 +5,6 @@
 - [x] Show selected departments and strongest exam fit separately on the student dashboard.
 - [x] Route home-page Learn More to application for signed-in students and signup for guests.
 - [x] Replace PNG and ICO favicons with the supplied college mark.
+- [x] Replace the footer ISO image and both favicons with the transparent supplied certification mark.
+- [x] Add an admin-controlled Grade 12 cutoff with automatic waiting-list classification.
+- [x] Add reversible manual application review controls and block ineligible progression.

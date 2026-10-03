@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import isoLogo from "@/assets/iso-logo.jpg";
+import isoLogoAsset from "@/assets/iso-21001-transparent.png.asset.json";
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 const Footer = () => {
   return <footer className="bg-primary text-primary-foreground">
@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* About */}
           <div>
-            <img src={isoLogo} alt="ISO 21001:2018 Certified" className="h-24 w-auto mb-4" />
+            <img src={isoLogoAsset.url} alt="ISO EOMS 21001:2018 Certified" className="h-28 w-auto object-contain mb-4" />
             <p className="text-sm opacity-90">International Organization for Standardization</p>
           </div>
 

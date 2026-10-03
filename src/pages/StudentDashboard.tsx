@@ -50,7 +50,7 @@ const StudentDashboard = () => {
     .filter((choice): choice is string => typeof choice === "string" && choice.length > 0);
   const scores = result?.scores && typeof result.scores === "object" ? result.scores as Record<string, number> : null;
   const bestFit = scores
-    ? selected.map(departmentName).filter((name) => typeof scores[name] === "number")
+    ? Object.keys(scores).filter((name) => name !== "General" && DEPARTMENTS.includes(name) && typeof scores[name] === "number")
         .sort((a, b) => scores[b] - scores[a])[0]
     : null;
   const approved = app?.status === "approved" && payment?.status === "completed";
@@ -114,7 +114,7 @@ const StudentDashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Your Strongest Exam Fit</CardTitle>
-                  <CardDescription>Highest score among the departments you selected</CardDescription>
+                  <CardDescription>Your highest-scoring department on the exam</CardDescription>
                 </CardHeader>
                 <CardContent><Badge variant="outline" className="text-base py-1">{bestFit}</Badge></CardContent>
               </Card>

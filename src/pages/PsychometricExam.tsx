@@ -49,7 +49,7 @@ const PsychometricExam = () => {
       if (answers[q.id] === q.answer) tally[q.dept].correct++;
     });
     const scores = Object.fromEntries(Object.entries(tally).map(([k, v]) => [k, Math.round((v.correct / v.total) * 100)]));
-    const ranked = Object.entries(scores).filter(([k]) => choices?.includes(k))
+    const ranked = Object.entries(scores).filter(([k]) => k !== "General")
       .sort((a, b) => b[1] - a[1]);
     const recommended = ranked.slice(0, 1).map(([k]) => k);
     setSubmitting(true);

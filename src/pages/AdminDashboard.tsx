@@ -426,7 +426,14 @@ const AdminDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Payment Tracking</CardTitle>
-                <CardDescription>New receipts appear here for your approval. Open each receipt and verify its transaction before approving.</CardDescription>
+                <CardDescription>New receipts appear here for your approval. Open each receipt and verify its transaction before approving. Regular: 350 ETB · Extension/Weekend: 1700 ETB.</CardDescription>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {["All", "Regular", "Extension", "Weekend"].map((p) => (
+                    <Button key={p} size="sm" variant={programFilter === p ? "default" : "outline"} onClick={() => setProgramFilter(p)}>
+                      {p} ({p === "All" ? payments.length : payments.filter((x) => (x.program ?? "Regular") === p).length})
+                    </Button>
+                  ))}
+                </div>
               </CardHeader>
               <CardContent>
                  <ScrollArea className="h-[500px] w-full">
@@ -454,6 +461,7 @@ const AdminDashboard = () => {
                             </div>
                           </TableCell>
                           <TableCell>{payment.profiles.student_code}</TableCell>
+                          <TableCell>{payment.program ?? "Regular"}</TableCell>
                           <TableCell>{payment.amount} ETB</TableCell>
                           <TableCell className="capitalize">{payment.payment_method}</TableCell>
                           <TableCell className="text-xs">{payment.transaction_id || "N/A"}</TableCell>

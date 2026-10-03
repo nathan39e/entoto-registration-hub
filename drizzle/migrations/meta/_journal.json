@@ -50,6 +50,13 @@
       "when": 1791058025953,
       "tag": "0006_configurable_admission_cutoff",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791058132454,
+      "tag": "0007_enforce_cutoff_for_staff_submissions",
+      "breakpoints": true
     }
   ]
 }

@@ -354,7 +354,7 @@ const AdminDashboard = () => {
                           <TableCell>{new Date(app.submitted_at).toLocaleDateString()}</TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1 min-w-[16rem]">
-                              <Button size="sm" variant="outline" onClick={() => viewDoc(app.result_doc_path)}>Photo</Button>
+                              <Button size="sm" variant="outline" onClick={() => viewDoc(app.result_doc_path)}>Grade 12</Button>
                               <Button size="sm" disabled={app.status === "approved"} onClick={() => setAppStatus(app.id, "approved")}>Approve</Button>
                               <Button size="sm" variant="outline" disabled={app.status === "pending"} onClick={() => setAppStatus(app.id, "pending")}>{app.status === "approved" ? "Unapprove" : "Review"}</Button>
                               <Button size="sm" variant="secondary" disabled={app.status === "waiting_list"} onClick={() => setAppStatus(app.id, "waiting_list")}>Waiting List</Button>

@@ -70,6 +70,15 @@ const PsychometricExam = () => {
     setTimeout(() => navigate("/student-dashboard"), 1200);
   };
 
+  if (blocked) return (
+    <div className="min-h-screen flex flex-col"><Header />
+      <main className="flex-grow flex items-center justify-center px-4">
+        <Card className="max-w-lg w-full"><CardHeader><CardTitle>Exam Not Available</CardTitle>
+          <CardDescription>Your application must be eligible or approved by an admin before you can take the exam.</CardDescription>
+        </CardHeader><CardContent><Button onClick={() => navigate("/student-dashboard")}>Back to Dashboard</Button></CardContent></Card>
+      </main><Footer /></div>
+  );
+
   if (exam) {
     const embed = exam.form_url.includes("docs.google.com/forms")
       ? exam.form_url.replace(/\/viewform.*$/, "/viewform") + "?embedded=true" : null;
@@ -97,15 +106,6 @@ const PsychometricExam = () => {
 
   if (!choices) return (
     <div className="min-h-screen flex flex-col"><Header /><main className="flex-grow flex items-center justify-center text-muted-foreground">Loading...</main><Footer /></div>
-  );
-
-  if (blocked) return (
-    <div className="min-h-screen flex flex-col"><Header />
-      <main className="flex-grow flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full"><CardHeader><CardTitle>Exam Not Available</CardTitle>
-          <CardDescription>Your application must be eligible or approved by an admin before you can take the exam.</CardDescription>
-        </CardHeader><CardContent><Button onClick={() => navigate("/student-dashboard")}>Back to Dashboard</Button></CardContent></Card>
-      </main><Footer /></div>
   );
 
   const q = questions[current];

@@ -9,7 +9,7 @@ const Statistics = () => {
     },
     {
       icon: GraduationCap,
-      value: "11",
+      value: "10",
       label: "Departments",
     },
     {

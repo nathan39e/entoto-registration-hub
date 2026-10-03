@@ -10,8 +10,6 @@ import { toast } from "sonner";
 import RegistrationSlip from "@/components/RegistrationSlip";
 import { DEPARTMENTS } from "@/data/departments";
 
-const departmentName = (choice: string) => DEPARTMENTS.find((department) => choice === department || choice.startsWith(`${department} —`)) ?? choice;
-
 const statusBadge = (s?: string | null) => {
   if (!s) return <Badge variant="outline">Not started</Badge>;
   if (s === "approved" || s === "completed") return <Badge className="capitalize">{s}</Badge>;

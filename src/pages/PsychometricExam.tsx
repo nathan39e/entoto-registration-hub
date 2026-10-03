@@ -22,6 +22,7 @@ const PsychometricExam = () => {
   const [studentCode, setStudentCode] = useState("");
   const [choices, setChoices] = useState<string[] | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     supabase.from("exam_forms").select("title, form_url").eq("is_active", true)
@@ -31,9 +32,14 @@ const PsychometricExam = () => {
       if (!user) return navigate("/auth");
       const [{ data: p }, { data: app }] = await Promise.all([
         supabase.from("profiles").select("student_code").eq("id", user.id).maybeSingle(),
-        supabase.from("applications").select("first_choice, second_choice, third_choice").eq("user_id", user.id).maybeSingle(),
+        supabase.from("applications").select("first_choice, second_choice, third_choice, status").eq("user_id", user.id).maybeSingle(),
       ]);
       setStudentCode(p?.student_code ?? "");
+      if (!app || ["waiting_list", "rejected"].includes(app.status ?? "pending")) {
+        setBlocked(true);
+        setChoices([]);
+        return;
+      }
       setChoices(app ? [app.first_choice, app.second_choice, app.third_choice].map(departmentName) : []);
     });
   }, [navigate]);
@@ -63,6 +69,15 @@ const PsychometricExam = () => {
     toast.success("Exam completed! View your department fit on your dashboard.");
     setTimeout(() => navigate("/student-dashboard"), 1200);
   };
+
+  if (blocked) return (
+    <div className="min-h-screen flex flex-col"><Header />
+      <main className="flex-grow flex items-center justify-center px-4">
+        <Card className="max-w-lg w-full"><CardHeader><CardTitle>Exam Not Available</CardTitle>
+          <CardDescription>Your application must be eligible or approved by an admin before you can take the exam.</CardDescription>
+        </CardHeader><CardContent><Button onClick={() => navigate("/student-dashboard")}>Back to Dashboard</Button></CardContent></Card>
+      </main><Footer /></div>
+  );
 
   if (exam) {
     const embed = exam.form_url.includes("docs.google.com/forms")

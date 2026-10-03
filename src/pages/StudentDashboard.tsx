@@ -14,6 +14,8 @@ const statusBadge = (s?: string | null) => {
   if (!s) return <Badge variant="outline">Not started</Badge>;
   if (s === "approved" || s === "completed") return <Badge className="capitalize">{s}</Badge>;
   if (s === "rejected") return <Badge variant="destructive">Rejected</Badge>;
+  if (s === "waiting_list") return <Badge variant="secondary">Waiting list</Badge>;
+  if (s === "pending") return <Badge variant="secondary">Document review</Badge>;
   return <Badge variant="secondary" className="capitalize">{s}</Badge>;
 };
 
@@ -36,7 +38,7 @@ const StudentDashboard = () => {
         supabase.from("psychometric_results").select("*").eq("user_id", uid).order("completed_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       if (p.error) toast.error("Failed to load student information");
-      if (p.data?.exam_required && !r.data) {
+      if (p.data?.exam_required && !r.data && a.data && !["waiting_list", "rejected"].includes(a.data.status ?? "pending")) {
         toast.info("Please take your psychometric exam first.");
         return navigate("/psychometric-exam");
       }
@@ -52,6 +54,7 @@ const StudentDashboard = () => {
         .sort((a, b) => scores[b] - scores[a])[0]
     : null;
   const approved = app?.status === "approved" && payment?.status === "completed";
+  const canContinue = !!app && !["waiting_list", "rejected"].includes(app.status);
   const payStatus = payment?.status === "completed" ? "completed" : payment?.status === "rejected" ? "rejected" : payment ? "awaiting verification" : null;
 
   return (
@@ -70,6 +73,22 @@ const StudentDashboard = () => {
             {approved && (
               <RegistrationSlip name={profile?.full_name ?? ""} code={profile?.student_code ?? ""}
                 department={app.first_choice} amount={Number(payment.amount)} approvedAt={payment.paid_at} />
+            )}
+            {app?.status === "waiting_list" && (
+              <Card className="border-accent">
+                <CardHeader>
+                  <CardTitle>Waiting List</CardTitle>
+                  <CardDescription>Your Grade 12 result is below the current minimum. An admin must approve your application before you continue.</CardDescription>
+                </CardHeader>
+              </Card>
+            )}
+            {app?.status === "pending" && (
+              <Card className="border-primary/40">
+                <CardHeader>
+                  <CardTitle>Documents Under Review</CardTitle>
+                  <CardDescription>You may continue while an admin manually checks that your uploaded documents are genuine.</CardDescription>
+                </CardHeader>
+              </Card>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
@@ -120,8 +139,8 @@ const StudentDashboard = () => {
 
             <div className="flex flex-wrap gap-4 justify-center">
               <Button size="lg" onClick={() => navigate("/application")}>{app ? "View My Application" : "Apply Now"}</Button>
-              {app && !result && <Button size="lg" variant="outline" onClick={() => navigate("/psychometric-exam")}>Take Psychometric Exam</Button>}
-              {(!payment || payment.status === "rejected") && <Button size="lg" variant="outline" onClick={() => navigate("/payment")}>Proceed to Payment</Button>}
+              {canContinue && !result && <Button size="lg" variant="outline" onClick={() => navigate("/psychometric-exam")}>Take Psychometric Exam</Button>}
+              {canContinue && result && (!payment || payment.status === "rejected") && <Button size="lg" variant="outline" onClick={() => navigate("/payment")}>Proceed to Payment</Button>}
               <Button size="lg" variant="outline" onClick={() => navigate("/portfolio")}>View Portfolio</Button>
             </div>
           </div>

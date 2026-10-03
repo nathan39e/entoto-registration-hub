@@ -11,6 +11,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Users, FileText, CreditCard, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import StudentsTab from "@/components/admin/StudentsTab";
 import ExamFormsTab from "@/components/admin/ExamFormsTab";
@@ -25,6 +27,7 @@ interface Application {
   status: string;
   submitted_at: string;
   result_doc_path?: string | null;
+  grade_12_results: { score?: number } | null;
   profiles: { full_name: string; email: string; student_code: string };
 }
 
@@ -57,6 +60,9 @@ const AdminDashboard = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [results, setResults] = useState<PsychometricResult[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [cutoff, setCutoff] = useState(150);
+  const [cutoffDraft, setCutoffDraft] = useState("150");
+  const [savingCutoff, setSavingCutoff] = useState(false);
   const knownPaymentIds = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -99,11 +105,12 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [appsResponse, resultsResponse, paymentsResponse, profilesResponse] = await Promise.all([
+      const [appsResponse, resultsResponse, paymentsResponse, profilesResponse, settingsResponse] = await Promise.all([
         supabase.from("applications").select("*").order("submitted_at", { ascending: false }),
         supabase.from("psychometric_results").select("*").order("completed_at", { ascending: false }),
         supabase.from("payments").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("id, full_name, email, student_code"),
+        supabase.from("admission_settings").select("grade_12_cutoff").eq("id", true).maybeSingle(),
       ]);
       const map = new Map((profilesResponse.data ?? []).map((p) => [p.id, p]));
       const empty = { full_name: "Unknown", email: "", student_code: "-" };
@@ -111,6 +118,9 @@ const AdminDashboard = () => {
       setApplications(attach(appsResponse.data));
       setResults(attach(resultsResponse.data));
       setPayments(attach(paymentsResponse.data));
+      const currentCutoff = Number(settingsResponse.data?.grade_12_cutoff ?? 150);
+      setCutoff(currentCutoff);
+      setCutoffDraft(String(currentCutoff));
       const pending = (paymentsResponse.data ?? []).filter((p) => p.status === "pending");
       if (knownPaymentIds.current) {
         const newlySubmitted = pending.filter((p) => !knownPaymentIds.current?.has(p.id));
@@ -155,6 +165,25 @@ const AdminDashboard = () => {
     toast({ title: `Application ${status}` });
   };
 
+  const saveCutoff = async () => {
+    const next = Number(cutoffDraft);
+    if (!Number.isFinite(next) || next < 0 || next > 700) {
+      return toast({ title: "Invalid mark", description: "Enter a mark from 0 to 700.", variant: "destructive" });
+    }
+    setSavingCutoff(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("admission_settings").update({
+      grade_12_cutoff: next,
+      updated_at: new Date().toISOString(),
+      updated_by: user?.id ?? null,
+    }).eq("id", true);
+    setSavingCutoff(false);
+    if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
+    setCutoff(next);
+    await fetchData();
+    toast({ title: "Admission mark updated", description: `The Grade 12 minimum is now ${next}. Waiting-list applications were recalculated.` });
+  };
+
   const setPaymentStatus = async (id: string, status: string) => {
     const paid_at = status === "completed" ? new Date().toISOString() : null;
     const { error } = await supabase.from("payments").update({ status, paid_at }).eq("id", id);
@@ -174,6 +203,8 @@ const AdminDashboard = () => {
     switch (status.toLowerCase()) {
       case "pending":
         return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+      case "waiting_list":
+        return "bg-accent/10 text-accent border-accent/20";
       case "approved":
       case "completed":
         return "bg-green-500/10 text-green-500 border-green-500/20";
@@ -247,6 +278,23 @@ const AdminDashboard = () => {
           ))}
         </div>
 
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Grade 12 Admission Mark</CardTitle>
+            <CardDescription>Students below this mark join the waiting list. Changing it recalculates applications that have not received a final admin decision.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-md">
+              <div className="space-y-2 flex-1">
+                <Label htmlFor="admission-cutoff">Minimum mark</Label>
+                <Input id="admission-cutoff" type="number" min={0} max={700} value={cutoffDraft} onChange={(event) => setCutoffDraft(event.target.value)} />
+              </div>
+              <Button onClick={saveCutoff} disabled={savingCutoff}>{savingCutoff ? "Saving..." : "Save Mark"}</Button>
+            </div>
+            <p className="text-sm text-muted-foreground mt-3">Current minimum: {cutoff}</p>
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="students" className="w-full">
           <TabsList className="flex flex-wrap h-auto w-full gap-1">
             <TabsTrigger value="students" className="flex-1 min-w-[7rem]">Students</TabsTrigger>
@@ -278,6 +326,7 @@ const AdminDashboard = () => {
                         <TableHead>First Choice</TableHead>
                         <TableHead>Second Choice</TableHead>
                         <TableHead>Third Choice</TableHead>
+                        <TableHead>Grade 12</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Submitted</TableHead>
                         <TableHead>Actions</TableHead>
@@ -296,6 +345,7 @@ const AdminDashboard = () => {
                           <TableCell>{app.first_choice}</TableCell>
                           <TableCell>{app.second_choice}</TableCell>
                           <TableCell>{app.third_choice}</TableCell>
+                          <TableCell>{app.grade_12_results?.score ?? "-"}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className={getStatusColor(app.status)}>
                               {app.status}
@@ -303,9 +353,11 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell>{new Date(app.submitted_at).toLocaleDateString()}</TableCell>
                           <TableCell>
-                            <div className="flex gap-1">
-                              <Button size="sm" variant="outline" onClick={() => viewDoc(app.result_doc_path)}>Photo</Button>
+                            <div className="flex flex-wrap gap-1 min-w-[16rem]">
+                              <Button size="sm" variant="outline" onClick={() => viewDoc(app.result_doc_path)}>Grade 12</Button>
                               <Button size="sm" disabled={app.status === "approved"} onClick={() => setAppStatus(app.id, "approved")}>Approve</Button>
+                              <Button size="sm" variant="outline" disabled={app.status === "pending"} onClick={() => setAppStatus(app.id, "pending")}>{app.status === "approved" ? "Unapprove" : "Review"}</Button>
+                              <Button size="sm" variant="secondary" disabled={app.status === "waiting_list"} onClick={() => setAppStatus(app.id, "waiting_list")}>Waiting List</Button>
                               <Button size="sm" variant="destructive" disabled={app.status === "rejected"} onClick={() => setAppStatus(app.id, "rejected")}>Reject</Button>
                             </div>
                           </TableCell>

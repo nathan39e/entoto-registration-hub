@@ -1,9 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Wifi, Hotel, Shirt, Car, TrendingUp, Sparkles, Zap, Leaf, Building, Hammer } from "lucide-react";
 
 const Departments = () => {
+  const navigate = useNavigate();
+  const handleLearnMore = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    navigate(session ? "/application" : "/auth?mode=signup");
+  };
   const departments = [
     {
       icon: Wifi,
@@ -100,11 +106,9 @@ const Departments = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground mb-4">{dept.description}</p>
-                  <Link to="/departments">
-                    <Button variant="link" className="p-0">
-                      Learn More →
-                    </Button>
-                  </Link>
+                  <Button variant="link" className="p-0" onClick={handleLearnMore}>
+                    Learn More →
+                  </Button>
                 </CardContent>
               </Card>
             );

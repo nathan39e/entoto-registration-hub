@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import RegistrationSlip from "@/components/RegistrationSlip";
+import { DEPARTMENTS } from "@/data/departments";
+
+const departmentName = (choice: string) => DEPARTMENTS.find((department) => choice === department || choice.startsWith(`${department} —`)) ?? choice;
 
 const statusBadge = (s?: string | null) => {
   if (!s) return <Badge variant="outline">Not started</Badge>;
@@ -43,8 +46,13 @@ const StudentDashboard = () => {
     })();
   }, [navigate]);
 
-  const recs: string[] = Array.isArray(result?.recommended_departments)
-    ? result.recommended_departments.map((d: any) => (typeof d === "string" ? d : d?.name ?? String(d))) : [];
+  const selected: string[] = [app?.first_choice, app?.second_choice, app?.third_choice]
+    .filter((choice): choice is string => typeof choice === "string" && choice.length > 0);
+  const scores = result?.scores && typeof result.scores === "object" ? result.scores as Record<string, number> : null;
+  const bestFit = scores
+    ? selected.map(departmentName).filter((name) => typeof scores[name] === "number")
+        .sort((a, b) => scores[b] - scores[a])[0]
+    : null;
   const approved = app?.status === "approved" && payment?.status === "completed";
   const payStatus = payment?.status === "completed" ? "completed" : payment?.status === "rejected" ? "rejected" : payment ? "awaiting verification" : null;
 
@@ -90,15 +98,25 @@ const StudentDashboard = () => {
               </Card>
             </div>
 
-            {recs.length > 0 && (
+            {selected.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Recommended Departments</CardTitle>
-                  <CardDescription>Based on your psychometric test results</CardDescription>
+                  <CardTitle>Your Department Choices</CardTitle>
+                  <CardDescription>Selected on your application, in order of preference</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-wrap gap-2">
-                  {recs.map((d) => <Badge key={d} variant="outline" className="text-base py-1">{d}</Badge>)}
+                <CardContent className="space-y-2">
+                  {selected.map((choice, index) => <p key={index} className="text-sm"><span className="font-semibold">{index + 1}.</span> {choice}</p>)}
                 </CardContent>
+              </Card>
+            )}
+
+            {bestFit && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Strongest Exam Fit</CardTitle>
+                  <CardDescription>Highest score among the departments you selected</CardDescription>
+                </CardHeader>
+                <CardContent><Badge variant="outline" className="text-base py-1">{bestFit}</Badge></CardContent>
               </Card>
             )}
 

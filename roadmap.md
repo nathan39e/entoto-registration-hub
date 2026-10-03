@@ -2,3 +2,6 @@
 - [x] Notify admins in the dashboard of new receipt submissions and retain manual approval.
 - [x] Add phone/tablet navigation and adapt key application and payment views.
 - [ ] Verify the staff submission and admin review with authenticated accounts (requires a usable preview session).
+- [x] Show selected departments and strongest exam fit separately on the student dashboard.
+- [x] Route home-page Learn More to application for signed-in students and signup for guests.
+- [x] Replace PNG and ICO favicons with the supplied college mark.

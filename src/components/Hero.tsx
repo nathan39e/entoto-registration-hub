@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-image.jpg";
-import historicPortrait from "@/assets/history-29.jpg.asset.json";
+import regalPortrait from "@/assets/regal-portrait.jpg.asset.json";
 import graduates from "@/assets/history-25.jpg.asset.json";
 import historicBuilding from "@/assets/history-23.jpg.asset.json";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 const slides = [
   { src: heroImage, alt: "Teferi Mekonnen Polytechnic College entrance" },
-  { src: historicPortrait.url, alt: "Historical portrait from the college collection" },
+  { src: regalPortrait.url, alt: "Historical royal portrait in military regalia" },
   { src: graduates.url, alt: "First graduates of T.M.S. in 1950" },
   { src: historicBuilding.url, alt: "Historic college building" },
 ];

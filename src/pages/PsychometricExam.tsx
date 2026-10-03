@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { buildExam, ExamQuestion } from "@/data/examQuestions";
+import { DEPARTMENTS } from "@/data/departments";
+
+const departmentName = (choice: string) => DEPARTMENTS.find((department) => choice === department || choice.startsWith(`${department} —`)) ?? choice;
 
 const PsychometricExam = () => {
   const navigate = useNavigate();
@@ -31,7 +34,7 @@ const PsychometricExam = () => {
         supabase.from("applications").select("first_choice, second_choice, third_choice").eq("user_id", user.id).maybeSingle(),
       ]);
       setStudentCode(p?.student_code ?? "");
-      setChoices(app ? [app.first_choice, app.second_choice, app.third_choice] : []);
+      setChoices(app ? [app.first_choice, app.second_choice, app.third_choice].map(departmentName) : []);
     });
   }, [navigate]);
 
@@ -47,8 +50,8 @@ const PsychometricExam = () => {
     });
     const scores = Object.fromEntries(Object.entries(tally).map(([k, v]) => [k, Math.round((v.correct / v.total) * 100)]));
     const ranked = Object.entries(scores).filter(([k]) => k !== "General")
-      .sort((a, b) => b[1] - a[1] + ((choices?.includes(b[0]) ? 5 : 0) - (choices?.includes(a[0]) ? 5 : 0)));
-    const recommended = ranked.slice(0, 3).map(([k]) => k);
+      .sort((a, b) => b[1] - a[1]);
+    const recommended = ranked.slice(0, 1).map(([k]) => k);
     setSubmitting(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return navigate("/auth");
@@ -57,7 +60,7 @@ const PsychometricExam = () => {
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    toast.success(`Exam completed! Recommended: ${recommended[0]}`);
+    toast.success("Exam completed! View your department fit on your dashboard.");
     setTimeout(() => navigate("/student-dashboard"), 1200);
   };
 

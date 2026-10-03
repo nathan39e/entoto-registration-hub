@@ -152,6 +152,45 @@ export type Database = {
         }
         Relationships: []
       }
+      news_articles: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          image_path: string | null
+          published: boolean
+          published_at: string | null
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          published?: boolean
+          published_at?: string | null
+          summary: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          image_path?: string | null
+          published?: boolean
+          published_at?: string | null
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number

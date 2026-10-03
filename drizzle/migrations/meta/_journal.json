@@ -71,6 +71,20 @@
       "when": 1791060252997,
       "tag": "0009_department_heads_and_program_fees",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791061570794,
+      "tag": "0010_create_news_articles",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791061592913,
+      "tag": "0011_news_image_storage_policies",
+      "breakpoints": true
     }
   ]
 }

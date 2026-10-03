@@ -8,3 +8,4 @@
 - [x] Replace the footer ISO image and both favicons with the transparent supplied certification mark.
 - [x] Add an admin-controlled Grade 12 cutoff with automatic waiting-list classification.
 - [x] Add reversible manual application review controls and block ineligible progression.
+- [x] Let admins publish photo articles on News and show the supplied historical photos in the home slideshow.

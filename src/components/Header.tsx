@@ -5,7 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
-import { Menu } from "lucide-react";
+import { Menu, Settings } from "lucide-react";
+import { toast } from "sonner";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { greeting } from "@/lib/i18n";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 
 const Header = () => {
@@ -28,6 +31,12 @@ const Header = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === "SIGNED_IN" && session?.user && !sessionStorage.getItem("tmpc-greeted")) {
+        sessionStorage.setItem("tmpc-greeted", "1");
+        const name = (session.user.user_metadata?.full_name as string | undefined)?.split(" ")[0];
+        toast.success(`${greeting()}${name ? `, ${name}` : ""}!`);
+      }
+      if (event === "SIGNED_OUT") sessionStorage.removeItem("tmpc-greeted");
       if (session?.user) {
         checkAdminStatus(session.user.id);
       } else {
@@ -104,8 +113,13 @@ const Header = () => {
 
           {/* Right Auth Buttons */}
           <div className="hidden lg:flex items-center gap-3">
+            <LanguageSwitcher />
             {user ? (
               <>
+                <span className="text-sm text-muted-foreground hidden xl:inline">{greeting()}</span>
+                {(isAdmin || isStaff || isHead) && (
+                  <Link to="/account"><Button variant="ghost" size="icon" aria-label="Profile and settings"><Settings className="h-4 w-4" /></Button></Link>
+                )}
                 <Link to="/student-dashboard" className="hidden sm:block">
                   <Button variant="outline" size="sm">Dashboard</Button>
                 </Link>
@@ -127,9 +141,10 @@ const Header = () => {
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild><Button variant="outline" size="icon" className="lg:hidden shrink-0" aria-label="Open navigation menu"><Menu className="h-5 w-5" /></Button></SheetTrigger>
             <SheetContent side="right" className="w-[min(85vw,22rem)] overflow-y-auto">
-              <SheetHeader><SheetTitle>Menu</SheetTitle></SheetHeader>
+              <SheetHeader><SheetTitle>Menu</SheetTitle>{user && <p className="text-sm text-muted-foreground">{greeting()}</p>}</SheetHeader>
+              <LanguageSwitcher className="mt-4" />
               <nav className="mt-8 flex flex-col gap-1">
-                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(isHead ? [["/department-head", "My Department"]] : []), ...(user ? [["/student-dashboard", "Dashboard"]] : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
+                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(isHead ? [["/department-head", "My Department"]] : []), ...((isAdmin || isStaff || isHead) ? [["/account", "Profile & Settings"]] : []), ...(user ? [["/student-dashboard", "Dashboard"]] : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
                   <SheetClose asChild key={to}><Link to={to} className="block rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{label}</Link></SheetClose>
                 ))}
                 {user && <Button variant="outline" className="mt-3 justify-start" onClick={async () => { setMenuOpen(false); await supabase.auth.signOut(); navigate("/"); }}>Logout</Button>}

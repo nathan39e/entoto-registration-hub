@@ -19,11 +19,14 @@ import StaffDashboard from "./pages/StaffDashboard";
 import DepartmentHeadDashboard from "./pages/DepartmentHeadDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import AccountSettings from "./pages/AccountSettings";
+import { LanguageProvider } from "./lib/i18n";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <LanguageProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -43,6 +46,7 @@ const App = () => (
           <Route path="/staff" element={<StaffDashboard />} />
           <Route path="/staff/apply" element={<Application staffMode />} />
           <Route path="/department-head" element={<DepartmentHeadDashboard />} />
+          <Route path="/account" element={<AccountSettings />} />
           <Route path="/news" element={<News />} />
           <Route path="/contact" element={<Contact />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
@@ -50,6 +54,7 @@ const App = () => (
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
+    </LanguageProvider>
   </QueryClientProvider>
 );
 

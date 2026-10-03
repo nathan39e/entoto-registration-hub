@@ -2,3 +2,4 @@
 - Route staff uploads for a newly created student through the authenticated manage-users function, because storage ownership policies prevent staff from writing directly into another user's folder.
 - Treat submitted receipts as pending until an admin reviews the image and explicitly verifies or rejects the payment; notify admins in the dashboard through polling while it is open.
 - Apply the configurable Grade 12 cutoff in a database trigger; only waiting-listed or rejected students are blocked from exam and payment progression.
+- Store news articles with admin-only writes and public published reads; keep news photos private with published-article access, because unpublished content must remain hidden.

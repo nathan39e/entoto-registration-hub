@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import StudentsTab from "@/components/admin/StudentsTab";
 import ExamFormsTab from "@/components/admin/ExamFormsTab";
 import SubAdminsTab from "@/components/admin/SubAdminsTab";
+import DepartmentHeadsTab from "@/components/admin/DepartmentHeadsTab";
 
 interface Application {
   id: string;
@@ -48,6 +49,7 @@ interface Payment {
   payment_method: string;
   transaction_id: string;
   receipt_path?: string | null;
+  program?: string | null;
   paid_at: string;
   created_at: string;
   profiles: { full_name: string; email: string; student_code: string };
@@ -60,6 +62,7 @@ const AdminDashboard = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [results, setResults] = useState<PsychometricResult[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [programFilter, setProgramFilter] = useState("All");
   const [cutoff, setCutoff] = useState(150);
   const [cutoffDraft, setCutoffDraft] = useState("150");
   const [savingCutoff, setSavingCutoff] = useState(false);
@@ -302,12 +305,14 @@ const AdminDashboard = () => {
             <TabsTrigger value="applications" className="flex-1 min-w-[7rem]">Applications</TabsTrigger>
             <TabsTrigger value="results" className="flex-1 min-w-[7rem]">Test Results</TabsTrigger>
             <TabsTrigger value="exams" className="flex-1 min-w-[7rem]">Exams</TabsTrigger>
+            <TabsTrigger value="heads" className="flex-1 min-w-[7rem]">Dept Heads</TabsTrigger>
             <TabsTrigger value="payments" className="flex-1 min-w-[7rem]">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="students" className="mt-6"><StudentsTab /></TabsContent>
           <TabsContent value="subadmins" className="mt-6"><SubAdminsTab /></TabsContent>
           <TabsContent value="exams" className="mt-6"><ExamFormsTab /></TabsContent>
+          <TabsContent value="heads" className="mt-6"><DepartmentHeadsTab /></TabsContent>
 
 
           <TabsContent value="applications" className="mt-6">
@@ -430,6 +435,7 @@ const AdminDashboard = () => {
                       <TableRow>
                         <TableHead>Student</TableHead>
                         <TableHead>Student Code</TableHead>
+                        <TableHead>Program</TableHead>
                         <TableHead>Amount</TableHead>
                         <TableHead>Method</TableHead>
                         <TableHead>Transaction ID</TableHead>
@@ -439,7 +445,7 @@ const AdminDashboard = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {payments.map((payment) => (
+                      {payments.filter((p) => programFilter === "All" || (p.program ?? "Regular") === programFilter).map((payment) => (
                         <TableRow key={payment.id}>
                           <TableCell className="font-medium">
                             <div>

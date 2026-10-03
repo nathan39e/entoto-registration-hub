@@ -18,16 +18,18 @@ const Payment = () => {
   const [receipt, setReceipt] = useState<File | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
-  const paymentAmount = 1500; // ETB
+  const [program, setProgram] = useState<string>("Regular");
+  const paymentAmount = program === "Extension" || program === "Weekend" ? 1700 : 350; // ETB
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return navigate("/auth");
       const [{ data }, { data: app }, { data: result }] = await Promise.all([
         supabase.from("payments").select("status").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("applications").select("status").eq("user_id", user.id).maybeSingle(),
+        supabase.from("applications").select("status, program").eq("user_id", user.id).maybeSingle(),
         supabase.from("psychometric_results").select("id").eq("user_id", user.id).limit(1).maybeSingle(),
       ]);
+      if (app?.program) setProgram(app.program);
       setSubmitted(data?.status === "pending" || data?.status === "completed");
       setAllowed(!!app && !!result && !["waiting_list", "rejected"].includes(app.status ?? "pending"));
     });
@@ -90,7 +92,7 @@ const Payment = () => {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>Payment Summary</CardTitle>
-                <CardDescription>Registration and examination fees</CardDescription>
+                <CardDescription>Registration fee for the {program} program</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">

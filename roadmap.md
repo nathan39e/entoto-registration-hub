@@ -9,3 +9,4 @@
 - [x] Add an admin-controlled Grade 12 cutoff with automatic waiting-list classification.
 - [x] Add reversible manual application review controls and block ineligible progression.
 - [x] Let admins publish photo articles on News and show the supplied historical photos in the home slideshow.
+- [x] Restore the home-page slideshow photos on external hosts and verify all four slides display.

@@ -3,5 +3,5 @@
 - Treat submitted receipts as pending until an admin reviews the image and explicitly verifies or rejects the payment; notify admins in the dashboard through polling while it is open.
 - Apply the configurable Grade 12 cutoff in a database trigger; only waiting-listed or rejected students are blocked from exam and payment progression.
 - Store news articles with admin-only writes and public published reads; keep news photos private with published-article access, because unpublished content must remain hidden.
-- Proxy CDN asset paths to the project's preview asset host only in local Vite development, because uploaded-photo pointers otherwise fall through to the SPA HTML page.
+- Resolve uploaded hero photo pointers against the project's preview asset host so they display on both Lovable and external hosts, where relative asset paths otherwise fall through to the SPA HTML page.
 - Amharic translation is done at runtime by src/lib/i18n.tsx (DOM text walker + AI translate edge function, cached in localStorage), because hand-maintained dictionaries can't cover every page; mark untranslatable content with data-no-translate.

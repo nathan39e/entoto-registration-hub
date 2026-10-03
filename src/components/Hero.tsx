@@ -9,9 +9,9 @@ import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 const slides = [
   { src: heroImage, alt: "Teferi Mekonnen Polytechnic College entrance" },
-  { src: regalPortrait.url, alt: "Historical royal portrait in military regalia" },
-  { src: graduates.url, alt: "First graduates of T.M.S. in 1950" },
-  { src: historicBuilding.url, alt: "Historic college building" },
+  { src: `https://id-preview--813b587f-bf72-44da-ad24-4b4123495f66.lovable.app${regalPortrait.url}`, alt: "Historical royal portrait in military regalia" },
+  { src: `https://id-preview--813b587f-bf72-44da-ad24-4b4123495f66.lovable.app${graduates.url}`, alt: "First graduates of T.M.S. in 1950" },
+  { src: `https://id-preview--813b587f-bf72-44da-ad24-4b4123495f66.lovable.app${historicBuilding.url}`, alt: "Historic college building" },
 ];
 
 const Hero = () => {

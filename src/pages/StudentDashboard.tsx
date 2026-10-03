@@ -23,6 +23,7 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [app, setApp] = useState<any>(null);
+  const [deptExams, setDeptExams] = useState<any[]>([]);
   const [payment, setPayment] = useState<any>(null);
   const [result, setResult] = useState<any>(null);
 
@@ -42,6 +43,7 @@ const StudentDashboard = () => {
         toast.info("Please take your psychometric exam first.");
         return navigate("/psychometric-exam");
       }
+      if (a.data) supabase.from("department_exams").select("id, title, form_url, department").eq("is_active", true).then(({ data }) => setDeptExams(data ?? []));
       setProfile(p.data); setApp(a.data); setPayment(pay.data); setResult(r.data);
     })();
   }, [navigate]);
@@ -123,6 +125,18 @@ const StudentDashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {selected.map((choice, index) => <p key={index} className="text-sm"><span className="font-semibold">{index + 1}.</span> {choice}</p>)}
+                </CardContent>
+              </Card>
+            )}
+
+            {canContinue && deptExams.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{app.first_department} Entry Exam</CardTitle>
+                  <CardDescription>Set by your department head. Use your student code {profile?.student_code} when filling the form.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-wrap gap-2">
+                  {deptExams.map((e) => <Button key={e.id} asChild><a href={e.form_url} target="_blank" rel="noopener noreferrer">{e.title}</a></Button>)}
                 </CardContent>
               </Card>
             )}

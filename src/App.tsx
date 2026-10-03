@@ -16,6 +16,7 @@ import Payment from "./pages/Payment";
 import Portfolio from "./pages/Portfolio";
 import AdminDashboard from "./pages/AdminDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
+import DepartmentHeadDashboard from "./pages/DepartmentHeadDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/staff" element={<StaffDashboard />} />
           <Route path="/staff/apply" element={<Application staffMode />} />
+          <Route path="/department-head" element={<DepartmentHeadDashboard />} />
           <Route path="/news" element={<News />} />
           <Route path="/contact" element={<Contact />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

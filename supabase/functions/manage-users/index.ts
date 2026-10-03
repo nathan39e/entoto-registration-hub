@@ -102,6 +102,43 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    if (action === "assign_department_head") {
+      const department = str(body.department, 100);
+      if (!department) return json({ error: "Select a department." }, 400);
+      if (body.remove) {
+        const { data: h } = await admin.from("department_heads").select("user_id").eq("department", department).maybeSingle();
+        if (h) {
+          await admin.from("department_heads").delete().eq("user_id", h.user_id);
+          await admin.from("user_roles").delete().eq("user_id", h.user_id).eq("role", "department_head");
+        }
+        return json({ ok: true });
+      }
+      const { data: taken } = await admin.from("department_heads").select("user_id").eq("department", department).maybeSingle();
+      if (taken) return json({ error: "This department already has a head. Remove them first." }, 400);
+      const email = str(body.email, 255).toLowerCase();
+      let id: string;
+      if (body.password) {
+        const full_name = str(body.full_name, 100);
+        const password = typeof body.password === "string" ? body.password : "";
+        if (!full_name || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8)
+          return json({ error: "Name, valid email and a password of at least 8 characters are required." }, 400);
+        const { data: created, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name } });
+        if (error) return json({ error: error.message }, 400);
+        id = created.user.id;
+        await admin.from("user_roles").delete().eq("user_id", id).eq("role", "student");
+      } else {
+        const { data: p } = await admin.from("profiles").select("id").ilike("email", email).maybeSingle();
+        if (!p) return json({ error: "No account found with that email." }, 404);
+        id = p.id;
+      }
+      const { data: already } = await admin.from("department_heads").select("department").eq("user_id", id).maybeSingle();
+      if (already) return json({ error: `This person already heads ${already.department}.` }, 400);
+      const { error: e1 } = await admin.from("department_heads").insert({ user_id: id, department });
+      if (e1) return json({ error: e1.message }, 400);
+      await admin.from("user_roles").upsert({ user_id: id, role: "department_head" }, { onConflict: "user_id,role" });
+      return json({ ok: true });
+    }
+
     if (action === "update_student") {
       const id = str(body.id, 64);
       const patch: Record<string, unknown> = { full_name: str(body.full_name, 100), phone: str(body.phone, 20) || null };

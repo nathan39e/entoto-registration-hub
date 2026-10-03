@@ -13,6 +13,7 @@ const Header = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isStaff, setIsStaff] = useState(false);
+  const [isHead, setIsHead] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ const Header = () => {
     const roles = (data ?? []).map((r) => r.role);
     setIsAdmin(roles.includes("admin"));
     setIsStaff(roles.includes("sub_admin"));
+    setIsHead(roles.includes("department_head"));
   };
 
   return (
@@ -81,6 +83,11 @@ const Header = () => {
               {isAdmin && (
                 <NavLink to="/admin-dashboard" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                   Admin Dashboard
+                </NavLink>
+              )}
+              {isHead && (
+                <NavLink to="/department-head" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
+                  My Department
                 </NavLink>
               )}
               {(isAdmin || isStaff) && (
@@ -122,7 +129,7 @@ const Header = () => {
             <SheetContent side="right" className="w-[min(85vw,22rem)] overflow-y-auto">
               <SheetHeader><SheetTitle>Menu</SheetTitle></SheetHeader>
               <nav className="mt-8 flex flex-col gap-1">
-                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(user ? [["/student-dashboard", "Dashboard"]] : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
+                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(isHead ? [["/department-head", "My Department"]] : []), ...(user ? [["/student-dashboard", "Dashboard"]] : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
                   <SheetClose asChild key={to}><Link to={to} className="block rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{label}</Link></SheetClose>
                 ))}
                 {user && <Button variant="outline" className="mt-3 justify-start" onClick={async () => { setMenuOpen(false); await supabase.auth.signOut(); navigate("/"); }}>Logout</Button>}

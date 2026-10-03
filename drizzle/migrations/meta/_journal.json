@@ -57,6 +57,20 @@
       "when": 1791058132454,
       "tag": "0007_enforce_cutoff_for_staff_submissions",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791060232810,
+      "tag": "0008_add_department_head_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791060252997,
+      "tag": "0009_department_heads_and_program_fees",
+      "breakpoints": true
     }
   ]
 }

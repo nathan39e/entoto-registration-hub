@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import isoLogo from "@/assets/iso-21001-transparent.png";
+import isoLogo from "@/assets/iso-21001.png";
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 const Footer = () => {
   return <footer className="bg-primary text-primary-foreground">

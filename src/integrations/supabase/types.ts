@@ -39,8 +39,10 @@ export type Database = {
         Row: {
           documents: Json
           first_choice: string
+          first_department: string | null
           grade_12_results: Json
           id: string
+          program: string | null
           result_doc_path: string | null
           second_choice: string
           status: string | null
@@ -51,8 +53,10 @@ export type Database = {
         Insert: {
           documents?: Json
           first_choice: string
+          first_department?: string | null
           grade_12_results: Json
           id?: string
+          program?: string | null
           result_doc_path?: string | null
           second_choice: string
           status?: string | null
@@ -63,13 +67,63 @@ export type Database = {
         Update: {
           documents?: Json
           first_choice?: string
+          first_department?: string | null
           grade_12_results?: Json
           id?: string
+          program?: string | null
           result_doc_path?: string | null
           second_choice?: string
           status?: string | null
           submitted_at?: string
           third_choice?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      department_exams: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department: string
+          form_url: string
+          id: string
+          is_active: boolean
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department: string
+          form_url: string
+          id?: string
+          is_active?: boolean
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department?: string
+          form_url?: string
+          id?: string
+          is_active?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
+      department_heads: {
+        Row: {
+          created_at: string
+          department: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
           user_id?: string
         }
         Relationships: []
@@ -105,6 +159,7 @@ export type Database = {
           id: string
           paid_at: string | null
           payment_method: string | null
+          program: string | null
           receipt_path: string | null
           status: string | null
           transaction_id: string | null
@@ -116,6 +171,7 @@ export type Database = {
           id?: string
           paid_at?: string | null
           payment_method?: string | null
+          program?: string | null
           receipt_path?: string | null
           status?: string | null
           transaction_id?: string | null
@@ -127,6 +183,7 @@ export type Database = {
           id?: string
           paid_at?: string | null
           payment_method?: string | null
+          program?: string | null
           receipt_path?: string | null
           status?: string | null
           transaction_id?: string | null
@@ -270,6 +327,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      head_department: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "student" | "sub_admin" | "department_head"

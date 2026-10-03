@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admission_settings: {
+        Row: {
+          grade_12_cutoff: number
+          id: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          grade_12_cutoff?: number
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          grade_12_cutoff?: number
+          id?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       applications: {
         Row: {
           documents: Json

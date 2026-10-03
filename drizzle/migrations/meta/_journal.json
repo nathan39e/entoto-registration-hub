@@ -43,6 +43,13 @@
       "when": 1790881955980,
       "tag": "0005_receipts_and_staff_uploads",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791058025953,
+      "tag": "0006_configurable_admission_cutoff",
+      "breakpoints": true
     }
   ]
 }

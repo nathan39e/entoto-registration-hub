@@ -21,16 +21,20 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import AccountSettings from "./pages/AccountSettings";
 import { LanguageProvider } from "./lib/i18n";
+import { HelmetProvider } from "react-helmet-async";
+import RouteMeta from "./components/RouteMeta";
 
 const queryClient = new QueryClient();
 
 const App = () => (
+  <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <RouteMeta />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
@@ -56,6 +60,7 @@ const App = () => (
     </TooltipProvider>
     </LanguageProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

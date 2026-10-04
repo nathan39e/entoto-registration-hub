@@ -249,6 +249,14 @@ const Auth = () => {
                     {loading ? "Creating account..." : "Sign Up"}
                   </Button>
                 </form>
+                <div className="flex items-center gap-3 my-4">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">or</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <Button type="button" variant="outline" className="w-full" size="lg" onClick={handleGoogleSignIn}>
+                  <GoogleIcon /> Continue with Google
+                </Button>
                 <p className="text-center mt-4 text-sm text-muted-foreground">
                   Already have an account?{" "}
                   <button onClick={handleFlip} className="text-primary font-medium hover:underline">

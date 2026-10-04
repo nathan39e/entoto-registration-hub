@@ -17,8 +17,12 @@ const Auth = () => {
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("mode") === "signup") setIsLogin(false);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/student-dashboard");
+    const home = async (uid: string) => {
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle();
+      return data ? "/admin-dashboard" : "/student-dashboard";
+    };
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session) navigate(await home(session.user.id));
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -26,7 +30,7 @@ const Auth = () => {
         if (sessionStorage.getItem("postSignup")) {
           sessionStorage.removeItem("postSignup");
           navigate("/application");
-        } else navigate("/student-dashboard");
+        } else setTimeout(async () => navigate(await home(session.user.id)), 0);
       }
     });
 

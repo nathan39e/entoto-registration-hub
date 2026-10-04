@@ -138,6 +138,18 @@ const Auth = () => {
     setLoading(false);
   };
 
+  const handleGoogleSignIn = async () => {
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      toast.error(result.error.message);
+      return;
+    }
+    if (result.redirected) return;
+    // Session already set — the onAuthStateChange listener navigates.
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero px-4">
       <div className="w-full max-w-md">

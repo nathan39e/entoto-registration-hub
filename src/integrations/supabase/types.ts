@@ -128,6 +128,56 @@ export type Database = {
         }
         Relationships: []
       }
+      department_placements: {
+        Row: {
+          application_id: string
+          choice_index: number
+          current_department: string
+          decision: string
+          evaluated_at: string | null
+          evaluated_by: string | null
+          exam_score: number | null
+          notes: string | null
+          placed_department: string | null
+          placed_field: string | null
+          user_id: string
+        }
+        Insert: {
+          application_id: string
+          choice_index?: number
+          current_department: string
+          decision?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          exam_score?: number | null
+          notes?: string | null
+          placed_department?: string | null
+          placed_field?: string | null
+          user_id: string
+        }
+        Update: {
+          application_id?: string
+          choice_index?: number
+          current_department?: string
+          decision?: string
+          evaluated_at?: string | null
+          evaluated_by?: string | null
+          exam_score?: number | null
+          notes?: string | null
+          placed_department?: string | null
+          placed_field?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_placements_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: true
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exam_forms: {
         Row: {
           created_at: string
@@ -358,6 +408,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      evaluate_application: {
+        Args: {
+          _app_id: string
+          _decision: string
+          _notes: string
+          _score: number
+        }
+        Returns: string
+      }
       generate_student_code: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -367,6 +426,10 @@ export type Database = {
         Returns: boolean
       }
       head_department: { Args: { _user_id: string }; Returns: string }
+      is_referred_to_head: {
+        Args: { _app_user: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "student" | "sub_admin" | "department_head"

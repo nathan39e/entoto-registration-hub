@@ -5,3 +5,4 @@
 - Store news articles with admin-only writes and public published reads; keep news photos private with published-article access, because unpublished content must remain hidden.
 - Resolve uploaded hero photo pointers against the project's preview asset host so they display on both Lovable and external hosts, where relative asset paths otherwise fall through to the SPA HTML page.
 - Amharic translation is done at runtime by src/lib/i18n.tsx (DOM text walker + AI translate edge function, cached in localStorage), because hand-maintained dictionaries can't cover every page; mark untranslatable content with data-no-translate.
+- Department head scoring/placement lives in department_placements and is written only via the evaluate_application security-definer RPC, so heads can't edit applications directly and referrals move the student to their next choice atomically.

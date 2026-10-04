@@ -23,6 +23,8 @@ async function flush() {
   const batch = [...pending].slice(0, 100);
   batch.forEach((b) => pending.delete(b));
   if (!batch.length) return;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return; // translation is for signed-in users only
   const { data } = await supabase.functions.invoke("translate", { body: { texts: batch } });
   const out: string[] = data?.translations ?? [];
   batch.forEach((t, i) => { cache[t] = out[i] ?? t; });

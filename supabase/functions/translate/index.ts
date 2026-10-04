@@ -7,6 +7,11 @@ const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { sta
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
+    const auth = req.headers.get("Authorization") ?? "";
+    const userRes = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+      headers: { Authorization: auth, apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "" },
+    });
+    if (!auth.startsWith("Bearer ") || !userRes.ok) return json({ error: "Sign in required" }, 401);
     const { texts } = await req.json();
     if (!Array.isArray(texts) || texts.length === 0 || texts.length > 120) return json({ error: "Send 1-120 texts" }, 400);
     const clean = texts.map((t) => String(t).slice(0, 2000));

@@ -157,6 +157,17 @@ const Auth = () => {
     // Session already set — the onAuthStateChange listener navigates.
   };
 
+  const handleAppleSignIn = async () => {
+    const result = await lovable.auth.signInWithOAuth("apple", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      toast.error(result.error.message);
+      return;
+    }
+    if (result.redirected) return;
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero px-4">
       <div className="w-full max-w-md">

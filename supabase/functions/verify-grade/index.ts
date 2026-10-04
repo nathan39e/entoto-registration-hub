@@ -6,6 +6,13 @@ const cors = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
+    const auth = req.headers.get("Authorization") ?? "";
+    const userRes = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+      headers: { Authorization: auth, apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "" },
+    });
+    if (!auth.startsWith("Bearer ") || !userRes.ok) {
+      return new Response(JSON.stringify({ error: "Sign in required" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } });
+    }
     const { image, enteredScore } = await req.json();
     if (typeof image !== "string" || !image.startsWith("data:image/") || image.length > 8_000_000) {
       return new Response(JSON.stringify({ error: "Please upload a valid image (max ~5MB)." }), { status: 400, headers: { ...cors, "Content-Type": "application/json" } });

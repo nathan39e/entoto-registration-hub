@@ -277,9 +277,14 @@ const Auth = () => {
                   <span className="text-xs text-muted-foreground">or</span>
                   <div className="h-px flex-1 bg-border" />
                 </div>
-                <Button type="button" variant="outline" className="w-full" size="lg" onClick={handleGoogleSignIn}>
-                  <GoogleIcon /> Continue with Google
-                </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <Button type="button" variant="outline" size="lg" onClick={handleGoogleSignIn}>
+                    <GoogleIcon /> Continue with Google
+                  </Button>
+                  <Button type="button" variant="outline" size="lg" onClick={handleAppleSignIn}>
+                    <AppleIcon /> Continue with Apple
+                  </Button>
+                </div>
                 <p className="text-center mt-4 text-sm text-muted-foreground">
                   Already have an account?{" "}
                   <button onClick={handleFlip} className="text-primary font-medium hover:underline">

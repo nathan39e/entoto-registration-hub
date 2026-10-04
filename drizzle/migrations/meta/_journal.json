@@ -92,6 +92,13 @@
       "when": 1791089779093,
       "tag": "0012_admission_settings_staff_only",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791152916507,
+      "tag": "0013_department_placements",
+      "breakpoints": true
     }
   ]
 }

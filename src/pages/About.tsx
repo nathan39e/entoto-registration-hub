@@ -8,7 +8,7 @@ const About = () => {
       <main className="flex-grow">
         <section className="py-20 bg-gradient-hero">
           <div className="container mx-auto px-4">
-            <h1 className="text-5xl font-bold text-center mb-8">About Tafsri Makonnen Polytechnic College</h1>
+            <h1 className="text-5xl font-bold text-center mb-8">About Teferi Mekonnen Polytechnic College</h1>
             <p className="text-xl text-center text-muted-foreground max-w-3xl mx-auto">
               Committed to excellence in technical education since our establishment
             </p>

@@ -166,16 +166,16 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         setPhoto(null); setResultDoc(null); setGrade8(null); setTranscript(null);
         return;
       }
-      const { error } = await supabase.from("applications").insert({ user_id: user.id, ...appRow });
+      const { data: saved, error } = await supabase.from("applications").insert({ user_id: user.id, ...appRow }).select("status").single();
       if (error) {
         if (error.code === "23505") throw new Error("You have already submitted an application.");
         throw error;
       }
-      if (grade12 >= cutoff) {
+      if (saved?.status !== "waiting_list") {
         toast.success("Application submitted! Your documents are awaiting admin review. Proceeding to the exam.");
         setTimeout(() => navigate("/psychometric-exam"), 1200);
       } else {
-        toast.info(`Application submitted to the waiting list. The current minimum is ${cutoff}.`);
+        toast.info("Application submitted to the waiting list because the result is below the current minimum.");
         setTimeout(() => navigate("/student-dashboard"), 1200);
       }
     } catch (err) {
@@ -239,7 +239,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
             <Card className="max-w-4xl mx-auto min-w-0">
               <CardHeader>
                 <CardTitle className="text-2xl md:text-3xl">Student Registration Form</CardTitle>
-                <CardDescription>Fields marked with * are mandatory. The current Grade 12 minimum is {cutoff}.{staffMode && " You are registering a student — they log in with the email and password below."}</CardDescription>
+                <CardDescription>Fields marked with * are mandatory.{staffMode && ` The current Grade 12 minimum is ${cutoff}. You are registering a student — they log in with the email and password below.`}</CardDescription>
                 {staffMode && newCode && <p className="text-sm mt-2">Last registered student code: <b className="text-primary">{newCode}</b></p>}
               </CardHeader>
               <CardContent>

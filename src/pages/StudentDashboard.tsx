@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import RegistrationSlip from "@/components/RegistrationSlip";
+import StudentIDCard from "@/components/StudentIDCard";
 import { DEPARTMENTS } from "@/data/departments";
 
 const statusBadge = (s?: string | null) => {
@@ -26,6 +27,7 @@ const StudentDashboard = () => {
   const [deptExams, setDeptExams] = useState<any[]>([]);
   const [payment, setPayment] = useState<any>(null);
   const [result, setResult] = useState<any>(null);
+  const [placement, setPlacement] = useState<any>(null);
 
   useEffect(() => {
     (async () => {
@@ -46,6 +48,7 @@ const StudentDashboard = () => {
         return navigate("/psychometric-exam");
       }
       if (a.data) supabase.from("department_exams").select("id, title, form_url, department").eq("is_active", true).then(({ data }) => setDeptExams(data ?? []));
+      supabase.from("department_placements").select("*").eq("user_id", uid).maybeSingle().then(({ data }) => setPlacement(data));
       setProfile(p.data); setApp(a.data); setPayment(pay.data); setResult(r.data);
     })();
   }, [navigate]);
@@ -78,6 +81,30 @@ const StudentDashboard = () => {
               <RegistrationSlip name={profile?.full_name ?? ""} code={profile?.student_code ?? ""}
                 department={app.first_choice} amount={Number(payment.amount)} approvedAt={payment.paid_at} />
             )}
+            {placement && placement.decision !== "under_review" && (
+              <Card className={placement.decision === "accepted" ? "border-primary" : ""}>
+                <CardHeader>
+                  <CardTitle>Department Placement</CardTitle>
+                  <CardDescription>
+                    {placement.decision === "accepted" && `Congratulations! You are placed in ${placement.placed_department}${placement.placed_field ? ` — ${placement.placed_field}` : ""}.`}
+                    {placement.decision === "waitlisted" && `You are on the ${placement.current_department} department waiting list.`}
+                    {placement.decision === "rejected" && `The ${placement.current_department} department did not accept your application.`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-sm space-y-1">
+                  {placement.exam_score != null && <p><span className="font-semibold">Entry exam score:</span> {placement.exam_score} / 100</p>}
+                  {placement.notes && <p><span className="font-semibold">Department notes:</span> {placement.notes}</p>}
+                </CardContent>
+              </Card>
+            )}
+            {placement && placement.decision === "under_review" && placement.choice_index > 1 && (
+              <Card><CardHeader><CardTitle>Department Placement</CardTitle><CardDescription>Your application was referred to your choice #{placement.choice_index}: {placement.current_department}. It is now under review there.</CardDescription></CardHeader></Card>
+            )}
+            {placement?.decision === "accepted" && app?.status === "approved" && (() => {
+              const pi = app.grade_12_results?.personal_info ?? {};
+              const full = [pi.firstName, pi.middleName, pi.lastName].filter(Boolean).join(" ") || profile?.full_name || "";
+              return <StudentIDCard data={{ name: full, code: profile?.student_code ?? "", department: placement.placed_department, field: placement.placed_field, program: app.program, photoPath: app.documents?.photo, emergencyName: pi.emergencyName, emergencyRelation: pi.emergencyRelation, emergencyPhone: pi.emergencyPhone, issuedAt: placement.evaluated_at }} />;
+            })()}
             {app?.status === "waiting_list" && (
               <Card className="border-accent">
                 <CardHeader>

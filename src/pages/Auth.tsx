@@ -25,6 +25,11 @@ const AppleIcon = () => (
 );
 
 
+const safeNext = () => {
+  const n = new URLSearchParams(window.location.search).get("next");
+  return n && n.startsWith("/") && !n.startsWith("//") ? n : null;
+};
+
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgot, setIsForgot] = useState(false);
@@ -35,6 +40,8 @@ const Auth = () => {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("mode") === "signup") setIsLogin(false);
     const home = async (uid: string) => {
+      const next = safeNext();
+      if (next) return next;
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle();
       return data ? "/admin-dashboard" : "/student-dashboard";
     };
@@ -46,7 +53,7 @@ const Auth = () => {
       if (session && event === "SIGNED_IN") {
         if (sessionStorage.getItem("postSignup")) {
           sessionStorage.removeItem("postSignup");
-          navigate("/application");
+          navigate(safeNext() ?? "/application");
         } else setTimeout(async () => navigate(await home(session.user.id)), 0);
       }
     });
@@ -127,7 +134,7 @@ const Auth = () => {
       password,
       options: {
         data: { full_name: fullname },
-        emailRedirectTo: `${window.location.origin}/application`,
+        emailRedirectTo: `${window.location.origin}${safeNext() ?? "/application"}`,
       },
     });
 
@@ -136,7 +143,7 @@ const Auth = () => {
       toast.error(error.message);
     } else if (data.session) {
       toast.success("Account created! Please fill in the registration form.");
-      navigate("/application");
+      navigate(safeNext() ?? "/application");
     } else {
       toast.success("Account created! Check your email to confirm — the link opens the registration form.");
       handleFlip();
@@ -147,7 +154,7 @@ const Auth = () => {
 
   const handleGoogleSignIn = async () => {
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: safeNext() ? `${window.location.origin}/auth?next=${encodeURIComponent(safeNext()!)}` : window.location.origin,
     });
     if (result.error) {
       toast.error(result.error.message);
@@ -159,7 +166,7 @@ const Auth = () => {
 
   const handleAppleSignIn = async () => {
     const result = await lovable.auth.signInWithOAuth("apple", {
-      redirect_uri: window.location.origin,
+      redirect_uri: safeNext() ? `${window.location.origin}/auth?next=${encodeURIComponent(safeNext()!)}` : window.location.origin,
     });
     if (result.error) {
       toast.error(result.error.message);

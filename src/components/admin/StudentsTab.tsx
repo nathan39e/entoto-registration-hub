@@ -44,9 +44,16 @@ const StudentsTab = () => {
     setDocs({ name: p.full_name, links });
   };
 
-  const load = () => supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by")
-    .order("created_at", { ascending: false }).then(({ data }) => setStudents((data as Profile[]) ?? []));
+  const load = async () => {
+    const [{ data }, { data: roles }] = await Promise.all([
+      supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("user_id").eq("role", "admin"),
+    ]);
+    const admins = new Set((roles ?? []).map((r) => r.user_id));
+    setStudents(((data as Profile[]) ?? []).filter((p) => !admins.has(p.id)));
+  };
   useEffect(() => { load(); }, []);
+  const [pickOpen, setPickOpen] = useState(false);
 
   const call = async (body: Record<string, unknown>) => {
     setBusy(true);
@@ -111,7 +118,7 @@ const StudentsTab = () => {
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>Registered Students ({students.length})</CardTitle>
-            <div className="flex gap-2"><Button variant="outline" onClick={() => navigate("/staff/apply")}>Register Student</Button><Button onClick={exportExcel}>Download Excel</Button></div>
+            <div className="flex gap-2"><Button variant="outline" onClick={() => navigate("/staff/apply")}>Register Student</Button><Button onClick={() => setPickOpen(true)}>Download Excel</Button></div>
           </div>
           <CardDescription>Search by name, email or student code. The Excel file includes the application form and document links.</CardDescription>
           <div className="flex flex-wrap items-end gap-3 mt-2">
@@ -169,6 +176,22 @@ const StudentsTab = () => {
                 toast.success("Student updated"); setEdit(null); load();
               }
             }}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={pickOpen} onOpenChange={setPickOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Download Excel</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Choose which registration days to include. Leave a date empty to include everything before or after.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div><Label htmlFor="dl-from">From day</Label><Input id="dl-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+            <div><Label htmlFor="dl-to">To day</Label><Input id="dl-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+          </div>
+          <p className="text-sm">{students.filter((s) => inRange(s.created_at)).length} students will be included.</p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setFrom(""); setTo(""); }}>All days</Button>
+            <Button onClick={async () => { setPickOpen(false); await exportExcel(); }}>Download</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

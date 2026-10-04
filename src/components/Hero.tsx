@@ -32,9 +32,9 @@ const Hero = () => {
       {/* Content */}
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-3xl mx-auto text-center text-primary-foreground">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 animate-fade-in">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 animate-fade-in">
             Build Your Future with Excellence
-          </h2>
+          </h1>
           <p className="text-xl md:text-2xl mb-8 opacity-95 animate-slide-up">
             Join Teferi Mekonnen Polytechnic College and embark on a journey of quality technical education that transforms lives
           </p>

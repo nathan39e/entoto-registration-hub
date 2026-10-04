@@ -33,7 +33,7 @@ const Statistics = () => {
             return (
               <div
                 key={index}
-                className="text-center text-white animate-slide-up"
+                className="text-center text-primary-foreground animate-slide-up"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <Icon className="h-12 w-12 mx-auto mb-4 opacity-90" />

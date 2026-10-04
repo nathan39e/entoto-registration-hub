@@ -85,6 +85,13 @@
       "when": 1791061592913,
       "tag": "0011_news_image_storage_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791089779093,
+      "tag": "0012_admission_settings_staff_only",
+      "breakpoints": true
     }
   ]
 }

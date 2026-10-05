@@ -35,8 +35,8 @@ const StudentDashboard = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return navigate("/auth");
       const uid = session.user.id;
-      const { data: adminRole } = await supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle();
-      if (adminRole) return navigate("/admin-dashboard", { replace: true });
+      const staffPath = await staffHome(uid);
+      if (staffPath) return navigate(staffPath, { replace: true });
       const [p, a, pay, r] = await Promise.all([
         supabase.from("profiles").select("full_name, student_code, exam_required").eq("id", uid).maybeSingle(),
         supabase.from("applications").select("*").eq("user_id", uid).maybeSingle(),

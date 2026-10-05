@@ -31,6 +31,8 @@ const PsychometricExam = () => {
       .then(({ data }) => setExam(data));
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return navigate("/auth");
+      const staffPath = await staffHome(user.id);
+      if (staffPath) return navigate(staffPath, { replace: true });
       const [{ data: p }, { data: app }] = await Promise.all([
         supabase.from("profiles").select("student_code").eq("id", user.id).maybeSingle(),
         supabase.from("applications").select("first_choice, second_choice, third_choice, status").eq("user_id", user.id).maybeSingle(),

@@ -169,6 +169,23 @@ const AdminDashboard = () => {
     toast({ title: `Application ${status}` });
   };
 
+  const removeApplication = async (id: string) => {
+    if (!window.confirm("Remove this application permanently? The student will be able to apply again.")) return;
+    await supabase.from("department_placements").delete().eq("application_id", id);
+    const { error } = await supabase.from("applications").delete().eq("id", id);
+    if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
+    setApplications((a) => a.filter((x) => x.id !== id));
+    toast({ title: "Application removed" });
+  };
+
+  const removeResult = async (id: string) => {
+    if (!window.confirm("Remove this test result permanently? The student will be able to retake the exam.")) return;
+    const { error } = await supabase.from("psychometric_results").delete().eq("id", id);
+    if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
+    setResults((r) => r.filter((x) => x.id !== id));
+    toast({ title: "Test result removed" });
+  };
+
   const saveCutoff = async () => {
     const next = Number(cutoffDraft);
     if (!Number.isFinite(next) || next < 0 || next > 700) {
@@ -367,6 +384,7 @@ const AdminDashboard = () => {
                               <Button size="sm" variant="outline" disabled={app.status === "pending"} onClick={() => setAppStatus(app.id, "pending")}>{app.status === "approved" ? "Unapprove" : "Review"}</Button>
                               <Button size="sm" variant="secondary" disabled={app.status === "waiting_list"} onClick={() => setAppStatus(app.id, "waiting_list")}>Waiting List</Button>
                               <Button size="sm" variant="destructive" disabled={app.status === "rejected"} onClick={() => setAppStatus(app.id, "rejected")}>Reject</Button>
+                              <Button size="sm" variant="outline" className="text-destructive border-destructive" onClick={() => removeApplication(app.id)}>Remove</Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -393,6 +411,7 @@ const AdminDashboard = () => {
                         <TableHead>Student Code</TableHead>
                         <TableHead>Recommended Departments</TableHead>
                         <TableHead>Completed</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -416,6 +435,7 @@ const AdminDashboard = () => {
                             </div>
                           </TableCell>
                           <TableCell>{new Date(result.completed_at).toLocaleDateString()}</TableCell>
+                          <TableCell><Button size="sm" variant="destructive" onClick={() => removeResult(result.id)}>Remove</Button></TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

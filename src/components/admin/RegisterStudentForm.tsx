@@ -53,7 +53,7 @@ const RegisterStudentForm = ({ onDone }: { onDone?: () => void }) => {
           {inp("email", "Email *", { type: "email", required: true, maxLength: 255 })}
           {inp("password", "Password (min 8) *", { type: "text", required: true, minLength: 8 })}
           {inp("phone", "Phone", { type: "tel", maxLength: 20 })}
-          {inp("grade12", "Grade 12 Result", { type: "number", min: 0, max: 700 })}
+          {inp("grade12", "Grade 12 Result", { type: "number", min: 0, max: 700, step: "0.01", inputMode: "decimal", placeholder: "e.g., 150.32" })}
           {pick("program", "Program", PROGRAMS)}
           {pick("choice1", "First Choice", DEPARTMENTS)}
           {pick("choice2", "Second Choice", DEPARTMENTS)}

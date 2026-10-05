@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { staffHome } from "@/lib/staffHome";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";

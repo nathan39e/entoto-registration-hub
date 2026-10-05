@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { staffHome } from "@/lib/staffHome";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";

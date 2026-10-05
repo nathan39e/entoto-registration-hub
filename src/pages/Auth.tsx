@@ -19,10 +19,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("mode") === "signup") setIsLogin(false);
-    const home = async (uid: string) => {
-      const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle();
-      return data ? "/admin-dashboard" : "/student-dashboard";
-    };
+    const home = async (uid: string) => (await staffHome(uid)) ?? "/student-dashboard";
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) navigate(await home(session.user.id));
     });

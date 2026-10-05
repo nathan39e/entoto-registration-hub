@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { staffHome } from "@/lib/staffHome";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";

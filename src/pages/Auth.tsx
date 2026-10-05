@@ -118,7 +118,9 @@ const Auth = () => {
 
     if (error) {
       sessionStorage.removeItem("postSignup");
-      toast.error(error.message);
+      toast.error(/weak|pwned|leak/i.test(error.message)
+        ? "Please choose a stronger password: at least 8 characters with letters and numbers."
+        : error.message);
     } else if (data.session) {
       toast.success("Account created! Please fill in the registration form.");
       navigate("/application");

@@ -121,7 +121,7 @@ const Header = () => {
                   <Link to="/account"><Button variant="ghost" size="icon" aria-label="Profile and settings"><Settings className="h-4 w-4" /></Button></Link>
                 )}
                 {!isAdmin && (
-                  <Link to="/student-dashboard" className="hidden sm:block">
+                  <Link to={isStaff ? "/staff" : isHead ? "/department-head" : "/student-dashboard"} className="hidden sm:block">
                     <Button variant="outline" size="sm">Dashboard</Button>
                   </Link>
                 )}

@@ -34,7 +34,7 @@ const StudentsTab = () => {
     const { data: a } = await supabase.from("applications").select("documents, result_doc_path").eq("user_id", p.id).maybeSingle();
     const d: Record<string, string> = { ...((a?.documents as Record<string, string>) ?? {}) };
     if (!d.grade12 && a?.result_doc_path) d.grade12 = a.result_doc_path;
-    const labels: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript (9–12)"]];
+    const labels: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript (9–12)"], ["manualForm", "Manual Form"]];
     const links: [string, string][] = [];
     for (const [k, l] of labels) {
       if (!d[k]) { links.push([l, ""]); continue; }
@@ -98,7 +98,7 @@ const StudentsTab = () => {
         "Application Status": a?.status ?? "Not applied", Submitted: a ? new Date(a.submitted_at).toLocaleDateString() : "",
         "Registered By": s.registered_by ? names.get(s.registered_by) ?? "Staff" : "Self",
         "Photo (7-day link)": await link(d.photo), "Grade 12 Doc": await link(d.grade12 ?? a?.result_doc_path),
-        "Grade 8 Doc": await link(d.grade8), Transcript: await link(d.transcript),
+        "Grade 8 Doc": await link(d.grade8), Transcript: await link(d.transcript), "Manual Form": await link(d.manualForm),
         Registered: new Date(s.created_at).toLocaleDateString(),
       });
     }

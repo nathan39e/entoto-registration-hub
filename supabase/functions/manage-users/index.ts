@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       if (choices.every(Boolean)) {
         await admin.from("applications").insert({
           user_id: id, first_choice: choices[0], second_choice: choices[1], third_choice: choices[2],
-          grade_12_results: { score: Number(body.grade12) || null, program: str(body.program, 20), registered_by_staff: true, personal_info: { phone: str(body.phone, 20), program: str(body.program, 20) } },
+          grade_12_results: { score: Number(String(body.grade12 ?? "").replace(",", ".")) || null, program: str(body.program, 20), registered_by_staff: true, personal_info: { phone: str(body.phone, 20), program: str(body.program, 20) } },
         });
       }
       const { data: prof } = await admin.from("profiles").select("student_code").eq("id", id).maybeSingle();

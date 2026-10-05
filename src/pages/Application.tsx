@@ -28,7 +28,7 @@ const schema = z.object({
   emergencyName: text(), emergencyRelation: text(50),
   emergencyPhone: z.string().trim().regex(/^\+?[0-9]{9,15}$/, "Invalid emergency phone number"),
   emergencyAddress: text(300),
-  grade12: z.coerce.number().min(0).max(700),
+  grade12: z.preprocess((x) => typeof x === "string" ? x.trim().replace(",", ".") : x, z.coerce.number().min(0).max(700)),
   grade12Year: z.coerce.number().int().min(1990).max(currentYear),
   program: z.enum(["Regular", "Extension", "Weekend"], { errorMap: () => ({ message: "Please select a program" }) }),
   choice1: text(), choice2: text(), choice3: text(),
@@ -321,7 +321,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                   <div>
                     <h3 className="text-xl font-semibold mb-4">Academic Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {field("grade12", "Grade 12 Exit Exam Result", { type: "number", min: 0, max: 700, step: "0.01", inputMode: "decimal", placeholder: "e.g., 150.32" })}
+                      {field("grade12", "Grade 12 Exit Exam Result", { type: "text", inputMode: "decimal", pattern: "[0-9]{1,3}([.,][0-9]{1,2})?", title: "Enter a mark like 150.32", placeholder: "e.g., 150.32" })}
                       {field("grade12Year", "Year Grade 12 Completed", { type: "number", min: 1990, max: currentYear, placeholder: `e.g., ${currentYear - 1}` })}
                       {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", setResultDoc, "The result on this document must match the result you entered.")}
                       {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.")}

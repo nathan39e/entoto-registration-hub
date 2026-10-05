@@ -60,13 +60,13 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const [existing, setExisting] = useState<any>(null);
   const [checking, setChecking] = useState(true);
   const [newCode, setNewCode] = useState<string | null>(null);
-  const [cutoff, setCutoff] = useState(150);
+  const [cutoffs, setCutoffs] = useState({ male: 160, female: 150 });
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return navigate("/auth");
-      const { data: settings } = await supabase.from("admission_settings").select("grade_12_cutoff").eq("id", true).maybeSingle();
-      setCutoff(Number(settings?.grade_12_cutoff ?? 150));
+      const { data: settings } = await supabase.from("admission_settings").select("grade_12_cutoff, female_grade_12_cutoff").eq("id", true).maybeSingle();
+      setCutoffs({ male: Number(settings?.grade_12_cutoff ?? 160), female: Number(settings?.female_grade_12_cutoff ?? 150) });
       if (staffMode) {
         const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin"]);
         if (!r?.length) { toast.error("Access denied"); return navigate("/"); }
@@ -158,6 +158,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       if (staffMode) {
         const { data: sa, error: saErr } = await supabase.functions.invoke("manage-users", { body: { action: "staff_application", id: ownerId, application: appRow } });
         if (saErr || sa?.error) throw new Error(sa?.error || "Could not save the application");
+        const cutoff = v.gender === "female" ? cutoffs.female : cutoffs.male;
         toast.success(grade12 >= cutoff
           ? "Student registered and can continue to the exam. Documents are awaiting admin review."
           : `Student registered on the waiting list because the result is below ${cutoff}.`);
@@ -239,7 +240,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
             <Card className="max-w-4xl mx-auto min-w-0">
               <CardHeader>
                 <CardTitle className="text-2xl md:text-3xl">Student Registration Form</CardTitle>
-                <CardDescription>Fields marked with * are mandatory.{staffMode && ` The current Grade 12 minimum is ${cutoff}. You are registering a student — they log in with the email and password below.`}</CardDescription>
+                <CardDescription>Fields marked with * are mandatory.{staffMode && ` The current Grade 12 minimum is ${cutoffs.male} for male and ${cutoffs.female} for female. You are registering a student — they log in with the email and password below.`}</CardDescription>
                 {staffMode && newCode && <p className="text-sm mt-2">Last registered student code: <b className="text-primary">{newCode}</b></p>}
               </CardHeader>
               <CardContent>

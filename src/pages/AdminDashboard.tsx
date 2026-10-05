@@ -64,8 +64,10 @@ const AdminDashboard = () => {
   const [results, setResults] = useState<PsychometricResult[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [programFilter, setProgramFilter] = useState("All");
-  const [cutoff, setCutoff] = useState(150);
-  const [cutoffDraft, setCutoffDraft] = useState("150");
+  const [cutoff, setCutoff] = useState(160);
+  const [cutoffDraft, setCutoffDraft] = useState("160");
+  const [femaleCutoff, setFemaleCutoff] = useState(150);
+  const [femaleDraft, setFemaleDraft] = useState("150");
   const [savingCutoff, setSavingCutoff] = useState(false);
   const knownPaymentIds = useRef<Set<string> | null>(null);
 
@@ -114,7 +116,7 @@ const AdminDashboard = () => {
         supabase.from("psychometric_results").select("*").order("completed_at", { ascending: false }),
         supabase.from("payments").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("id, full_name, email, student_code"),
-        supabase.from("admission_settings").select("grade_12_cutoff").eq("id", true).maybeSingle(),
+        supabase.from("admission_settings").select("grade_12_cutoff, female_grade_12_cutoff").eq("id", true).maybeSingle(),
       ]);
       const map = new Map((profilesResponse.data ?? []).map((p) => [p.id, p]));
       const empty = { full_name: "Unknown", email: "", student_code: "-" };
@@ -122,9 +124,12 @@ const AdminDashboard = () => {
       setApplications(attach(appsResponse.data));
       setResults(attach(resultsResponse.data));
       setPayments(attach(paymentsResponse.data));
-      const currentCutoff = Number(settingsResponse.data?.grade_12_cutoff ?? 150);
+      const currentCutoff = Number(settingsResponse.data?.grade_12_cutoff ?? 160);
       setCutoff(currentCutoff);
       setCutoffDraft(String(currentCutoff));
+      const currentFemale = Number(settingsResponse.data?.female_grade_12_cutoff ?? 150);
+      setFemaleCutoff(currentFemale);
+      setFemaleDraft(String(currentFemale));
       const pending = (paymentsResponse.data ?? []).filter((p) => p.status === "pending");
       if (knownPaymentIds.current) {
         const newlySubmitted = pending.filter((p) => !knownPaymentIds.current?.has(p.id));
@@ -188,21 +193,25 @@ const AdminDashboard = () => {
 
   const saveCutoff = async () => {
     const next = Number(cutoffDraft);
-    if (!Number.isFinite(next) || next < 0 || next > 700) {
-      return toast({ title: "Invalid mark", description: "Enter a mark from 0 to 700.", variant: "destructive" });
+    const nextF = Number(femaleDraft);
+    const bad = (n: number) => !Number.isFinite(n) || n < 0 || n > 700;
+    if (bad(next) || bad(nextF)) {
+      return toast({ title: "Invalid mark", description: "Enter marks from 0 to 700.", variant: "destructive" });
     }
     setSavingCutoff(true);
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("admission_settings").update({
       grade_12_cutoff: next,
+      female_grade_12_cutoff: nextF,
       updated_at: new Date().toISOString(),
       updated_by: user?.id ?? null,
     }).eq("id", true);
     setSavingCutoff(false);
     if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
     setCutoff(next);
+    setFemaleCutoff(nextF);
     await fetchData();
-    toast({ title: "Admission mark updated", description: `The Grade 12 minimum is now ${next}. Waiting-list applications were recalculated.` });
+    toast({ title: "Admission marks updated", description: `Male minimum ${next}, female minimum ${nextF}. Waiting-list applications were recalculated.` });
   };
 
   const setPaymentStatus = async (id: string, status: string) => {
@@ -305,14 +314,18 @@ const AdminDashboard = () => {
             <CardDescription>Students below this mark join the waiting list. Changing it recalculates applications that have not received a final admin decision.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-md">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-xl">
               <div className="space-y-2 flex-1">
-                <Label htmlFor="admission-cutoff">Minimum mark</Label>
+                <Label htmlFor="admission-cutoff">Male minimum</Label>
                 <Input id="admission-cutoff" type="number" min={0} max={700} value={cutoffDraft} onChange={(event) => setCutoffDraft(event.target.value)} />
               </div>
-              <Button onClick={saveCutoff} disabled={savingCutoff}>{savingCutoff ? "Saving..." : "Save Mark"}</Button>
+              <div className="space-y-2 flex-1">
+                <Label htmlFor="admission-cutoff-female">Female minimum</Label>
+                <Input id="admission-cutoff-female" type="number" min={0} max={700} value={femaleDraft} onChange={(event) => setFemaleDraft(event.target.value)} />
+              </div>
+              <Button onClick={saveCutoff} disabled={savingCutoff}>{savingCutoff ? "Saving..." : "Save Marks"}</Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-3">Current minimum: {cutoff}</p>
+            <p className="text-sm text-muted-foreground mt-3">Current minimum: male {cutoff}, female {femaleCutoff}</p>
           </CardContent>
         </Card>
 

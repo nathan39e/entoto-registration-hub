@@ -16,18 +16,21 @@ export type Database = {
     Tables: {
       admission_settings: {
         Row: {
+          female_grade_12_cutoff: number
           grade_12_cutoff: number
           id: boolean
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          female_grade_12_cutoff?: number
           grade_12_cutoff?: number
           id?: boolean
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          female_grade_12_cutoff?: number
           grade_12_cutoff?: number
           id?: boolean
           updated_at?: string

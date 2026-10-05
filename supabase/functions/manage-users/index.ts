@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
       if (!isAdmin && !isSub) return json({ error: "Not allowed" }, 403);
       const id = str(body.id, 64);
       const name = str(body.name, 24);
-      const allowed = ["photo", "grade12", "grade8", "transcript"];
+      const allowed = ["photo", "grade12", "grade8", "transcript", "manualForm"];
       const mime = str(body.mime, 40);
       if (!allowed.includes(name) || !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(mime) ||
           ((name === "photo" || name === "grade12") && mime === "application/pdf"))

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { staffHome } from "@/lib/staffHome";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,8 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         if (!r?.length) { toast.error("Access denied"); return navigate("/"); }
         setChecking(false); return;
       }
+      const staffPath = await staffHome(user.id);
+      if (staffPath) return navigate(staffPath, { replace: true });
       setV((p) => ({ ...p, email: p.email ?? user.email ?? "" }));
       const { data } = await supabase.from("applications").select("*").eq("user_id", user.id).maybeSingle();
       setExisting(data);

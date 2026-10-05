@@ -121,7 +121,7 @@ const Header = () => {
                   <Link to="/account"><Button variant="ghost" size="icon" aria-label="Profile and settings"><Settings className="h-4 w-4" /></Button></Link>
                 )}
                 {!isAdmin && (
-                  <Link to="/student-dashboard" className="hidden sm:block">
+                  <Link to={isStaff ? "/staff" : isHead ? "/department-head" : "/student-dashboard"} className="hidden sm:block">
                     <Button variant="outline" size="sm">Dashboard</Button>
                   </Link>
                 )}
@@ -146,7 +146,7 @@ const Header = () => {
               <SheetHeader><SheetTitle>Menu</SheetTitle>{user && <p className="text-sm text-muted-foreground">{greeting()}</p>}</SheetHeader>
               <LanguageSwitcher className="mt-4" />
               <nav className="mt-8 flex flex-col gap-1">
-                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(isHead ? [["/department-head", "My Department"]] : []), ...((isAdmin || isStaff || isHead) ? [["/account", "Profile & Settings"]] : []), ...(user ? (isAdmin ? [] : [["/student-dashboard", "Dashboard"]]) : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
+                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(isHead ? [["/department-head", "My Department"]] : []), ...((isAdmin || isStaff || isHead) ? [["/account", "Profile & Settings"]] : []), ...(user ? ((isAdmin || isStaff || isHead) ? [] : [["/student-dashboard", "Dashboard"]]) : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
                   <SheetClose asChild key={to}><Link to={to} className="block rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{label}</Link></SheetClose>
                 ))}
                 {user && <Button variant="outline" className="mt-3 justify-start" onClick={async () => { setMenuOpen(false); await supabase.auth.signOut(); navigate("/"); }}>Logout</Button>}

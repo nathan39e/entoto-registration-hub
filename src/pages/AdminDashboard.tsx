@@ -317,11 +317,11 @@ const AdminDashboard = () => {
             <div className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-xl">
               <div className="space-y-2 flex-1">
                 <Label htmlFor="admission-cutoff">Male minimum</Label>
-                <Input id="admission-cutoff" type="number" min={0} max={700} value={cutoffDraft} onChange={(event) => setCutoffDraft(event.target.value)} />
+                <Input id="admission-cutoff" type="number" min={0} max={700} step="0.01" value={cutoffDraft} onChange={(event) => setCutoffDraft(event.target.value)} />
               </div>
               <div className="space-y-2 flex-1">
                 <Label htmlFor="admission-cutoff-female">Female minimum</Label>
-                <Input id="admission-cutoff-female" type="number" min={0} max={700} value={femaleDraft} onChange={(event) => setFemaleDraft(event.target.value)} />
+                <Input id="admission-cutoff-female" type="number" min={0} max={700} step="0.01" value={femaleDraft} onChange={(event) => setFemaleDraft(event.target.value)} />
               </div>
               <Button onClick={saveCutoff} disabled={savingCutoff}>{savingCutoff ? "Saving..." : "Save Marks"}</Button>
             </div>

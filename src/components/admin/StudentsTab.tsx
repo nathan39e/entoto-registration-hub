@@ -47,7 +47,7 @@ const StudentsTab = () => {
   const load = async () => {
     const [{ data }, { data: roles }] = await Promise.all([
       supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }),
-      supabase.from("user_roles").select("user_id").eq("role", "admin"),
+      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head"]),
     ]);
     const admins = new Set((roles ?? []).map((r) => r.user_id));
     setStudents(((data as Profile[]) ?? []).filter((p) => !admins.has(p.id)));

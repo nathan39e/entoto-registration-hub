@@ -69,6 +69,15 @@ const AdminDashboard = () => {
   const [femaleCutoff, setFemaleCutoff] = useState(150);
   const [femaleDraft, setFemaleDraft] = useState("150");
   const [savingCutoff, setSavingCutoff] = useState(false);
+  const [examStart, setExamStart] = useState("");
+  const [examEnd, setExamEnd] = useState("");
+  const toLocal = (v?: string | null) => { if (!v) return ""; const d = new Date(v); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
+  const saveExamWindow = async () => {
+    if (examStart && examEnd && new Date(examEnd) <= new Date(examStart)) return toast({ title: "End must be after start", variant: "destructive" });
+    const { error } = await supabase.from("admission_settings").update({ exam_start: examStart ? new Date(examStart).toISOString() : null, exam_end: examEnd ? new Date(examEnd).toISOString() : null }).eq("id", true);
+    if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
+    toast({ title: "Exam schedule saved" });
+  };
   const knownPaymentIds = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -116,7 +125,7 @@ const AdminDashboard = () => {
         supabase.from("psychometric_results").select("*").order("completed_at", { ascending: false }),
         supabase.from("payments").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("id, full_name, email, student_code"),
-        supabase.from("admission_settings").select("grade_12_cutoff, female_grade_12_cutoff").eq("id", true).maybeSingle(),
+        supabase.from("admission_settings").select("grade_12_cutoff, female_grade_12_cutoff, exam_start, exam_end").eq("id", true).maybeSingle(),
       ]);
       const map = new Map((profilesResponse.data ?? []).map((p) => [p.id, p]));
       const empty = { full_name: "Unknown", email: "", student_code: "-" };
@@ -130,6 +139,8 @@ const AdminDashboard = () => {
       const currentFemale = Number(settingsResponse.data?.female_grade_12_cutoff ?? 150);
       setFemaleCutoff(currentFemale);
       setFemaleDraft(String(currentFemale));
+      setExamStart(toLocal(settingsResponse.data?.exam_start));
+      setExamEnd(toLocal(settingsResponse.data?.exam_end));
       const pending = (paymentsResponse.data ?? []).filter((p) => p.status === "pending");
       if (knownPaymentIds.current) {
         const newlySubmitted = pending.filter((p) => !knownPaymentIds.current?.has(p.id));
@@ -311,7 +322,7 @@ const AdminDashboard = () => {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Grade 12 Admission Mark</CardTitle>
-            <CardDescription>Students below this mark join the waiting list. Changing it recalculates applications that have not received a final admin decision.</CardDescription>
+            <CardDescription>Students at or above this mark are approved automatically; students below it join the waiting list. Changing it recalculates applications that have not received a final admin decision.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-xl">
@@ -326,6 +337,20 @@ const AdminDashboard = () => {
               <Button onClick={saveCutoff} disabled={savingCutoff}>{savingCutoff ? "Saving..." : "Save Marks"}</Button>
             </div>
             <p className="text-sm text-muted-foreground mt-3">Current minimum: male {cutoff}, female {femaleCutoff}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Psychometric Exam Schedule</CardTitle>
+            <CardDescription>Students can only start the exam between these dates and times. Leave empty for no limit.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 max-w-2xl">
+              <div className="space-y-2 flex-1"><Label htmlFor="exam-start">Opens</Label><Input id="exam-start" type="datetime-local" value={examStart} onChange={(e) => setExamStart(e.target.value)} /></div>
+              <div className="space-y-2 flex-1"><Label htmlFor="exam-end">Closes</Label><Input id="exam-end" type="datetime-local" value={examEnd} onChange={(e) => setExamEnd(e.target.value)} /></div>
+              <Button onClick={saveExamWindow}>Save Schedule</Button>
+            </div>
           </CardContent>
         </Card>
 

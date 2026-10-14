@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       admission_settings: {
         Row: {
+          exam_end: string | null
+          exam_start: string | null
           female_grade_12_cutoff: number
           grade_12_cutoff: number
           id: boolean
@@ -23,6 +25,8 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          exam_end?: string | null
+          exam_start?: string | null
           female_grade_12_cutoff?: number
           grade_12_cutoff?: number
           id?: boolean
@@ -30,6 +34,8 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          exam_end?: string | null
+          exam_start?: string | null
           female_grade_12_cutoff?: number
           grade_12_cutoff?: number
           id?: boolean
@@ -180,6 +186,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      exam_exit_events: {
+        Row: {
+          created_at: string
+          department: string | null
+          id: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          id?: string
+          reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          id?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       exam_forms: {
         Row: {
@@ -421,6 +451,13 @@ export type Database = {
         Returns: string
       }
       generate_student_code: { Args: never; Returns: string }
+      get_exam_window: {
+        Args: never
+        Returns: {
+          exam_end: string
+          exam_start: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

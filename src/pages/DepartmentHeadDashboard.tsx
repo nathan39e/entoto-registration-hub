@@ -51,7 +51,14 @@ const DepartmentHeadDashboard = () => {
     setExams(data ?? []);
   };
 
+  const [exits, setExits] = useState<any[]>([]);
+  const loadExits = async (d: string) => {
+    const { data } = await supabase.from("exam_exit_events").select("*").eq("department", d).order("created_at", { ascending: false }).limit(50);
+    setExits(data ?? []);
+  };
+
   useEffect(() => {
+    let timer: number | undefined;
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return navigate("/auth");
@@ -60,8 +67,11 @@ const DepartmentHeadDashboard = () => {
       setDept(h.department);
       await loadStudents(h.department);
       await loadExams(h.department);
+      await loadExits(h.department);
       setLoading(false);
+      timer = window.setInterval(() => loadExits(h.department), 30000);
     })();
+    return () => { if (timer) window.clearInterval(timer); };
   }, [navigate]);
 
   const choiceOf = (s: any) => [s.first_choice, s.second_choice, s.third_choice][(s.placement?.choice_index ?? 1) - 1] ?? s.first_choice;
@@ -108,6 +118,19 @@ const DepartmentHeadDashboard = () => {
           <Button className="mt-3" onClick={() => navigate("/staff/apply")}>Register a Student</Button>
           <p className="text-muted-foreground">Students who chose {dept} as their first choice</p>
         </div>
+
+        {exits.length > 0 && (
+          <Card className="border-destructive">
+            <CardHeader><CardTitle className="text-destructive">Exam Exit Alerts</CardTitle>
+              <CardDescription>Students who left the psychometric exam page after starting it.</CardDescription></CardHeader>
+            <CardContent className="space-y-1 text-sm">
+              {exits.slice(0, 20).map((x) => {
+                const s = students.find((st) => st.user_id === x.user_id);
+                return <p key={x.id}><span className="font-semibold">{s?.profile?.full_name ?? "Student"}</span> ({s?.profile?.student_code ?? "-"}) — {x.reason} — {new Date(x.created_at).toLocaleString()}</p>;
+              })}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card><CardHeader className="pb-2"><CardDescription>Total students</CardDescription><CardTitle className="text-3xl text-primary">{students.length}</CardTitle></CardHeader></Card>

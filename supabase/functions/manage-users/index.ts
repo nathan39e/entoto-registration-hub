@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     if (!user) return json({ error: "Not signed in" }, 401);
     const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", user.id);
     const isAdmin = roles?.some((r) => r.role === "admin");
-    const isSub = roles?.some((r) => r.role === "sub_admin");
+    const isSub = roles?.some((r) => r.role === "sub_admin" || r.role === "department_head");
     const body = await req.json();
     const action = body.action;
 

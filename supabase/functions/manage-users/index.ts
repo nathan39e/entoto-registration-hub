@@ -51,11 +51,20 @@ Deno.serve(async (req) => {
       const password = typeof body.password === "string" ? body.password : "";
       if (!full_name || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8)
         return json({ error: "Name, valid email and a password of at least 8 characters are required." }, 400);
+      let id: string;
       const { data: created, error } = await admin.auth.admin.createUser({
         email, password, email_confirm: true, user_metadata: { full_name },
       });
-      if (error) return json({ error: error.message }, 400);
-      const id = created.user.id;
+      if (error) {
+        // A previous attempt may have created the account but failed later (e.g. upload). Let the same staff retry.
+        const { data: prev } = await admin.from("profiles").select("id, registered_by").ilike("email", email).maybeSingle();
+        const { data: prevApp } = prev ? await admin.from("applications").select("id").eq("user_id", prev.id).maybeSingle() : { data: null };
+        if (!prev || prevApp || (prev.registered_by && prev.registered_by !== user.id && !isAdmin))
+          return json({ error: /already/i.test(error.message) ? "A student with this email already exists." : error.message }, 400);
+        id = prev.id;
+        await admin.auth.admin.updateUserById(id, { password, user_metadata: { full_name } });
+        await admin.from("profiles").update({ full_name }).eq("id", id);
+      } else id = created.user.id;
       await admin.from("profiles").update({ phone: str(body.phone, 20) || null, registered_by: user.id, exam_required: true }).eq("id", id);
       const choices = [str(body.choice1), str(body.choice2), str(body.choice3)];
       if (choices.every(Boolean)) {

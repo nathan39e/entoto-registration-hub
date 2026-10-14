@@ -31,16 +31,29 @@ Deno.serve(async (req) => {
     if (typeof image !== "string" || !image.startsWith("data:image/") || image.length > 8_000_000) return json({ error: "Please upload a valid image (max ~5MB)." }, 400);
 
     const properties = Object.fromEntries(FIELDS.map((f) => [f, { type: ["string", "null"] }]));
+    const system = `You are an expert at reading HANDWRITTEN paper forms (English and Amharic script, often scanned or photographed at an angle, with stamps and ruled lines).
+The image is the APPLICATION FORM of Tafari Makonnen Polytechnic College. Read it carefully line by line, matching each printed label to the handwriting written next to or under it.
+Rules:
+- Name = firstName, Father's Name = middleName, Grand Father's Name = lastName. Same pattern for the emergency contact and the mother's names.
+- If a value is written in Amharic, transliterate names to Latin letters (e.g. "አበበ" -> "Abebe"); keep places in their common English spelling.
+- gender / emergencySex: "male" or "female" (M/ወንድ = male, F/ሴት = female).
+- dob: YYYY-MM-DD. If the date is clearly Ethiopian calendar (E.C.), convert to Gregorian (add ~7-8 years).
+- phone numbers: digits only, keep a leading +251 or 09.
+- disability: "yes" or "no". stream: "natural" or "social". program: "Regular", "Extension" or "Weekend" (a ticked box counts).
+- grade12 = ESLCE / national exam result, keep decimals like 150.32. Subject marks and years as numbers only.
+- dept1..3 = department choices in order; occupation1..3 = the occupation/sub field written next to each.
+- Handwritten digits: distinguish 1/7, 4/9, 5/6, 0/6 using the surrounding context.
+- Use null for empty, crossed out, or truly unreadable fields. Do not invent values.`;
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3.1-pro-preview",
         messages: [
-          { role: "system", content: "You read a filled paper APPLICATION FORM of Tafari Makonnen Polytechnic College (handwritten). Extract every filled value. Name = firstName, Father's Name = middleName, Grand Father's Name = lastName. gender: 'male' or 'female'. dob as YYYY-MM-DD if possible. disability: 'yes' or 'no'. stream: 'natural' or 'social'. program: 'Regular', 'Extension' or 'Weekend'. grade12 = ESLCE Result. Subject marks as numbers. Use null for empty or unreadable fields. Never guess." },
-          { role: "user", content: [{ type: "text", text: "Extract the form values." }, { type: "image_url", image_url: { url: image } }] },
+          { role: "system", content: system },
+          { role: "user", content: [{ type: "text", text: "Read every handwritten value on this form and report it with the report_form tool." }, { type: "image_url", image_url: { url: image } }] },
         ],
-        tools: [{ type: "function", function: { name: "report_form", parameters: { type: "object", properties, required: FIELDS } } }],
+        tools: [{ type: "function", function: { name: "report_form", description: "Report the values read from the form", parameters: { type: "object", properties, required: FIELDS } } }],
         tool_choice: { type: "function", function: { name: "report_form" } },
       }),
     });

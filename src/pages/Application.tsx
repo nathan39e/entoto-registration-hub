@@ -405,7 +405,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", setResultDoc, "The result on this document must match the result you entered.")}
                       {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.")}
                       {fileInput("transcript", "Transcript (Grade 9–12)", "image/*,application/pdf", setTranscript, "Image or PDF, under 5MB.")}
-                      {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, "Scan or photo of the completed paper form — image or PDF, under 5MB.")}
+                      {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, manualForm ? `Attached: ${manualForm.name}` : "Scan or photo of the completed paper form — image or PDF, under 5MB.")}
                     </div>
                   </div>
 

@@ -41,6 +41,9 @@ const toDataUrl = (f: File) => new Promise<string>((res, rej) => {
 const MAX = 5 * 1024 * 1024;
 const isImg = (f: File) => f.type.startsWith("image/");
 const isDoc = (f: File) => isImg(f) || f.type === "application/pdf";
+const SUBJECTS: [string, string][] = [["english", "English"], ["physics", "Physics"], ["civics", "Civics"], ["geography", "Geography"], ["naturalMath", "Natural Math"], ["biology", "Biology"], ["socialMath", "Social Math"], ["economics", "Economics"], ["aptitude", "Aptitude"], ["chemistry", "Chemistry"], ["history", "History"]];
+const EXTRA_KEYS = ["emergencySex", "motherFirstName", "motherMiddleName", "motherLastName", "emergencyRegion", "emergencySubcity", "emergencyWereda", "emergencyHouseNumber", "disability", "disabilityDetail", "highSchoolName", "grade8Result", "grade8Year", "stream", "receiptNo", ...SUBJECTS.map(([k]) => k)];
+const ageFrom = (dob?: string) => { if (!dob) return ""; const d = new Date(dob); if (isNaN(+d)) return ""; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a >= 0 ? String(a) : ""; };
 
 const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const navigate = useNavigate();
@@ -70,7 +73,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       const { data: settings } = await supabase.from("admission_settings").select("grade_12_cutoff, female_grade_12_cutoff").eq("id", true).maybeSingle();
       setCutoffs({ male: Number(settings?.grade_12_cutoff ?? 160), female: Number(settings?.female_grade_12_cutoff ?? 150) });
       if (staffMode) {
-        const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin"]);
+        const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin", "department_head"]);
         if (!r?.length) { toast.error("Access denied"); return navigate("/"); }
         setChecking(false); return;
       }
@@ -82,6 +85,33 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       setChecking(false);
     });
   }, [navigate, staffMode]);
+
+  const [reading, setReading] = useState(false);
+  const autofill = async (f: File | null) => {
+    if (!f) return;
+    if (!isImg(f) || f.size > MAX) return toast.error("Please upload a photo (JPG/PNG) of the form under 5MB.");
+    setReading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("read-form", { body: { image: await toDataUrl(f) } });
+      if (error || data?.error) throw new Error(data?.error || "Could not read the form");
+      const x: Record<string, string> = data.fields ?? {};
+      const matchDept = (s?: string) => s ? DEPARTMENTS.find((d) => d.toLowerCase().includes(s.toLowerCase().split(" ")[0]) || s.toLowerCase().includes(d.toLowerCase().split(" ")[0])) : undefined;
+      setV((p) => {
+        const n: Record<string, string> = { ...p };
+        for (const [k, val] of Object.entries(x)) if (!k.startsWith("dept") && !k.startsWith("occupation")) n[k] = val;
+        if (x.gender) n.gender = x.gender.toLowerCase().startsWith("f") ? "female" : "male";
+        if (x.program) n.program = ["Regular", "Extension", "Weekend"].find((o) => o.toLowerCase() === x.program.toLowerCase()) ?? "";
+        if (x.emergencyFirstName && !p.emergencyName) n.emergencyName = [x.emergencyFirstName, x.emergencyMiddleName, x.emergencyLastName].filter(Boolean).join(" ");
+        if (x.emergencyRegion && !p.emergencyAddress) n.emergencyAddress = [x.emergencyRegion, x.emergencySubcity, x.emergencyWereda, x.emergencyHouseNumber].filter(Boolean).join(", ");
+        if (x.kebele) n.kebele = x.kebele.padStart(2, "0");
+        [1, 2, 3].forEach((i) => { const d = matchDept(x[`dept${i}`]); if (d) { n[`choice${i}`] = d; n[`field${i}`] = ""; } });
+        return n;
+      });
+      toast.success("Form read. Please check every field, then pick the sub fields and upload the documents.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not read the form");
+    } finally { setReading(false); }
+  };
 
   const inEthiopia = v.country?.trim().toLowerCase() === "ethiopia";
   const inAddis = inEthiopia && v.city === "Addis Ababa";
@@ -155,8 +185,9 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       };
 
       const { choice1: c1, choice2: c2, choice3: c3, field1, field2, field3, grade12, ...personal } = parsed.data;
+      const form_details = Object.fromEntries(EXTRA_KEYS.filter((k) => (v[k] ?? "").trim()).map((k) => [k, v[k].trim().slice(0, 300)]));
       const appRow = {
-        grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: personal, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
+        grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: { ...personal, ...form_details }, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
         first_choice: `${c1} — ${field1}`, second_choice: `${c2} — ${field2}`, third_choice: `${c3} — ${field3}`,
         result_doc_path: path,
         documents,

@@ -41,6 +41,9 @@ const toDataUrl = (f: File) => new Promise<string>((res, rej) => {
 const MAX = 5 * 1024 * 1024;
 const isImg = (f: File) => f.type.startsWith("image/");
 const isDoc = (f: File) => isImg(f) || f.type === "application/pdf";
+const SUBJECTS: [string, string][] = [["english", "English"], ["physics", "Physics"], ["civics", "Civics"], ["geography", "Geography"], ["naturalMath", "Natural Math"], ["biology", "Biology"], ["socialMath", "Social Math"], ["economics", "Economics"], ["aptitude", "Aptitude"], ["chemistry", "Chemistry"], ["history", "History"]];
+const EXTRA_KEYS = ["emergencySex", "motherFirstName", "motherMiddleName", "motherLastName", "emergencyRegion", "emergencySubcity", "emergencyWereda", "emergencyHouseNumber", "disability", "disabilityDetail", "highSchoolName", "grade8Result", "grade8Year", "stream", "receiptNo", ...SUBJECTS.map(([k]) => k)];
+const ageFrom = (dob?: string) => { if (!dob) return ""; const d = new Date(dob); if (isNaN(+d)) return ""; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a >= 0 ? String(a) : ""; };
 
 const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const navigate = useNavigate();
@@ -70,7 +73,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       const { data: settings } = await supabase.from("admission_settings").select("grade_12_cutoff, female_grade_12_cutoff").eq("id", true).maybeSingle();
       setCutoffs({ male: Number(settings?.grade_12_cutoff ?? 160), female: Number(settings?.female_grade_12_cutoff ?? 150) });
       if (staffMode) {
-        const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin"]);
+        const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin", "department_head"]);
         if (!r?.length) { toast.error("Access denied"); return navigate("/"); }
         setChecking(false); return;
       }
@@ -82,6 +85,33 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       setChecking(false);
     });
   }, [navigate, staffMode]);
+
+  const [reading, setReading] = useState(false);
+  const autofill = async (f: File | null) => {
+    if (!f) return;
+    if (!isImg(f) || f.size > MAX) return toast.error("Please upload a photo (JPG/PNG) of the form under 5MB.");
+    setReading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("read-form", { body: { image: await toDataUrl(f) } });
+      if (error || data?.error) throw new Error(data?.error || "Could not read the form");
+      const x: Record<string, string> = data.fields ?? {};
+      const matchDept = (s?: string) => s ? DEPARTMENTS.find((d) => d.toLowerCase().includes(s.toLowerCase().split(" ")[0]) || s.toLowerCase().includes(d.toLowerCase().split(" ")[0])) : undefined;
+      setV((p) => {
+        const n: Record<string, string> = { ...p };
+        for (const [k, val] of Object.entries(x)) if (!k.startsWith("dept") && !k.startsWith("occupation")) n[k] = val;
+        if (x.gender) n.gender = x.gender.toLowerCase().startsWith("f") ? "female" : "male";
+        if (x.program) n.program = ["Regular", "Extension", "Weekend"].find((o) => o.toLowerCase() === x.program.toLowerCase()) ?? "";
+        if (x.emergencyFirstName && !p.emergencyName) n.emergencyName = [x.emergencyFirstName, x.emergencyMiddleName, x.emergencyLastName].filter(Boolean).join(" ");
+        if (x.emergencyRegion && !p.emergencyAddress) n.emergencyAddress = [x.emergencyRegion, x.emergencySubcity, x.emergencyWereda, x.emergencyHouseNumber].filter(Boolean).join(", ");
+        if (x.kebele) n.kebele = x.kebele.padStart(2, "0");
+        [1, 2, 3].forEach((i) => { const d = matchDept(x[`dept${i}`]); if (d) { n[`choice${i}`] = d; n[`field${i}`] = ""; } });
+        return n;
+      });
+      toast.success("Form read. Please check every field, then pick the sub fields and upload the documents.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not read the form");
+    } finally { setReading(false); }
+  };
 
   const inEthiopia = v.country?.trim().toLowerCase() === "ethiopia";
   const inAddis = inEthiopia && v.city === "Addis Ababa";
@@ -155,8 +185,9 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       };
 
       const { choice1: c1, choice2: c2, choice3: c3, field1, field2, field3, grade12, ...personal } = parsed.data;
+      const form_details = Object.fromEntries(EXTRA_KEYS.filter((k) => (v[k] ?? "").trim()).map((k) => [k, v[k].trim().slice(0, 300)]));
       const appRow = {
-        grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: personal, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
+        grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: { ...personal, ...form_details }, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
         first_choice: `${c1} — ${field1}`, second_choice: `${c2} — ${field2}`, third_choice: `${c3} — ${field3}`,
         result_doc_path: path,
         documents,
@@ -214,6 +245,21 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         : <div className="text-sm text-muted-foreground self-end pb-2">Choose a department first</div>}
     </div>
   );
+  const opt = (id: string, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} value={v[id] ?? ""} maxLength={300} onChange={(e) => set(id)(e.target.value)} {...props} />
+    </div>
+  );
+  const optPick = (id: string, label: string, options: string[]) => (
+    <div>
+      <Label>{label}</Label>
+      <Select value={v[id] ?? ""} onValueChange={set(id)}>
+        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+        <SelectContent>{options.map((o) => <SelectItem key={o} value={o} className="capitalize">{o[0].toUpperCase() + o.slice(1)}</SelectItem>)}</SelectContent>
+      </Select>
+    </div>
+  );
   const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string) => (
     <div>
       <Label htmlFor={id}>{label} *</Label>
@@ -250,6 +296,14 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                 {staffMode && newCode && <p className="text-sm mt-2">Last registered student code: <b className="text-primary">{newCode}</b></p>}
               </CardHeader>
               <CardContent>
+                {staffMode && (
+                  <div className="mb-8 rounded-lg border border-dashed border-primary/50 bg-primary/5 p-4">
+                    <Label htmlFor="formPhoto" className="font-semibold">Fill from a photo of the paper form</Label>
+                    <Input id="formPhoto" type="file" accept="image/*" disabled={reading} className="mt-2"
+                      onChange={(e) => { autofill(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+                    <p className="text-xs text-muted-foreground mt-1">{reading ? "Reading the form..." : "Upload a clear photo of the filled application form. Fields are filled automatically — check them before submitting."}</p>
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="space-y-8">
                   <div>
                     <h3 className="text-xl font-semibold mb-4">Personal Information</h3>
@@ -261,6 +315,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {staffMode && field("password", "Student Password (min 8)", { type: "password", minLength: 8, autoComplete: "new-password" })}
                       {field("phone", "Phone Number", { type: "tel", placeholder: "+2519..." })}
                       {field("dob", "Date of Birth", { type: "date" })}
+                      <div><Label>Age</Label><Input value={ageFrom(v.dob)} readOnly placeholder="From date of birth" /></div>
                       <div>
                         <Label>Gender *</Label>
                         <Select value={v.gender} onValueChange={set("gender")}>
@@ -316,9 +371,32 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                     <div className="mt-4">
                       {field("emergencyAddress", "Address", { maxLength: 300, placeholder: "City, sub city, wereda, house number" })}
                     </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                      {optPick("emergencySex", "Contact's Sex", ["male", "female"])}
+                      {opt("emergencyRegion", "Region")}
+                      {opt("emergencySubcity", "Sub City")}
+                      {opt("emergencyWereda", "Woreda")}
+                      {opt("emergencyHouseNumber", "House No")}
+                      {opt("motherFirstName", "Mother's Name")}
+                      {opt("motherMiddleName", "Mother's Middle Name")}
+                      {opt("motherLastName", "Mother's Last Name")}
+                    </div>
                   </div>
 
                   <div>
+                    <h3 className="text-xl font-semibold mb-4">Additional Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      {optPick("disability", "Physical Disability", ["yes", "no"])}
+                      {v.disability === "yes" && <div className="md:col-span-2">{opt("disabilityDetail", "Describe the problem")}</div>}
+                      {opt("highSchoolName", "High School Name")}
+                      {opt("grade8Result", "Grade 8 Result")}
+                      {opt("grade8Year", "Grade 8 Completion Year", { inputMode: "numeric" })}
+                      {optPick("stream", "Secondary School Stream", ["natural", "social"])}
+                    </div>
+                    <p className="text-sm font-medium mb-2">Grade 12 Subject Marks</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                      {SUBJECTS.map(([k, l]) => <div key={k}>{opt(k, l, { inputMode: "decimal" })}</div>)}
+                    </div>
                     <h3 className="text-xl font-semibold mb-4">Academic Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {field("grade12", "Grade 12 Exit Exam Result", { type: "text", inputMode: "decimal", pattern: "[0-9]{1,3}([.,][0-9]{1,2})?", title: "Enter a mark like 150.32", placeholder: "e.g., 150.32" })}
@@ -340,6 +418,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                     </div>
                   </div>
 
+                  <div className="max-w-sm">{opt("receiptNo", "Receipt No")}</div>
                   <Button type="submit" size="lg" className="w-full" disabled={loading}>
                     {loading ? "Verifying & submitting..." : "Submit Application"}
                   </Button>

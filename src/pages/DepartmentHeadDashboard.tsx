@@ -105,6 +105,7 @@ const DepartmentHeadDashboard = () => {
       <main className="flex-grow container mx-auto px-4 py-8 space-y-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">{dept} Department</h1>
+          <Button className="mt-3" onClick={() => navigate("/staff/apply")}>Register a Student</Button>
           <p className="text-muted-foreground">Students who chose {dept} as their first choice</p>
         </div>
 

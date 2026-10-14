@@ -264,7 +264,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string) => (
     <div>
       <Label htmlFor={id}>{label} *</Label>
-      <Input id={id} type="file" accept={accept} required onChange={(e) => onPick(e.target.files?.[0] ?? null)} />
+      <Input id={id} type="file" accept={accept} required={!(id === "manualForm" && manualForm)} onChange={(e) => onPick(e.target.files?.[0] ?? manualForm)} />
       <p className="text-xs text-muted-foreground mt-1">{hint}</p>
     </div>
   );

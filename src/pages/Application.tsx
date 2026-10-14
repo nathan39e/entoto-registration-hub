@@ -107,7 +107,8 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         [1, 2, 3].forEach((i) => { const d = matchDept(x[`dept${i}`]); if (d) { n[`choice${i}`] = d; n[`field${i}`] = ""; } });
         return n;
       });
-      toast.success("Form read. Please check every field, then pick the sub fields and upload the documents.");
+      setManualForm(f);
+      toast.success("Form read. The photo is saved as the student's Manual Form. Check every field, then pick the sub fields and upload the other documents.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not read the form");
     } finally { setReading(false); }

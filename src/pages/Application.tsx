@@ -107,7 +107,8 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         [1, 2, 3].forEach((i) => { const d = matchDept(x[`dept${i}`]); if (d) { n[`choice${i}`] = d; n[`field${i}`] = ""; } });
         return n;
       });
-      toast.success("Form read. Please check every field, then pick the sub fields and upload the documents.");
+      setManualForm(f);
+      toast.success("Form read. The photo is saved as the student's Manual Form. Check every field, then pick the sub fields and upload the other documents.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not read the form");
     } finally { setReading(false); }
@@ -263,7 +264,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string) => (
     <div>
       <Label htmlFor={id}>{label} *</Label>
-      <Input id={id} type="file" accept={accept} required onChange={(e) => onPick(e.target.files?.[0] ?? null)} />
+      <Input id={id} type="file" accept={accept} required={!(id === "manualForm" && manualForm)} onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
       <p className="text-xs text-muted-foreground mt-1">{hint}</p>
     </div>
   );
@@ -404,7 +405,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", setResultDoc, "The result on this document must match the result you entered.")}
                       {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.")}
                       {fileInput("transcript", "Transcript (Grade 9–12)", "image/*,application/pdf", setTranscript, "Image or PDF, under 5MB.")}
-                      {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, "Scan or photo of the completed paper form — image or PDF, under 5MB.")}
+                      {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, manualForm ? `Attached: ${manualForm.name}` : "Scan or photo of the completed paper form — image or PDF, under 5MB.")}
                     </div>
                   </div>
 

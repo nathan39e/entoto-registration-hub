@@ -281,6 +281,14 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                 {staffMode && newCode && <p className="text-sm mt-2">Last registered student code: <b className="text-primary">{newCode}</b></p>}
               </CardHeader>
               <CardContent>
+                {staffMode && (
+                  <div className="mb-8 rounded-lg border border-dashed border-primary/50 bg-primary/5 p-4">
+                    <Label htmlFor="formPhoto" className="font-semibold">Fill from a photo of the paper form</Label>
+                    <Input id="formPhoto" type="file" accept="image/*" disabled={reading} className="mt-2"
+                      onChange={(e) => { autofill(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+                    <p className="text-xs text-muted-foreground mt-1">{reading ? "Reading the form..." : "Upload a clear photo of the filled application form. Fields are filled automatically — check them before submitting."}</p>
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="space-y-8">
                   <div>
                     <h3 className="text-xl font-semibold mb-4">Personal Information</h3>
@@ -292,6 +300,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {staffMode && field("password", "Student Password (min 8)", { type: "password", minLength: 8, autoComplete: "new-password" })}
                       {field("phone", "Phone Number", { type: "tel", placeholder: "+2519..." })}
                       {field("dob", "Date of Birth", { type: "date" })}
+                      <div><Label>Age</Label><Input value={ageFrom(v.dob)} readOnly placeholder="From date of birth" /></div>
                       <div>
                         <Label>Gender *</Label>
                         <Select value={v.gender} onValueChange={set("gender")}>
@@ -350,6 +359,19 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                   </div>
 
                   <div>
+                    <h3 className="text-xl font-semibold mb-4">Additional Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                      {optPick("disability", "Physical Disability", ["yes", "no"])}
+                      {v.disability === "yes" && <div className="md:col-span-2">{opt("disabilityDetail", "Describe the problem")}</div>}
+                      {opt("highSchoolName", "High School Name")}
+                      {opt("grade8Result", "Grade 8 Result")}
+                      {opt("grade8Year", "Grade 8 Completion Year", { inputMode: "numeric" })}
+                      {optPick("stream", "Secondary School Stream", ["natural", "social"])}
+                    </div>
+                    <p className="text-sm font-medium mb-2">Grade 12 Subject Marks</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                      {SUBJECTS.map(([k, l]) => <div key={k}>{opt(k, l, { inputMode: "decimal" })}</div>)}
+                    </div>
                     <h3 className="text-xl font-semibold mb-4">Academic Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {field("grade12", "Grade 12 Exit Exam Result", { type: "text", inputMode: "decimal", pattern: "[0-9]{1,3}([.,][0-9]{1,2})?", title: "Enter a mark like 150.32", placeholder: "e.g., 150.32" })}
@@ -371,6 +393,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                     </div>
                   </div>
 
+                  <div className="max-w-sm">{opt("receiptNo", "Receipt No")}</div>
                   <Button type="submit" size="lg" className="w-full" disabled={loading}>
                     {loading ? "Verifying & submitting..." : "Submit Application"}
                   </Button>

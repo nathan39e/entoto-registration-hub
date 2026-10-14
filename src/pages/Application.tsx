@@ -245,6 +245,21 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         : <div className="text-sm text-muted-foreground self-end pb-2">Choose a department first</div>}
     </div>
   );
+  const opt = (id: string, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      <Input id={id} value={v[id] ?? ""} maxLength={300} onChange={(e) => set(id)(e.target.value)} {...props} />
+    </div>
+  );
+  const optPick = (id: string, label: string, options: string[]) => (
+    <div>
+      <Label>{label}</Label>
+      <Select value={v[id] ?? ""} onValueChange={set(id)}>
+        <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+        <SelectContent>{options.map((o) => <SelectItem key={o} value={o} className="capitalize">{o[0].toUpperCase() + o.slice(1)}</SelectItem>)}</SelectContent>
+      </Select>
+    </div>
+  );
   const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string) => (
     <div>
       <Label htmlFor={id}>{label} *</Label>
@@ -355,6 +370,16 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                     </div>
                     <div className="mt-4">
                       {field("emergencyAddress", "Address", { maxLength: 300, placeholder: "City, sub city, wereda, house number" })}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                      {optPick("emergencySex", "Contact's Sex", ["male", "female"])}
+                      {opt("emergencyRegion", "Region")}
+                      {opt("emergencySubcity", "Sub City")}
+                      {opt("emergencyWereda", "Woreda")}
+                      {opt("emergencyHouseNumber", "House No")}
+                      {opt("motherFirstName", "Mother's Name")}
+                      {opt("motherMiddleName", "Mother's Middle Name")}
+                      {opt("motherLastName", "Mother's Last Name")}
                     </div>
                   </div>
 

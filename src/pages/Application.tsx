@@ -108,7 +108,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         return n;
       });
       setManualForm(f);
-      toast.success("Form read. The photo is saved as the student's Manual Form. Check every field, then pick the sub fields and upload the other documents.");
+      toast.success("Form read. The photo is saved as the student's Manual Form. Check every field, then pick the occupations and upload the other documents.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not read the form");
     } finally { setReading(false); }
@@ -242,7 +242,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const deptSelect = (n: number, label: string) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border rounded-lg p-4">
       {pick(`choice${n}`, `${label} — Department`, DEPARTMENTS, "Select department")}
-      {v[`choice${n}`] ? pick(`field${n}`, "Sub Field", DEPARTMENT_FIELDS[v[`choice${n}`]] ?? [], "Select sub field")
+      {v[`choice${n}`] ? pick(`field${n}`, "Occupation", DEPARTMENT_FIELDS[v[`choice${n}`]] ?? [], "Select occupation")
         : <div className="text-sm text-muted-foreground self-end pb-2">Choose a department first</div>}
     </div>
   );

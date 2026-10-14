@@ -71,6 +71,7 @@ const DepartmentHeadDashboard = () => {
       setLoading(false);
       timer = window.setInterval(() => loadExits(h.department), 30000);
     })();
+    return () => { if (timer) window.clearInterval(timer); };
   }, [navigate]);
 
   const choiceOf = (s: any) => [s.first_choice, s.second_choice, s.third_choice][(s.placement?.choice_index ?? 1) - 1] ?? s.first_choice;

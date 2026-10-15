@@ -19,6 +19,7 @@ import ExamFormsTab from "@/components/admin/ExamFormsTab";
 import SubAdminsTab from "@/components/admin/SubAdminsTab";
 import DepartmentHeadsTab from "@/components/admin/DepartmentHeadsTab";
 import NewsTab from "@/components/admin/NewsTab";
+import StudentQRScanner from "@/components/StudentQRScanner";
 
 interface Application {
   id: string;
@@ -353,6 +354,8 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        <div className="mb-8"><StudentQRScanner /></div>
 
         <Tabs defaultValue="students" className="w-full">
           <TabsList className="flex flex-wrap h-auto w-full gap-1">

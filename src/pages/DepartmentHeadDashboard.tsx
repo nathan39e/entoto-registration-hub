@@ -13,6 +13,7 @@ import { DEPARTMENT_FIELDS } from "@/data/departments";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import StudentQRScanner from "@/components/StudentQRScanner";
 
 const DECISIONS: Record<string, string> = { under_review: "Under review", accepted: "Accepted", waitlisted: "Waitlisted", rejected: "Rejected" };
 
@@ -118,6 +119,8 @@ const DepartmentHeadDashboard = () => {
           <Button className="mt-3" onClick={() => navigate("/staff/apply")}>Register a Student</Button>
           <p className="text-muted-foreground">Students who chose {dept} as their first choice</p>
         </div>
+
+        {dept && <StudentQRScanner department={dept} />}
 
         {exits.length > 0 && (
           <Card className="border-destructive">

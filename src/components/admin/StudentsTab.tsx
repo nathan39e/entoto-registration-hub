@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import DocumentsZipExport from "./DocumentsZipExport";
 
 type Profile = { id: string; full_name: string; email: string; phone: string | null; student_code: string; created_at: string; registered_by: string | null };
 
@@ -118,7 +119,7 @@ const StudentsTab = () => {
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>Registered Students ({students.length})</CardTitle>
-            <div className="flex gap-2"><Button variant="outline" onClick={() => navigate("/staff/apply")}>Register Student</Button><Button onClick={() => setPickOpen(true)}>Download Excel</Button></div>
+            <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => navigate("/staff/apply")}>Register Student</Button><DocumentsZipExport /><Button onClick={() => setPickOpen(true)}>Download Excel</Button></div>
           </div>
           <CardDescription>Search by name, email or student code. The Excel file includes the application form and document links.</CardDescription>
           <div className="flex flex-wrap items-end gap-3 mt-2">

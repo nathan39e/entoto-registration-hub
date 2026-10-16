@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import DocumentsZipExport from "@/components/admin/DocumentsZipExport";
 
 
 const DOCS: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript"], ["manualForm", "Manual Form"]];
@@ -60,7 +61,10 @@ const StaffDashboard = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8 space-y-6">
-        <h1 className="text-4xl font-bold">Staff Dashboard</h1>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-4xl font-bold">Staff Dashboard</h1>
+          <DocumentsZipExport />
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Check a Student</CardTitle>

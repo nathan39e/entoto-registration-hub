@@ -33,10 +33,10 @@ const DocumentsZipExport = () => {
   const build = async () => {
     setBusy(true); setResult(null); setDone(0); setTotal(0);
     try {
-      let q = supabase.from("applications").select("user_id, first_choice, documents, result_doc_path, created_at");
+      let q = supabase.from("applications").select("user_id, first_choice, documents, result_doc_path, submitted_at");
       if (dept !== "all") q = q.eq("first_choice", dept);
-      if (from) q = q.gte("created_at", from);
-      if (to) q = q.lte("created_at", `${to}T23:59:59`);
+      if (from) q = q.gte("submitted_at", from);
+      if (to) q = q.lte("submitted_at", `${to}T23:59:59`);
       const { data: apps, error } = await q;
       if (error) throw error;
       if (!apps?.length) { toast.error("No applications match this filter."); return; }

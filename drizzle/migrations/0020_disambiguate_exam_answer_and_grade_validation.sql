@@ -1,0 +1,19 @@
+CREATE OR REPLACE FUNCTION public.save_portal_exam_answers(_attempt uuid,_answers jsonb,_submit boolean) RETURNS public.portal_exam_attempts LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE a public.portal_exam_attempts; question_item jsonb; k text; val jsonb; BEGIN
+ SELECT * INTO a FROM public.portal_exam_attempts WHERE id=_attempt AND user_id=auth.uid() FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Attempt not found'; END IF; IF a.submitted_at IS NOT NULL THEN RAISE EXCEPTION 'Exam already submitted'; END IF;
+ IF now()>=a.deadline THEN UPDATE public.portal_exam_attempts SET submitted_at=a.deadline WHERE id=a.id RETURNING * INTO a; RETURN a; END IF;
+ IF jsonb_typeof(_answers) IS DISTINCT FROM 'object' OR octet_length(_answers::text)>600000 THEN RAISE EXCEPTION 'Invalid answers'; END IF;
+ FOR k,val IN SELECT key,value FROM jsonb_each(_answers) LOOP
+ SELECT value INTO question_item FROM jsonb_array_elements(a.questions) WHERE value->>'id'=k; IF NOT FOUND OR jsonb_typeof(val)<>'string' OR length(val#>>'{}')>5000 THEN RAISE EXCEPTION 'Invalid answer'; END IF;
+ IF question_item->>'type'='choice' AND (val#>>'{}')<>'' AND NOT EXISTS(SELECT 1 FROM jsonb_array_elements_text(question_item->'options') v WHERE v=val#>>'{}') THEN RAISE EXCEPTION 'Invalid choice answer'; END IF; END LOOP;
+ IF _submit AND EXISTS(SELECT 1 FROM jsonb_array_elements(a.questions) AS question WHERE (question->>'required')::boolean AND length(trim(COALESCE(_answers->>(question->>'id'),'')))=0) THEN RAISE EXCEPTION 'Answer all required questions'; END IF;
+ UPDATE public.portal_exam_attempts SET answers=_answers,submitted_at=CASE WHEN _submit THEN now() ELSE NULL END WHERE id=a.id RETURNING * INTO a; RETURN a; END $$;
+CREATE OR REPLACE FUNCTION public.grade_portal_exam(_attempt uuid,_points jsonb,_feedback text,_publish boolean) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE a public.portal_exam_attempts; question_item jsonb; n numeric; total numeric:=0; maximum numeric:=0; BEGIN
+ SELECT * INTO a FROM public.portal_exam_attempts WHERE id=_attempt AND department=public.head_department(auth.uid()) FOR UPDATE; IF NOT FOUND THEN RAISE EXCEPTION 'Not your department attempt'; END IF;
+ IF a.submitted_at IS NULL AND now()<a.deadline THEN RAISE EXCEPTION 'Student has not submitted'; END IF; IF a.submitted_at IS NULL THEN UPDATE public.portal_exam_attempts SET submitted_at=a.deadline WHERE id=a.id; END IF;
+ IF jsonb_typeof(_points) IS DISTINCT FROM 'object' THEN RAISE EXCEPTION 'Invalid grades'; END IF;
+ IF EXISTS(SELECT 1 FROM jsonb_object_keys(_points) k WHERE NOT EXISTS(SELECT 1 FROM jsonb_array_elements(a.questions) AS question WHERE question->>'id'=k)) THEN RAISE EXCEPTION 'Unknown question'; END IF;
+ FOR question_item IN SELECT value FROM jsonb_array_elements(a.questions) LOOP n:=(_points->>(question_item->>'id'))::numeric; IF n IS NULL AND _publish THEN RAISE EXCEPTION 'Grade every question'; END IF;
+ IF n IS NOT NULL AND (n<0 OR n>(question_item->>'points')::numeric OR n::text IN ('NaN','Infinity','-Infinity')) THEN RAISE EXCEPTION 'Points outside question maximum'; END IF;
+ total:=total+COALESCE(n,0); maximum:=maximum+(question_item->>'points')::numeric; END LOOP;
+ INSERT INTO public.portal_exam_grades(attempt_id,department,points,feedback,total,maximum,published,graded_by) VALUES(a.id,a.department,_points,left(COALESCE(_feedback,''),2000),total,maximum,_publish,auth.uid()) ON CONFLICT(attempt_id) DO UPDATE SET points=EXCLUDED.points,feedback=EXCLUDED.feedback,total=EXCLUDED.total,maximum=EXCLUDED.maximum,published=EXCLUDED.published,graded_by=EXCLUDED.graded_by,graded_at=now(); END $$;

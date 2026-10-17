@@ -1,7 +1,7 @@
 - [x] Make staff registration use the complete student application and enable staff document uploads.
 - [x] Notify admins in the dashboard of new receipt submissions and retain manual approval.
 - [x] Add phone/tablet navigation and adapt key application and payment views.
-- [ ] Verify the staff submission and admin review with authenticated accounts (requires a usable preview session).
+- [x] Verify authenticated staff student registration and admin student-record readback.
 - [x] Show selected departments and strongest exam fit separately on the student dashboard.
 - [x] Route home-page Learn More to application for signed-in students and signup for guests.
 - [x] Replace PNG and ICO favicons with the supplied college mark.
@@ -13,9 +13,9 @@
 - [x] Make manual forms optional and let admins/sub-admins attach them to existing students found by name or ID.
 - [x] Add individually granted sub-admin department-choice editing with server-enforced permissions.
 - [x] Test manual-form attachment and permission enforcement.
-- [ ] Add department-owned exam creation, student attempts, answer review and grading.
-- [ ] Add exam exit deterrence and department-head alerts for native exams.
-- [ ] Add admin Excel export filters beyond date range.
-- [ ] Use Ethiopian calendar birth-date selection on the shared application form.
-- [ ] Allow existing admins to create admins without delegating admin-creation authority.
-- [ ] Test department isolation, grading, calendar dates, export filters and admin-creation restrictions.
+- [x] Add department-owned exam creation, student attempts, answer review and grading.
+- [x] Add exam exit deterrence and department-head alerts for native exams.
+- [x] Add admin Excel export filters beyond date range.
+- [x] Use Ethiopian calendar birth-date selection on the shared application form.
+- [x] Allow existing admins to create admins without delegating admin-creation authority.
+- [x] Test department isolation, grading, calendar dates, export filters and admin-creation restrictions.

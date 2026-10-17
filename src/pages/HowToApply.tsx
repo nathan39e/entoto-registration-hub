@@ -3,10 +3,12 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { UserPlus, FileText, Receipt, ClipboardCheck, IdCard, PlayCircle } from "lucide-react";
+import guideVideo from "@/assets/registration-guide.mp4.asset.json";
+import { UserPlus, FileText, Receipt, ClipboardCheck, IdCard } from "lucide-react";
 
 // Paste a YouTube embed link here (e.g. https://www.youtube.com/embed/VIDEO_ID) once the tutorial is recorded.
 const TUTORIAL_VIDEO_URL = "";
+const GUIDE_VIDEO_SRC = `https://id-preview--813b587f-bf72-44da-ad24-4b4123495f66.lovable.app${guideVideo.url}`;
 
 const steps = [
   {
@@ -86,11 +88,7 @@ const HowToApply = () => (
             {TUTORIAL_VIDEO_URL ? (
               <iframe src={TUTORIAL_VIDEO_URL} title="Registration tutorial video" className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; encrypted-media; picture-in-picture" />
             ) : (
-              <div className="text-center p-6 text-muted-foreground">
-                <PlayCircle className="w-16 h-16 mx-auto mb-3 text-primary" />
-                <p className="font-medium">Tutorial video coming soon</p>
-                <p className="text-sm">Follow the steps below in the meantime.</p>
-              </div>
+              <video src={GUIDE_VIDEO_SRC} controls playsInline preload="metadata" className="w-full h-full" data-no-translate aria-label="Registration walkthrough with English and Amharic captions" />
             )}
           </div>
         </div>

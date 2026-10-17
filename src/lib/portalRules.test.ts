@@ -1,0 +1,25 @@
+import { expect, test } from "bun:test";
+import { daysInEthiopianMonth, ethiopianToISO, isoToEthiopian } from "./ethiopianCalendar";
+import { matchesStudentExport } from "./studentExport";
+import { attemptExpired, validAward } from "./portalExams";
+
+test("Ethiopian New Year maps to the correct Gregorian date", () => expect(ethiopianToISO(2019, 1, 1)).toBe("2026-09-11"));
+test("existing Gregorian birth dates convert without changing the date", () => expect(isoToEthiopian("2026-09-11")).toEqual([2019, 1, 1]));
+test("Pagumen has six days in Ethiopian leap years", () => expect(daysInEthiopianMonth(2015, 13)).toBe(6));
+test("Pagumen has five days in other years", () => expect(daysInEthiopianMonth(2016, 13)).toBe(5));
+test("invalid sixth Pagumen day is rejected", () => expect(() => ethiopianToISO(2016, 13, 6)).toThrow());
+const student = { created_at: "2026-10-17T10:00:00Z", full_name: "Exam Student", email: "student@example.test", student_code: "EPC123" };
+const app = { first_department: "ICT", program: "Regular", status: "approved" };
+const filters = { from: "2026-10-17", to: "2026-10-17", department: "All", program: "All", status: "All", search: "" };
+test("Excel date range includes both boundary days", () => expect(matchesStudentExport(student, app, filters)).toBe(true));
+test("Excel excludes registrations outside selected dates", () => expect(matchesStudentExport(student, app, { ...filters, from: "2026-10-18" })).toBe(false));
+test("Excel department filter excludes other departments", () => expect(matchesStudentExport(student, app, { ...filters, department: "Automotive Technology" })).toBe(false));
+test("Excel program filter excludes other programs", () => expect(matchesStudentExport(student, app, { ...filters, program: "Weekend" })).toBe(false));
+test("Excel status filter excludes other statuses", () => expect(matchesStudentExport(student, app, { ...filters, status: "waiting_list" })).toBe(false));
+test("Excel search filter matches permanent student codes", () => expect(matchesStudentExport(student, app, { ...filters, search: "epc123" })).toBe(true));
+test("Excel search filter excludes unmatched names", () => expect(matchesStudentExport(student, app, { ...filters, search: "unrelated" })).toBe(false));
+test("grades cannot exceed the question points", () => expect(validAward(6, 5)).toBe(false));
+test("grades can equal the question maximum", () => expect(validAward(5, 5)).toBe(true));
+test("negative grades are invalid", () => expect(validAward(-1, 5)).toBe(false));
+test("attempt deadline expires exactly at the deadline", () => expect(attemptExpired("2026-10-17T14:40:00Z", Date.parse("2026-10-17T14:40:00Z"))).toBe(true));
+test("attempt remains active before its deadline", () => expect(attemptExpired("2026-10-17T14:40:00Z", Date.parse("2026-10-17T14:39:59Z"))).toBe(false));

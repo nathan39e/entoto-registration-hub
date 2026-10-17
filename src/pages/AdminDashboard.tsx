@@ -20,6 +20,7 @@ import SubAdminsTab from "@/components/admin/SubAdminsTab";
 import DepartmentHeadsTab from "@/components/admin/DepartmentHeadsTab";
 import NewsTab from "@/components/admin/NewsTab";
 import StudentQRScanner from "@/components/StudentQRScanner";
+import AdminsTab from "@/components/admin/AdminsTab";
 
 interface Application {
   id: string;
@@ -361,6 +362,7 @@ const AdminDashboard = () => {
           <TabsList className="flex flex-wrap h-auto w-full gap-1">
             <TabsTrigger value="students" className="flex-1 min-w-[7rem]">Students</TabsTrigger>
             <TabsTrigger value="subadmins" className="flex-1 min-w-[7rem]">Sub Admins</TabsTrigger>
+            <TabsTrigger value="admins" className="flex-1 min-w-[7rem]">Admins</TabsTrigger>
             <TabsTrigger value="applications" className="flex-1 min-w-[7rem]">Applications</TabsTrigger>
             <TabsTrigger value="results" className="flex-1 min-w-[7rem]">Test Results</TabsTrigger>
             <TabsTrigger value="exams" className="flex-1 min-w-[7rem]">Exams</TabsTrigger>
@@ -371,6 +373,7 @@ const AdminDashboard = () => {
 
           <TabsContent value="students" className="mt-6"><StudentsTab /></TabsContent>
           <TabsContent value="subadmins" className="mt-6"><SubAdminsTab /></TabsContent>
+          <TabsContent value="admins" className="mt-6"><AdminsTab /></TabsContent>
           <TabsContent value="exams" className="mt-6"><ExamFormsTab /></TabsContent>
           <TabsContent value="heads" className="mt-6"><DepartmentHeadsTab /></TabsContent>
           <TabsContent value="news" className="mt-6"><NewsTab /></TabsContent>

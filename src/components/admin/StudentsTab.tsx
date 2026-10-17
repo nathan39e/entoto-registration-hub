@@ -13,6 +13,11 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import DocumentsZipExport from "./DocumentsZipExport";
 import StudentRecordActions from "@/components/StudentRecordActions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DEPARTMENTS } from "@/data/departments";
+import { matchesStudentExport } from "@/lib/studentExport";
+import { formatEthiopianDate } from "@/lib/ethiopianCalendar";
+import type { Database } from "@/integrations/supabase/types";
 
 type Profile = { id: string; full_name: string; email: string; phone: string | null; student_code: string; created_at: string; registered_by: string | null };
 
@@ -24,6 +29,10 @@ const StudentsTab = () => {
   const [busy, setBusy] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [department, setDepartment] = useState("All");
+  const [program, setProgram] = useState("All");
+  const [status, setStatus] = useState("All");
+  const [applications, setApplications] = useState<Database["public"]["Tables"]["applications"]["Row"][]>([]);
   const [docs, setDocs] = useState<{ name: string; links: [string, string][] } | null>(null);
   const navigate = useNavigate();
 
@@ -47,10 +56,13 @@ const StudentsTab = () => {
   };
 
   const load = async () => {
-    const [{ data }, { data: roles }] = await Promise.all([
+    const [{ data }, { data: roles }, apps] = await Promise.all([
       supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head"]),
+      supabase.from("applications").select("*"),
     ]);
+    if (apps.error) return toast.error("Could not load application filters");
+    setApplications(apps.data ?? []);
     const admins = new Set((roles ?? []).map((r) => r.user_id));
     setStudents(((data as Profile[]) ?? []).filter((p) => !admins.has(p.id)));
   };
@@ -71,6 +83,7 @@ const StudentsTab = () => {
   };
 
   const exportExcel = async () => {
+    if (from && to && from > to) return toast.error("End date must be on or after start date");
     toast.info("Preparing Excel file...");
     const { data: apps } = await supabase.from("applications").select("*");
     const byUser = new Map((apps ?? []).map((a: any) => [a.user_id, a]));
@@ -81,7 +94,7 @@ const StudentsTab = () => {
       return data?.signedUrl ?? "";
     };
     const rows = [];
-    const list = students.filter((s) => inRange(s.created_at));
+    const list = students.filter((s) => matchesStudentExport(s, byUser.get(s.id), { from, to, department, program, status, search: q }));
     if (!list.length) return toast.error("No students registered in that date range.");
     for (const s of list) {
       const a: any = byUser.get(s.id);
@@ -90,7 +103,7 @@ const StudentsTab = () => {
       const d = a?.documents ?? {};
       rows.push({
         "Student Code": s.student_code, "Full Name": s.full_name, Email: s.email, Phone: s.phone ?? pi.phone ?? "",
-        Program: pi.program ?? g.program ?? "", Gender: pi.gender ?? "", "Date of Birth": pi.dob ?? "",
+        Program: a?.program ?? pi.program ?? g.program ?? "", Gender: pi.gender ?? "", "Date of Birth (E.C.)": formatEthiopianDate(pi.dob ?? ""),
         Country: pi.country ?? "", Region: pi.region ?? "", City: pi.city ?? "", "Sub City": pi.subcity ?? "",
         Wereda: pi.wereda ?? "", Kebele: pi.kebele ?? "", "House No": pi.houseNumber ?? "", "Specific Place": pi.specificPlace ?? "",
         "Emergency Name": pi.emergencyName ?? "", "Emergency Relation": pi.emergencyRelation ?? "",
@@ -110,9 +123,12 @@ const StudentsTab = () => {
     XLSX.writeFile(wb, `students-${from || "start"}-to-${to || new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const s = q.trim().toLowerCase();
-  const filtered = students.filter((p) => inRange(p.created_at) && (
-    !s || p.full_name.toLowerCase().includes(s) || p.email.toLowerCase().includes(s) || p.student_code.toLowerCase().includes(s)));
+  const filtered = students.filter((p) => matchesStudentExport(p, applications.find((a) => a.user_id === p.id), { from, to, department, program, status, search: q }));
+  const filterControls = <div className="grid gap-3 sm:grid-cols-3">
+    <div><Label>Department</Label><Select value={department} onValueChange={setDepartment}><SelectTrigger aria-label="Export department"><SelectValue /></SelectTrigger><SelectContent>{["All", ...DEPARTMENTS].map((d) => <SelectItem key={d} value={d}>{d === "All" ? "All departments" : d}</SelectItem>)}</SelectContent></Select></div>
+    <div><Label>Program</Label><Select value={program} onValueChange={setProgram}><SelectTrigger aria-label="Export program"><SelectValue /></SelectTrigger><SelectContent>{["All", "Regular", "Extension", "Weekend"].map((p) => <SelectItem key={p} value={p}>{p === "All" ? "All programs" : p}</SelectItem>)}</SelectContent></Select></div>
+    <div><Label>Application status</Label><Select value={status} onValueChange={setStatus}><SelectTrigger aria-label="Export application status"><SelectValue /></SelectTrigger><SelectContent>{[["All", "All statuses"], ["approved", "Approved"], ["waiting_list", "Waiting list"], ["pending", "Document review"], ["rejected", "Rejected"], ["not_applied", "Not applied"]].map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
+  </div>;
 
   return (
     <div className="space-y-6">
@@ -130,6 +146,7 @@ const StudentsTab = () => {
             {(from || to) && <Button variant="ghost" onClick={() => { setFrom(""); setTo(""); }}>Clear dates</Button>}
           </div>
           <p className="text-xs text-muted-foreground">The list and the Excel download only include students registered in the chosen dates.</p>
+          {filterControls}
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[500px]">
@@ -191,10 +208,12 @@ const StudentsTab = () => {
             <div><Label htmlFor="dl-from">From day</Label><Input id="dl-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
             <div><Label htmlFor="dl-to">To day</Label><Input id="dl-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
           </div>
-          <p className="text-sm">{students.filter((s) => inRange(s.created_at)).length} students will be included.</p>
+          <Input aria-label="Export student search" placeholder="Search name, email or student code" value={q} onChange={(e) => setQ(e.target.value)} />
+          {filterControls}
+          <p className="text-sm">{filtered.length} students will be included.</p>
           <DialogFooter>
             <Button variant="ghost" onClick={() => { setFrom(""); setTo(""); }}>All days</Button>
-            <Button onClick={async () => { setPickOpen(false); await exportExcel(); }}>Download</Button>
+            <Button disabled={!filtered.length || !!(from && to && from > to)} onClick={async () => { setPickOpen(false); await exportExcel(); }}>Download</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

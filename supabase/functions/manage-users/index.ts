@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { canEditDepartments, canAttachManualForm, validManualForm } from "./record-rules.ts";
+import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin } from "./record-rules.ts";
 import { DEPARTMENT_FIELDS } from "./departments.ts";
 
 const cors = {
@@ -108,6 +108,8 @@ Deno.serve(async (req) => {
       if (error) {
         // A previous attempt may have created the account but failed later (e.g. upload). Let the same staff retry.
         const { data: prev } = await admin.from("profiles").select("id, registered_by").ilike("email", email).maybeSingle();
+        const { data: previousStaff } = prev ? await admin.from("user_roles").select("role").eq("user_id", prev.id).in("role", ["admin", "sub_admin", "department_head"]) : { data: null };
+        if (previousStaff?.length) return json({ error: "This email belongs to a staff account." }, 400);
         const { data: prevApp } = prev ? await admin.from("applications").select("id").eq("user_id", prev.id).maybeSingle() : { data: null };
         if (!prev || prevApp || (prev.registered_by && prev.registered_by !== user.id && !isAdmin))
           return json({ error: /already/i.test(error.message) ? "A student with this email already exists." : error.message }, 400);
@@ -147,6 +149,23 @@ Deno.serve(async (req) => {
     }
 
     if (!isAdmin) return json({ error: "Admins only" }, 403);
+
+    if (action === "create_admin") {
+      const { data: authority, error: authorityError } = await admin.from("admin_creation_authority").select("user_id").eq("user_id", user.id).maybeSingle();
+      if (authorityError || !canCreateAdmin(roleNames, !!authority)) return json({ error: "Your account cannot create additional admins." }, 403);
+      const full_name = str(body.full_name, 100), email = str(body.email, 255).toLowerCase();
+      const password = typeof body.password === "string" ? body.password : "";
+      if (!full_name || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8) return json({ error: "Name, valid email and password of at least 8 characters required." }, 400);
+      const { data: created, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name } });
+      if (error) return json({ error: error.message }, 400);
+      const id = created.user.id;
+      const { error: roleError } = await admin.from("user_roles").insert({ user_id: id, role: "admin" });
+      if (roleError) { await admin.auth.admin.deleteUser(id); return json({ error: "Could not assign admin role" }, 500); }
+      const { error: cleanupError } = await admin.from("user_roles").delete().eq("user_id", id).eq("role", "student");
+      if (cleanupError) { await admin.auth.admin.deleteUser(id); return json({ error: "Could not finalize admin account" }, 500); }
+      // Intentionally do not grant admin_creation_authority to newly created admins.
+      return json({ ok: true });
+    }
 
     if (action === "create_sub_admin") {
       const full_name = str(body.full_name, 100), email = str(body.email, 255).toLowerCase();
@@ -200,6 +219,8 @@ Deno.serve(async (req) => {
 
     if (action === "update_student") {
       const id = str(body.id, 64);
+      const { data: staff, error: roleLookupError } = await admin.from("user_roles").select("role").eq("user_id", id).in("role", ["admin", "sub_admin", "department_head"]);
+      if (roleLookupError || staff?.length) return json({ error: "Select a student account, not a staff account." }, 403);
       const patch: Record<string, unknown> = { full_name: str(body.full_name, 100), phone: str(body.phone, 20) || null };
       const email = str(body.email, 255).toLowerCase();
       if (email) {
@@ -214,6 +235,8 @@ Deno.serve(async (req) => {
 
     if (action === "delete_student") {
       const id = str(body.id, 64);
+      const { data: staff, error: roleLookupError } = await admin.from("user_roles").select("role").eq("user_id", id).in("role", ["admin", "sub_admin", "department_head"]);
+      if (roleLookupError || staff?.length) return json({ error: "Select a student account, not a staff account." }, 403);
       if (id === user.id) return json({ error: "You can't delete yourself." }, 400);
       for (const t of ["applications", "payments", "psychometric_results", "portfolios", "user_roles"]) {
         await admin.from(t).delete().eq("user_id", id);

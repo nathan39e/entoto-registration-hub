@@ -127,6 +127,20 @@
       "when": 1792241857257,
       "tag": "0017_staff_department_edit_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792248358441,
+      "tag": "0018_portal_exam_records_and_admin_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792248382997,
+      "tag": "0019_secure_portal_exam_operations",
+      "breakpoints": true
     }
   ]
 }

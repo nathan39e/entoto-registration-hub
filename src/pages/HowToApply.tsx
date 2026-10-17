@@ -88,7 +88,7 @@ const HowToApply = () => (
             {TUTORIAL_VIDEO_URL ? (
               <iframe src={TUTORIAL_VIDEO_URL} title="Registration tutorial video" className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; encrypted-media; picture-in-picture" />
             ) : (
-              <video src={GUIDE_VIDEO_SRC} controls playsInline preload="metadata" className="w-full h-full bg-black" data-no-translate aria-label="Registration walkthrough with English and Amharic captions" />
+              <video src={GUIDE_VIDEO_SRC} controls playsInline preload="metadata" className="w-full h-full" data-no-translate aria-label="Registration walkthrough with English and Amharic captions" />
             )}
           </div>
         </div>

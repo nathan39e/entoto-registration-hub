@@ -10,3 +10,6 @@
 - [x] Add reversible manual application review controls and block ineligible progression.
 - [x] Let admins publish photo articles on News and show the supplied historical photos in the home slideshow.
 - [x] Restore the home-page slideshow photos on external hosts and verify all four slides display.
+- [ ] Make manual forms optional and let admins/sub-admins attach them to existing students found by name or ID.
+- [ ] Add individually granted sub-admin department-choice editing with server-enforced permissions.
+- [ ] Test manual-form attachment and permission enforcement.

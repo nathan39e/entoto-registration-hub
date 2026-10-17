@@ -24,6 +24,7 @@ import { LanguageProvider } from "./lib/i18n";
 import { HelmetProvider } from "react-helmet-async";
 import RouteMeta from "./components/RouteMeta";
 import DepartmentExam from "./pages/DepartmentExam";
+import HowToApply from "./pages/HowToApply";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/about" element={<About />} />
+          <Route path="/how-to-apply" element={<HowToApply />} />
           <Route path="/departments" element={<DepartmentsPage />} />
           <Route path="/application" element={<Application />} />
           <Route path="/psychometric-exam" element={<PsychometricExam />} />

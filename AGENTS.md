@@ -9,3 +9,7 @@
 - Existing-student manual-form attachments use authenticated manage-users actions for admins/sub-admins, preserving all stored files because staff cannot upload directly into another student's folder.
 - Department-choice changes use a service-only atomic RPC with actor role and individual staff_permissions checks; they reset entry evaluation to the first choice so placement remains consistent. Keep the manage-users department catalog aligned with src/data/departments.ts.
 - Share student-record validation in manage-users/record-rules.ts and run its Bun tests when permissions or manual-form rules change.
+- Native department exams use server-validated RPCs and immutable attempt question snapshots/deadlines; students cannot write grades or reset attempts, so browser controls are deterrents rather than authority.
+- Admin creation authority is backfilled only for existing admins and never delegated to created admins; enforce it in manage-users and a user_roles trigger to prevent direct privilege escalation.
+- Shared application birth-date controls use Ethiopian calendar conversion while retaining Gregorian ISO storage, so existing records, age calculations and photo autofill remain compatible.
+- Student Excel exports use the shared filter predicate for dates, department, program, status and search, so preview counts match downloaded records.

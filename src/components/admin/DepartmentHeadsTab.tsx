@@ -44,7 +44,7 @@ const DepartmentHeadsTab = () => {
     <Card>
       <CardHeader>
         <CardTitle>Department Heads ({heads.length}/{DEPARTMENTS.length})</CardTitle>
-        <CardDescription>Each department can have only one head. Heads post their department entry exam (Google Form) and see students whose first choice is their department.</CardDescription>
+        <CardDescription>Each department can have only one head.</CardDescription>
         <div className="max-w-xs pt-2">
           <Select value={dept} onValueChange={setDept}>
             <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>

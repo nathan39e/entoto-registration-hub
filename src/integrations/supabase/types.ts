@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_creation_authority: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admission_settings: {
         Row: {
           exam_end: string | null
@@ -313,6 +328,136 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_exam_attempts: {
+        Row: {
+          answers: Json
+          deadline: string
+          department: string
+          exam_id: string
+          id: string
+          questions: Json
+          started_at: string
+          submitted_at: string | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          deadline: string
+          department: string
+          exam_id: string
+          id?: string
+          questions: Json
+          started_at?: string
+          submitted_at?: string | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          deadline?: string
+          department?: string
+          exam_id?: string
+          id?: string
+          questions?: Json
+          started_at?: string
+          submitted_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_exam_attempts_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "portal_exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_exam_grades: {
+        Row: {
+          attempt_id: string
+          department: string
+          feedback: string
+          graded_at: string
+          graded_by: string
+          maximum: number
+          points: Json
+          published: boolean
+          total: number
+        }
+        Insert: {
+          attempt_id: string
+          department: string
+          feedback?: string
+          graded_at?: string
+          graded_by: string
+          maximum?: number
+          points?: Json
+          published?: boolean
+          total?: number
+        }
+        Update: {
+          attempt_id?: string
+          department?: string
+          feedback?: string
+          graded_at?: string
+          graded_by?: string
+          maximum?: number
+          points?: Json
+          published?: boolean
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_exam_grades_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: true
+            referencedRelation: "portal_exam_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_exams: {
+        Row: {
+          closes_at: string | null
+          created_at: string
+          created_by: string
+          department: string
+          description: string
+          duration_minutes: number
+          id: string
+          opens_at: string | null
+          published: boolean
+          questions: Json
+          title: string
+        }
+        Insert: {
+          closes_at?: string | null
+          created_at?: string
+          created_by: string
+          department: string
+          description?: string
+          duration_minutes?: number
+          id?: string
+          opens_at?: string | null
+          published?: boolean
+          questions?: Json
+          title: string
+        }
+        Update: {
+          closes_at?: string | null
+          created_at?: string
+          created_by?: string
+          department?: string
+          description?: string
+          duration_minutes?: number
+          id?: string
+          opens_at?: string | null
+          published?: boolean
+          questions?: Json
+          title?: string
+        }
+        Relationships: []
+      }
       portfolios: {
         Row: {
           bio: string | null
@@ -462,6 +607,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_admin: { Args: { _user: string }; Returns: boolean }
       edit_student_choices: {
         Args: {
           _actor: string
@@ -470,6 +616,10 @@ export type Database = {
           _student: string
         }
         Returns: undefined
+      }
+      eligible_for_portal_exam: {
+        Args: { _dept: string; _user: string }
+        Returns: boolean
       }
       evaluate_application: {
         Args: {
@@ -488,6 +638,15 @@ export type Database = {
           exam_start: string
         }[]
       }
+      grade_portal_exam: {
+        Args: {
+          _attempt: string
+          _feedback: string
+          _points: Json
+          _publish: boolean
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -499,6 +658,54 @@ export type Database = {
       is_referred_to_head: {
         Args: { _app_user: string; _user_id: string }
         Returns: boolean
+      }
+      save_portal_exam: {
+        Args: { _definition: Json; _id: string }
+        Returns: string
+      }
+      save_portal_exam_answers: {
+        Args: { _answers: Json; _attempt: string; _submit: boolean }
+        Returns: {
+          answers: Json
+          deadline: string
+          department: string
+          exam_id: string
+          id: string
+          questions: Json
+          started_at: string
+          submitted_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "portal_exam_attempts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      set_portal_exam_published: {
+        Args: { _id: string; _published: boolean }
+        Returns: undefined
+      }
+      start_portal_exam: {
+        Args: { _exam: string }
+        Returns: {
+          answers: Json
+          deadline: string
+          department: string
+          exam_id: string
+          id: string
+          questions: Json
+          started_at: string
+          submitted_at: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "portal_exam_attempts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {

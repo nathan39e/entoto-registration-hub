@@ -23,6 +23,7 @@ import AccountSettings from "./pages/AccountSettings";
 import { LanguageProvider } from "./lib/i18n";
 import { HelmetProvider } from "react-helmet-async";
 import RouteMeta from "./components/RouteMeta";
+import DepartmentExam from "./pages/DepartmentExam";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
           <Route path="/staff" element={<StaffDashboard />} />
           <Route path="/staff/apply" element={<Application staffMode />} />
           <Route path="/department-head" element={<DepartmentHeadDashboard />} />
+          <Route path="/department-exam/:examId" element={<DepartmentExam />} />
           <Route path="/account" element={<AccountSettings />} />
           <Route path="/news" element={<News />} />
           <Route path="/contact" element={<Contact />} />

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import RegistrationSlip from "@/components/RegistrationSlip";
 import StudentIDCard from "@/components/StudentIDCard";
 import { DEPARTMENTS } from "@/data/departments";
+import StudentPortalExams from "@/components/department/StudentPortalExams";
 
 const statusBadge = (s?: string | null) => {
   if (!s) return <Badge variant="outline">Not started</Badge>;
@@ -159,6 +160,7 @@ const StudentDashboard = () => {
               </Card>
             )}
 
+            <StudentPortalExams />
             {canContinue && deptExams.length > 0 && (
               <Card>
                 <CardHeader>

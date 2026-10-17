@@ -1,7 +1,10 @@
 import { describe, test, expect } from "bun:test";
-import { canEditDepartments, canAttachManualForm, validManualForm } from "./record-rules";
+import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin } from "./record-rules";
 
 describe("student record rules", () => {
+  test("existing authorized admins can create admins", () => expect(canCreateAdmin(["admin"], true)).toBe(true));
+  test("created admins cannot create further admins", () => expect(canCreateAdmin(["admin"], false)).toBe(false));
+  test("non-admins cannot use creation authority", () => expect(canCreateAdmin(["sub_admin"], true)).toBe(false));
   test("manual form can be left empty", () => expect(validManualForm(null)).toBe(true));
   test("admins can attach a manual form", () => expect(canAttachManualForm(["admin"])).toBe(true));
   test("sub-admins can attach forms without department-edit permission", () => expect(canAttachManualForm(["sub_admin"])).toBe(true));

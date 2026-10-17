@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import StudentQRScanner from "@/components/StudentQRScanner";
+import PortalExamManager from "@/components/department/PortalExamManager";
 
 const DECISIONS: Record<string, string> = { under_review: "Under review", accepted: "Accepted", waitlisted: "Waitlisted", rejected: "Rejected" };
 
@@ -121,6 +122,7 @@ const DepartmentHeadDashboard = () => {
         </div>
 
         {dept && <StudentQRScanner department={dept} />}
+        {dept && <PortalExamManager department={dept} />}
 
         {exits.length > 0 && (
           <Card className="border-destructive">

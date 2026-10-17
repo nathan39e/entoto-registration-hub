@@ -15,6 +15,7 @@ import ApplicationSummary from "@/components/ApplicationSummary";
 import { DEPARTMENTS, DEPARTMENT_FIELDS } from "@/data/departments";
 import { ETHIOPIA, REGIONS } from "@/data/ethiopia";
 import { validManualForm } from "../../supabase/functions/manage-users/record-rules";
+import EthiopianDatePicker from "@/components/EthiopianDatePicker";
 
 const text = (max = 100) => z.string().trim().min(1, "Required").max(max);
 const currentYear = new Date().getFullYear();
@@ -316,7 +317,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {field("email", "Email Address", { type: "email", maxLength: 255 })}
                       {staffMode && field("password", "Student Password (min 8)", { type: "password", minLength: 8, autoComplete: "new-password" })}
                       {field("phone", "Phone Number", { type: "tel", placeholder: "+2519..." })}
-                      {field("dob", "Date of Birth", { type: "date" })}
+                      <EthiopianDatePicker value={v.dob ?? ""} onChange={set("dob")} />
                       <div><Label>Age</Label><Input value={ageFrom(v.dob)} readOnly placeholder="From date of birth" /></div>
                       <div>
                         <Label>Gender *</Label>

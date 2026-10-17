@@ -45,8 +45,10 @@ export default function DepartmentExam() {
   const logExit = useCallback((reason: string) => {
     if (!attempt || !activeRef.current || Date.now() - lastExit.current < 2500) return;
     lastExit.current = Date.now();
-    supabase.from("exam_exit_events").insert({ user_id: attempt.user_id, department: attempt.department, reason: `Portal exam ${exam?.title ?? ""}: ${reason}` }).then(({ error }) => { if (error) setSaveStatus("Exit report pending · check connection"); });
-    toast.error("Exam departure detected and reported to your department head.");
+    supabase.from("exam_exit_events").insert({ user_id: attempt.user_id, department: attempt.department, reason: `Portal exam ${exam?.title ?? ""}: ${reason}` }).then(({ error }) => {
+      if (error) { setSaveStatus("Exit report failed · check connection"); toast.error("Departure detected; the report could not be sent."); }
+      else toast.error("Exam departure detected and reported to your department head.");
+    });
   }, [attempt, exam]);
   useEffect(() => {
     if (!active || !attempt) return;

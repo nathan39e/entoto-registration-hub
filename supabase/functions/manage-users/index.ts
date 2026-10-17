@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { canEditDepartments, canAttachManualForm, validManualForm } from "./record-rules.ts";
+import { DEPARTMENT_FIELDS } from "./departments.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

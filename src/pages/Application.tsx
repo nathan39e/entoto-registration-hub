@@ -14,6 +14,7 @@ import { z } from "zod";
 import ApplicationSummary from "@/components/ApplicationSummary";
 import { DEPARTMENTS, DEPARTMENT_FIELDS } from "@/data/departments";
 import { ETHIOPIA, REGIONS } from "@/data/ethiopia";
+import { validManualForm } from "../../supabase/functions/manage-users/record-rules";
 
 const text = (max = 100) => z.string().trim().min(1, "Required").max(max);
 const currentYear = new Date().getFullYear();
@@ -133,7 +134,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
     if (!resultDoc || !isImg(resultDoc) || resultDoc.size > MAX) return toast.error("Grade 12 result must be an image (JPG/PNG) under 5MB.");
     if (!grade8 || !isDoc(grade8) || grade8.size > MAX) return toast.error("Please upload your Grade 8 result (image or PDF under 5MB).");
     if (!transcript || !isDoc(transcript) || transcript.size > MAX) return toast.error("Please upload your Grade 9–12 transcript (image or PDF under 5MB).");
-    if (!manualForm || !isDoc(manualForm) || manualForm.size > MAX) return toast.error("Please upload the filled manual form (image or PDF under 5MB).");
+    if (!validManualForm(manualForm)) return toast.error("Manual form must be a JPG, PNG, WebP or PDF under 5MB.");
     if (staffMode && (v.password ?? "").length < 8) return toast.error("Password must be at least 8 characters.");
 
     setLoading(true);
@@ -182,7 +183,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         grade12: path,
         grade8: await upload(grade8, "grade8"),
         transcript: await upload(transcript, "transcript"),
-        manualForm: await upload(manualForm, "manualForm"),
+        ...(manualForm ? { manualForm: await upload(manualForm, "manualForm") } : {}),
       };
 
       const { choice1: c1, choice2: c2, choice3: c3, field1, field2, field3, grade12, ...personal } = parsed.data;
@@ -263,8 +264,8 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   );
   const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string) => (
     <div>
-      <Label htmlFor={id}>{label} *</Label>
-      <Input id={id} type="file" accept={accept} required={!(id === "manualForm" && manualForm)} onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
+      <Label htmlFor={id}>{label}{id === "manualForm" ? " (optional)" : " *"}</Label>
+      <Input id={id} type="file" accept={accept} required={id !== "manualForm"} onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
       <p className="text-xs text-muted-foreground mt-1">{hint}</p>
     </div>
   );

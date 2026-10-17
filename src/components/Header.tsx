@@ -77,6 +77,9 @@ const Header = () => {
               <NavLink to="/about" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 About Us
               </NavLink>
+              <NavLink to="/how-to-apply" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
+                How to Apply
+              </NavLink>
               <NavLink to="/departments" className="text-sm font-medium text-foreground hover:text-primary transition-colors" activeClassName="text-primary underline underline-offset-4">
                 Departments
               </NavLink>
@@ -146,7 +149,7 @@ const Header = () => {
               <SheetHeader><SheetTitle>Menu</SheetTitle>{user && <p className="text-sm text-muted-foreground">{greeting()}</p>}</SheetHeader>
               <LanguageSwitcher className="mt-4" />
               <nav className="mt-8 flex flex-col gap-1">
-                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(isHead ? [["/department-head", "My Department"]] : []), ...((isAdmin || isStaff || isHead) ? [["/account", "Profile & Settings"]] : []), ...(user ? ((isAdmin || isStaff || isHead) ? [] : [["/student-dashboard", "Dashboard"]]) : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
+                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/how-to-apply", "How to Apply"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(isHead ? [["/department-head", "My Department"]] : []), ...((isAdmin || isStaff || isHead) ? [["/account", "Profile & Settings"]] : []), ...(user ? ((isAdmin || isStaff || isHead) ? [] : [["/student-dashboard", "Dashboard"]]) : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
                   <SheetClose asChild key={to}><Link to={to} className="block rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{label}</Link></SheetClose>
                 ))}
                 {user && <Button variant="outline" className="mt-3 justify-start" onClick={async () => { setMenuOpen(false); await supabase.auth.signOut(); navigate("/"); }}>Logout</Button>}

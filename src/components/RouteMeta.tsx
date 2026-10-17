@@ -6,6 +6,7 @@ const BASE = "https://entoto-pathfinder.lovable.app";
 
 const META: Record<string, { title: string; description: string; noindex?: boolean }> = {
   "/": { title: `${SITE} — Quality Technical Education`, description: "Join Teferi Mekonnen Polytechnic College for quality technical education. Explore 10 departments, apply online and build your future." },
+  "/how-to-apply": { title: `How to Apply — ${SITE}`, description: "Step-by-step guide to register, apply, pay, take exams and get your student ID at Teferi Mekonnen Polytechnic College." },
   "/about": { title: `About Us — ${SITE}`, description: "Learn about the history, mission and ISO 21001 certified training of Teferi Mekonnen Polytechnic College, founded in Addis Ababa." },
   "/departments": { title: `Departments & Programs — ${SITE}`, description: "Explore our 10 departments, from ICT to construction technology, with sub-fields, training levels and 3-year program durations." },
   "/news": { title: `Latest News — ${SITE}`, description: "Read the latest announcements, events and admission news from Teferi Mekonnen Polytechnic College." },

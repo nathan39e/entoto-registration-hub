@@ -120,6 +120,13 @@
       "when": 1791972841879,
       "tag": "0016_auto_approve_exam_window_exits",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792241857257,
+      "tag": "0017_staff_department_edit_permissions",
+      "breakpoints": true
     }
   ]
 }

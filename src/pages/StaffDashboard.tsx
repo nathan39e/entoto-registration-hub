@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import DocumentsZipExport from "@/components/admin/DocumentsZipExport";
+import StudentRecordActions from "@/components/StudentRecordActions";
 
 
 const DOCS: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript"], ["manualForm", "Manual Form"]];
@@ -19,6 +20,8 @@ const StaffDashboard = () => {
   const [code, setCode] = useState("");
   const [found, setFound] = useState<{ profile: any; app: any; result: any } | null>(null);
   const [searched, setSearched] = useState(false);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [canEdit, setCanEdit] = useState(false);
   const [mine, setMine] = useState<{ full_name: string; student_code: string; created_at: string }[]>([]);
 
   useEffect(() => {
@@ -27,21 +30,36 @@ const StaffDashboard = () => {
       const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin"]);
       if (!data?.length) { toast.error("Access denied"); return navigate("/"); }
       setOk(true);
+      const { data: permission } = await supabase.from("staff_permissions").select("can_edit_departments").eq("user_id", user.id).maybeSingle();
+      setCanEdit(data.some((r) => r.role === "admin") || permission?.can_edit_departments === true);
       const { data: m } = await supabase.from("profiles").select("full_name, student_code, created_at").eq("registered_by", user.id).order("created_at", { ascending: false });
       setMine(m ?? []);
     });
   }, [navigate]);
 
-  const search = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearched(true); setFound(null);
-    const { data: profile } = await supabase.from("profiles").select("*").ilike("student_code", code.trim()).maybeSingle();
-    if (!profile) return;
+  const selectStudent = async (profile: any) => {
     const [{ data: app }, { data: result }] = await Promise.all([
       supabase.from("applications").select("*").eq("user_id", profile.id).maybeSingle(),
       supabase.from("psychometric_results").select("recommended_departments").eq("user_id", profile.id).limit(1).maybeSingle(),
     ]);
     setFound({ profile, app, result });
+  };
+
+  const search = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearched(true); setFound(null); setMatches([]);
+    const term = code.trim().replace(/[%_]/g, "");
+    if (!term) return;
+    const [{ data: byCode, error }, { data: byName }, { data: staff }] = await Promise.all([
+      supabase.from("profiles").select("*").ilike("student_code", term).limit(20),
+      supabase.from("profiles").select("*").ilike("full_name", `%${term}%`).limit(20),
+      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head"]),
+    ]);
+    if (error) return toast.error(error.message);
+    const excluded = new Set((staff ?? []).map((r) => r.user_id));
+    const results = [...new Map([...(byCode ?? []), ...(byName ?? [])].map((p) => [p.id, p])).values()].filter((p) => !excluded.has(p.id));
+    setMatches(results);
+    if (results.length === 1) await selectStudent(results[0]);
   };
 
   const open = async (path?: string) => {
@@ -68,14 +86,15 @@ const StaffDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Check a Student</CardTitle>
-            <CardDescription>Enter the student code to see if they applied and view their documents.</CardDescription>
+            <CardDescription>Search by student name or ID.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={search} className="flex flex-wrap gap-2">
-              <Input required placeholder="e.g. EPC1A2B3C4D" value={code} onChange={(e) => setCode(e.target.value)} className="max-w-sm" />
+              <Input required aria-label="Student name or ID" placeholder="Student name or ID" value={code} onChange={(e) => setCode(e.target.value)} className="max-w-sm" />
               <Button type="submit">Search</Button>
             </form>
-            {searched && !found && <p className="text-muted-foreground">No student found with that code.</p>}
+            {searched && !matches.length && <p className="text-muted-foreground">No student found.</p>}
+            {matches.length > 1 && <div className="flex flex-wrap gap-2">{matches.map((p) => <Button key={p.id} variant="outline" onClick={() => selectStudent(p)}>{p.full_name} · {p.student_code}</Button>)}</div>}
             {found && (
               <div className="space-y-3 border rounded-lg p-4">
                 <div className="flex flex-wrap items-center gap-3">
@@ -92,6 +111,7 @@ const StaffDashboard = () => {
                       {DOCS.map(([k, label]) => (
                         <Button key={k} size="sm" variant="outline" disabled={!docs[k]} onClick={() => open(docs[k])}>{label}</Button>
                       ))}
+                      <StudentRecordActions key={found.profile.id} studentId={found.profile.id} canEdit={canEdit} onSaved={() => selectStudent(found.profile)} />
                     </div>
                   </>
                 )}

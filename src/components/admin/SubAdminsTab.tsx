@@ -5,8 +5,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
-type Row = { id: string; full_name: string; email: string; count: number };
+type Row = { id: string; full_name: string; email: string; count: number; canEdit: boolean };
 
 const SubAdminsTab = () => {
   const [rows, setRows] = useState<Row[]>([]);
@@ -15,14 +16,15 @@ const SubAdminsTab = () => {
   const [nw, setNw] = useState({ full_name: "", email: "", password: "" });
 
   const load = async () => {
-    const [{ data: roles }, { data: profs }] = await Promise.all([
+    const [{ data: roles }, { data: profs }, { data: permissions }] = await Promise.all([
       supabase.from("user_roles").select("user_id").eq("role", "sub_admin"),
       supabase.from("profiles").select("id, full_name, email, registered_by"),
+      supabase.from("staff_permissions").select("user_id, can_edit_departments"),
     ]);
     const all = profs ?? [];
     setRows((roles ?? []).map((r) => {
       const p = all.find((x) => x.id === r.user_id);
-      return { id: r.user_id, full_name: p?.full_name ?? "Unknown", email: p?.email ?? "", count: all.filter((x) => x.registered_by === r.user_id).length };
+      return { id: r.user_id, full_name: p?.full_name ?? "Unknown", email: p?.email ?? "", count: all.filter((x) => x.registered_by === r.user_id).length, canEdit: permissions?.some((x) => x.user_id === r.user_id && x.can_edit_departments) ?? false };
     }));
   };
   useEffect(() => { load(); }, []);
@@ -53,13 +55,14 @@ const SubAdminsTab = () => {
       </CardHeader>
       <CardContent>
         <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Students Registered</TableHead><TableHead /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Students Registered</TableHead><TableHead>Edit Department Choices</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
             {rows.map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="font-medium">{r.full_name}</TableCell>
                 <TableCell>{r.email}</TableCell>
                 <TableCell className="font-bold text-primary">{r.count}</TableCell>
+                <TableCell><div className="flex items-center gap-2"><Switch aria-label={`Allow ${r.full_name} to edit department choices`} checked={r.canEdit} disabled={busy} onCheckedChange={(allowed) => call({ action: "set_department_edit_permission", id: r.id, allowed }, allowed ? "Department editing allowed" : "Department editing denied")} /><span className="text-sm text-muted-foreground">{r.canEdit ? "Allowed" : "Denied"}</span></div></TableCell>
                 <TableCell><Button size="sm" variant="outline" disabled={busy} onClick={() => call({ action: "set_sub_admin", email: r.email, remove: true }, "Sub admin removed")}>Remove</Button></TableCell>
               </TableRow>
             ))}

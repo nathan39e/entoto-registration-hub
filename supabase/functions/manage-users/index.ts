@@ -1,4 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { canEditDepartments, canAttachManualForm, validManualForm } from "./record-rules.ts";
+import { DEPARTMENT_FIELDS } from "./departments.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -11,8 +13,10 @@ const str = (v: unknown, max = 200) => (typeof v === "string" ? v.trim().slice(0
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
-    const url = Deno.env.get("SUPABASE_URL")!;
-    const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return json({ error: "Service unavailable" }, 500);
+    const admin = createClient(url, key);
     const token = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
     const { data: { user } } = await admin.auth.getUser(token);
     if (!user) return json({ error: "Not signed in" }, 401);
@@ -21,6 +25,52 @@ Deno.serve(async (req) => {
     const isSub = roles?.some((r) => r.role === "sub_admin" || r.role === "department_head");
     const body = await req.json();
     const action = body.action;
+    const roleNames = (roles ?? []).map((r) => r.role);
+
+    if (action === "set_department_edit_permission") {
+      if (!isAdmin) return json({ error: "Admins only" }, 403);
+      const id = str(body.id, 64);
+      if (typeof body.allowed !== "boolean") return json({ error: "Select allow or deny" }, 400);
+      const { data: sub } = await admin.from("user_roles").select("user_id").eq("user_id", id).eq("role", "sub_admin").maybeSingle();
+      if (!sub) return json({ error: "Select a sub-admin" }, 400);
+      const { error } = await admin.from("staff_permissions").upsert({ user_id: id, can_edit_departments: body.allowed, updated_by: user.id, updated_at: new Date().toISOString() });
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
+    if (action === "edit_student_choices") {
+      const { data: permission } = await admin.from("staff_permissions").select("can_edit_departments").eq("user_id", user.id).maybeSingle();
+      if (!canEditDepartments(roleNames, permission?.can_edit_departments === true)) return json({ error: "Your admin has not granted permission to edit department choices." }, 403);
+      const choices = Array.isArray(body.choices) ? body.choices : [];
+      const fields = Array.isArray(body.fields) ? body.fields : [];
+      // Use the same department catalog as the application form.
+      const catalog: Record<string, string[]> = DEPARTMENT_FIELDS;
+      if (choices.length !== 3 || fields.length !== 3 || new Set(choices).size !== 3 || choices.some((d, i) => typeof d !== "string" || !catalog[d]?.includes(fields[i]))) return json({ error: "Choose three different departments and a valid occupation for each." }, 400);
+      const { error } = await admin.rpc("edit_student_choices", { _actor: user.id, _student: str(body.id, 64), _choices: choices, _fields: fields });
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
+    if (action === "attach_manual_form") {
+      if (!canAttachManualForm(roleNames)) return json({ error: "Admins and sub-admins only" }, 403);
+      const id = str(body.id, 64);
+      const { data: staff } = await admin.from("user_roles").select("role").eq("user_id", id).in("role", ["admin", "sub_admin", "department_head"]);
+      if (staff?.length) return json({ error: "Select a student account" }, 400);
+      const { data: application, error: lookupError } = await admin.from("applications").select("id, documents").eq("user_id", id).maybeSingle();
+      if (lookupError || !application) return json({ error: "Student has no application" }, 400);
+      const mime = str(body.mime, 40);
+      const encoded = typeof body.content === "string" ? body.content : "";
+      if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length > 7_000_000 || encoded.length < 4) return json({ error: "Invalid or oversized document" }, 400);
+      const bytes = Uint8Array.from(atob(encoded), (c) => c.charCodeAt(0));
+      if (!validManualForm({ type: mime, size: bytes.length })) return json({ error: "Use a JPG, PNG, WebP or PDF under 5MB" }, 400);
+      const ext = mime === "application/pdf" ? "pdf" : mime === "image/png" ? "png" : mime === "image/webp" ? "webp" : "jpg";
+      const path = `${id}/manualForm-${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await admin.storage.from("result-docs").upload(path, bytes, { contentType: mime });
+      if (uploadError) return json({ error: uploadError.message }, 400);
+      const { error } = await admin.from("applications").update({ documents: { ...(application.documents ?? {}), manualForm: path } }).eq("id", application.id);
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true, path });
+    }
 
     if (action === "upload_student_document") {
       if (!isAdmin && !isSub) return json({ error: "Not allowed" }, 403);

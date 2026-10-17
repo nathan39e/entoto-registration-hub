@@ -418,6 +418,27 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_permissions: {
+        Row: {
+          can_edit_departments: boolean
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          can_edit_departments?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          can_edit_departments?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -441,6 +462,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      edit_student_choices: {
+        Args: {
+          _actor: string
+          _choices: string[]
+          _fields: string[]
+          _student: string
+        }
+        Returns: undefined
+      }
       evaluate_application: {
         Args: {
           _app_id: string

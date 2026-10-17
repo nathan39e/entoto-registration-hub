@@ -1,0 +1,8 @@
+CREATE POLICY "Students read exams already attempted" ON public.portal_exams FOR SELECT TO authenticated USING(EXISTS(SELECT 1 FROM public.portal_exam_attempts a WHERE a.exam_id=portal_exams.id AND a.user_id=auth.uid()));
+CREATE OR REPLACE FUNCTION public.start_portal_exam(_exam uuid) RETURNS public.portal_exam_attempts LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE e public.portal_exams; a public.portal_exam_attempts; qs jsonb; BEGIN
+ SELECT * INTO e FROM public.portal_exams WHERE id=_exam FOR UPDATE;
+ IF NOT FOUND OR NOT public.eligible_for_portal_exam(auth.uid(),e.department) THEN RAISE EXCEPTION 'Exam unavailable for your account'; END IF;
+ SELECT * INTO a FROM public.portal_exam_attempts WHERE exam_id=_exam AND user_id=auth.uid(); IF FOUND THEN RETURN a; END IF;
+ IF NOT e.published OR (e.opens_at IS NOT NULL AND now()<e.opens_at) OR (e.closes_at IS NOT NULL AND now()>=e.closes_at) THEN RAISE EXCEPTION 'Exam is outside its scheduled time'; END IF;
+ SELECT jsonb_agg(CASE WHEN q->>'type'='choice' THEN jsonb_set(q,'{options}',(SELECT jsonb_agg(v ORDER BY random()) FROM jsonb_array_elements(q->'options') v)) ELSE q END ORDER BY random()) INTO qs FROM jsonb_array_elements(e.questions) q;
+ INSERT INTO public.portal_exam_attempts(exam_id,user_id,department,questions,deadline) VALUES(e.id,auth.uid(),e.department,qs,LEAST(now()+make_interval(mins=>e.duration_minutes),COALESCE(e.closes_at,'infinity'::timestamptz))) RETURNING * INTO a; RETURN a; END $$;

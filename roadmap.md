@@ -13,3 +13,9 @@
 - [x] Make manual forms optional and let admins/sub-admins attach them to existing students found by name or ID.
 - [x] Add individually granted sub-admin department-choice editing with server-enforced permissions.
 - [x] Test manual-form attachment and permission enforcement.
+- [ ] Add department-owned exam creation, student attempts, answer review and grading.
+- [ ] Add exam exit deterrence and department-head alerts for native exams.
+- [ ] Add admin Excel export filters beyond date range.
+- [ ] Use Ethiopian calendar birth-date selection on the shared application form.
+- [ ] Allow existing admins to create admins without delegating admin-creation authority.
+- [ ] Test department isolation, grading, calendar dates, export filters and admin-creation restrictions.

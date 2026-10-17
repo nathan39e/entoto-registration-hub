@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import DocumentsZipExport from "./DocumentsZipExport";
+import StudentRecordActions from "@/components/StudentRecordActions";
 
 type Profile = { id: string; full_name: string; email: string; phone: string | null; student_code: string; created_at: string; registered_by: string | null };
 
@@ -149,6 +150,7 @@ const StudentsTab = () => {
                     <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="flex flex-wrap gap-2">
                       <Button size="sm" variant="outline" onClick={() => showDocs(p)}>Documents</Button>
+                      <StudentRecordActions studentId={p.id} canEdit={true} onSaved={() => showDocs(p)} />
                       <Button size="sm" variant="outline" onClick={() => setEdit({ ...p })}>Edit</Button>
                       <Button size="sm" variant="outline" onClick={() => sendReset(p.email)}>Reset email</Button>
                       <Button size="sm" variant="destructive" onClick={() => setDel(p)}>Delete</Button>

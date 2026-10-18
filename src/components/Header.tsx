@@ -8,6 +8,7 @@ import logo from "@/assets/logo.png";
 import { Menu, Settings } from "lucide-react";
 import { toast } from "sonner";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import DarkModeToggle from "@/components/DarkModeToggle";
 import { greeting } from "@/lib/i18n";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 

@@ -67,6 +67,7 @@ const App = () => (
     </LanguageProvider>
   </QueryClientProvider>
   </HelmetProvider>
+  </ThemeProvider>
 );
 
 export default App;

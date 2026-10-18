@@ -118,6 +118,7 @@ const Header = () => {
           {/* Right Auth Buttons */}
           <div className="hidden lg:flex items-center gap-3">
             <LanguageSwitcher />
+            <DarkModeToggle />
             {user ? (
               <>
                 <span className="text-sm text-muted-foreground hidden xl:inline">{greeting()}</span>
@@ -148,7 +149,10 @@ const Header = () => {
             <SheetTrigger asChild><Button variant="outline" size="icon" className="lg:hidden shrink-0" aria-label="Open navigation menu"><Menu className="h-5 w-5" /></Button></SheetTrigger>
             <SheetContent side="right" className="w-[min(85vw,22rem)] overflow-y-auto">
               <SheetHeader><SheetTitle>Menu</SheetTitle>{user && <p className="text-sm text-muted-foreground">{greeting()}</p>}</SheetHeader>
-              <LanguageSwitcher className="mt-4" />
+              <div className="mt-4 flex items-center gap-2">
+                <LanguageSwitcher className="flex-1" />
+                <DarkModeToggle />
+              </div>
               <nav className="mt-8 flex flex-col gap-1">
                 {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/how-to-apply", "How to Apply"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(isHead ? [["/department-head", "My Department"]] : []), ...((isAdmin || isStaff || isHead) ? [["/account", "Profile & Settings"]] : []), ...(user ? ((isAdmin || isStaff || isHead) ? [] : [["/student-dashboard", "Dashboard"]]) : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
                   <SheetClose asChild key={to}><Link to={to} className="block rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{label}</Link></SheetClose>

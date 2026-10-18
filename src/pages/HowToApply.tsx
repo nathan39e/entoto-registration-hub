@@ -3,12 +3,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import guideVideo from "@/assets/registration-guide.mp4.asset.json";
 import { UserPlus, FileText, Receipt, ClipboardCheck, IdCard } from "lucide-react";
 
-// Paste a YouTube embed link here (e.g. https://www.youtube.com/embed/VIDEO_ID) once the tutorial is recorded.
-const TUTORIAL_VIDEO_URL = "";
-const GUIDE_VIDEO_SRC = `https://id-preview--813b587f-bf72-44da-ad24-4b4123495f66.lovable.app${guideVideo.url}`;
+// The recorded walkthrough tutorial, hosted on the college's YouTube channel.
+const TUTORIAL_VIDEO_URL = "https://www.youtube.com/embed/A4idvfz3gRY";
+
 
 const steps = [
   {
@@ -84,13 +83,13 @@ const HowToApply = () => (
 
       <section className="py-12 bg-background">
         <div className="container mx-auto px-4 max-w-4xl">
-          <div className="aspect-video w-full rounded-xl overflow-hidden border bg-muted flex items-center justify-center">
-            {TUTORIAL_VIDEO_URL ? (
-              <iframe src={TUTORIAL_VIDEO_URL} title="Registration tutorial video" className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; encrypted-media; picture-in-picture" />
-            ) : (
-              <video src={GUIDE_VIDEO_SRC} controls playsInline preload="metadata" className="w-full h-full" data-no-translate aria-label="Registration walkthrough with English and Amharic captions" />
-            )}
+          <div className="aspect-video w-full rounded-xl overflow-hidden border bg-muted">
+            <iframe src={TUTORIAL_VIDEO_URL} title="Registration tutorial video" className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; encrypted-media; picture-in-picture" />
           </div>
+          <p className="mt-3 text-sm text-muted-foreground text-center">
+            Video: How to apply and register into Tafari Makonnen Polytechnic College portal.
+          </p>
+
         </div>
       </section>
 

@@ -21,6 +21,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import AccountSettings from "./pages/AccountSettings";
 import { LanguageProvider } from "./lib/i18n";
+import { ThemeProvider } from "./lib/theme";
 import { HelmetProvider } from "react-helmet-async";
 import RouteMeta from "./components/RouteMeta";
 import DepartmentExam from "./pages/DepartmentExam";
@@ -29,6 +30,7 @@ import HowToApply from "./pages/HowToApply";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ThemeProvider>
   <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
@@ -65,6 +67,7 @@ const App = () => (
     </LanguageProvider>
   </QueryClientProvider>
   </HelmetProvider>
+  </ThemeProvider>
 );
 
 export default App;

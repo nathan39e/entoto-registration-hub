@@ -12,6 +12,13 @@ const Departments = () => {
   };
   const departments = [
     {
+      icon: Sparkles,
+      name: "Aesthetics",
+      description: "Master beauty therapy, cosmetology, and personal care services",
+      duration: "2 Years",
+      color: "bg-pink-500",
+    },
+    {
       icon: Wifi,
       name: "ICT",
       description: "Master information and communication technology, software development, and network systems",
@@ -19,18 +26,18 @@ const Departments = () => {
       color: "bg-blue-500",
     },
     {
-      icon: Hotel,
-      name: "Hotel and Tourism",
-      description: "Prepare for careers in hospitality management, tourism services, and customer relations",
-      duration: "2 Years",
-      color: "bg-emerald-500",
-    },
-    {
       icon: Shirt,
       name: "Garment and Textile",
       description: "Learn textile design, garment production, and fashion technology",
       duration: "2 Years",
       color: "bg-purple-500",
+    },
+    {
+      icon: Hotel,
+      name: "Hotel and Tourism",
+      description: "Prepare for careers in hospitality management, tourism services, and customer relations",
+      duration: "2 Years",
+      color: "bg-emerald-500",
     },
     {
       icon: Car,
@@ -45,13 +52,6 @@ const Departments = () => {
       description: "Develop skills in business management, accounting, and financial planning",
       duration: "2 Years",
       color: "bg-teal-500",
-    },
-    {
-      icon: Sparkles,
-      name: "Aesthetics",
-      description: "Master beauty therapy, cosmetology, and personal care services",
-      duration: "2 Years",
-      color: "bg-pink-500",
     },
     {
       icon: Zap,

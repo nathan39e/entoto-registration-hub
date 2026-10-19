@@ -57,7 +57,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const [resultDoc, setResultDoc] = useState<File | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [grade8, setGrade8] = useState<File | null>(null);
-  const [transcript, setTranscript] = useState<File | null>(null);
+  const [transcripts, setTranscripts] = useState<File[]>([]);
   const [manualForm, setManualForm] = useState<File | null>(null);
   const set = (k: string) => (val: string) => setV((p) => {
     const n = { ...p, [k]: val };
@@ -140,7 +140,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
     if (!photo || !isImg(photo) || photo.size > MAX) return toast.error("Please upload a personal photo (image under 5MB).");
     if (!resultDoc || !isImg(resultDoc) || resultDoc.size > MAX) return toast.error("Grade 12 result must be an image (JPG/PNG) under 5MB.");
     if (!grade8 || !isDoc(grade8) || grade8.size > MAX) return toast.error("Please upload your Grade 8 result (image or PDF under 5MB).");
-    if (!transcript || !isDoc(transcript) || transcript.size > MAX) return toast.error("Please upload your Grade 9–12 transcript (image or PDF under 5MB).");
+    if (!transcripts.length || transcripts.some((f) => !isDoc(f) || f.size > MAX)) return toast.error("Please upload your Grade 9–12 transcript(s) — image or PDF, each under 5MB.");
     if (!validManualForm(manualForm)) return toast.error("Manual form must be a JPG, PNG, WebP or PDF under 5MB.");
     if (staffMode && (v.password ?? "").length < 8) return toast.error("Password must be at least 8 characters.");
 
@@ -185,11 +185,14 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         return p;
       };
       const path = await upload(resultDoc, "grade12");
+      const transcriptPaths: string[] = [];
+      for (const f of transcripts) transcriptPaths.push(await upload(f, "transcript"));
       const documents = {
         photo: await upload(photo, "photo"),
         grade12: path,
         grade8: await upload(grade8, "grade8"),
-        transcript: await upload(transcript, "transcript"),
+        transcript: transcriptPaths[0],
+        transcripts: transcriptPaths,
         ...(manualForm ? { manualForm: await upload(manualForm, "manualForm") } : {}),
       };
 

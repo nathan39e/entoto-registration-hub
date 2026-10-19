@@ -45,12 +45,15 @@ const isImg = (f: File) => f.type.startsWith("image/");
 const isDoc = (f: File) => isImg(f) || f.type === "application/pdf";
 const SUBJECTS: [string, string][] = [["english", "English"], ["physics", "Physics"], ["civics", "Civics"], ["geography", "Geography"], ["naturalMath", "Natural Math"], ["biology", "Biology"], ["socialMath", "Social Math"], ["economics", "Economics"], ["aptitude", "Aptitude"], ["chemistry", "Chemistry"], ["history", "History"]];
 const EXTRA_KEYS = ["emergencySex", "motherFirstName", "motherMiddleName", "motherLastName", "emergencyRegion", "emergencySubcity", "emergencyWereda", "emergencyHouseNumber", "disability", "disabilityDetail", "highSchoolName", "grade8Result", "grade8Year", "stream", "receiptNo", ...SUBJECTS.map(([k]) => k)];
+export const DEFAULT_PASSWORD = "123456789";
+export const autoEmail = (first: string) => { const b = first.toLowerCase().replace(/[^a-z0-9]/g, ""); return b ? `${b}@gmail.com` : ""; };
 const ageFrom = (dob?: string) => { if (!dob) return ""; const d = new Date(dob); if (isNaN(+d)) return ""; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a >= 0 ? String(a) : ""; };
 
 const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [v, setV] = useState<Record<string, string>>({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa" });
+  const initial = (): Record<string, string> => ({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa", ...(staffMode ? { password: DEFAULT_PASSWORD } : {}) });
+  const [v, setV] = useState<Record<string, string>>(initial);
   const [resultDoc, setResultDoc] = useState<File | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [grade8, setGrade8] = useState<File | null>(null);
@@ -61,6 +64,9 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
     if (k === "region") { n.city = ""; n.subcity = ""; }
     if (k === "city") n.subcity = "";
     if (k.startsWith("choice")) n[`field${k.slice(-1)}`] = "";
+    if (k === "firstName" && staffMode) n.email = autoEmail(val);
+    if (k === "kebele" && val) n.wereda = String(Number(val));
+    if (k === "wereda") { const w = Number(val.trim()); if (Number.isInteger(w) && w >= 1 && w <= 15) n.kebele = String(w).padStart(2, "0"); }
     return n;
   });
 
@@ -123,7 +129,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = schema.safeParse(v);
+    const parsed = schema.safeParse({ ...v, houseNumber: (v.houseNumber ?? "").trim() || (v.emergencyHouseNumber ?? "").trim() || "0000" });
     if (!parsed.success) {
       const i = parsed.error.issues[0];
       return toast.error(`${i.path.join(".")}: ${i.message}`);
@@ -202,7 +208,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         toast.success(grade12 >= cutoff
           ? "Student registered and can continue to the exam. Documents are awaiting admin review."
           : `Student registered on the waiting list because the result is below ${cutoff}.`);
-        setV({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa" });
+        setV(initial());
         (e.target as HTMLFormElement).reset();
         setPhoto(null); setResultDoc(null); setGrade8(null); setTranscript(null); setManualForm(null);
         return;
@@ -243,7 +249,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   );
   const deptSelect = (n: number, label: string) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border rounded-lg p-4">
-      {pick(`choice${n}`, `${label} — Department`, DEPARTMENTS, "Select department")}
+      {pick(`choice${n}`, `${label} — Department`, DEPARTMENTS.filter((d) => ![1, 2, 3].some((o) => o !== n && v[`choice${o}`] === d)), "Select department")}
       {v[`choice${n}`] ? pick(`field${n}`, "Occupation", DEPARTMENT_FIELDS[v[`choice${n}`]] ?? [], "Select occupation")
         : <div className="text-sm text-muted-foreground self-end pb-2">Choose a department first</div>}
     </div>
@@ -315,7 +321,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {field("middleName", "Middle Name", { maxLength: 100 })}
                       {field("lastName", "Last Name", { maxLength: 100 })}
                       {field("email", "Email Address", { type: "email", maxLength: 255 })}
-                      {staffMode && field("password", "Student Password (min 8)", { type: "password", minLength: 8, autoComplete: "new-password" })}
+                      {staffMode && field("password", "Student Password (min 8)", { type: "text", minLength: 8, autoComplete: "new-password" })}
                       {field("phone", "Phone Number", { type: "tel", placeholder: "+2519..." })}
                       <EthiopianDatePicker value={v.dob ?? ""} onChange={set("dob")} />
                       <div><Label>Age</Label><Input value={ageFrom(v.dob)} readOnly placeholder="From date of birth" /></div>
@@ -353,7 +359,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                           </SelectContent>
                         </Select>
                       </div>
-                      {field("houseNumber", "House Number", { maxLength: 30 })}
+                      {opt("houseNumber", "House Number", { maxLength: 30, placeholder: "Empty = emergency contact's or 0000" })}
                     </div>
                     {!inAddis && (
                       <div className="mt-4">

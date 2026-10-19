@@ -55,6 +55,8 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const initial = (): Record<string, string> => ({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa", ...(staffMode ? { password: DEFAULT_PASSWORD } : {}) });
   const [v, setV] = useState<Record<string, string>>(initial);
   const [resultDoc, setResultDoc] = useState<File | null>(null);
+  const [docScan, setDocScan] = useState<{ file: File; extracted: number | null; isDocument: boolean } | null>(null);
+  const [markReading, setMarkReading] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
   const [grade8, setGrade8] = useState<File | null>(null);
   const [transcripts, setTranscripts] = useState<File[]>([]);
@@ -122,6 +124,28 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
     } finally { setReading(false); }
   };
 
+  const pickResultDoc = async (f: File | null) => {
+    setResultDoc(f);
+    setDocScan(null);
+    if (!f || !isImg(f) || f.size > MAX) return;
+    setMarkReading(true);
+    try {
+      const { data: scan, error } = await supabase.functions.invoke("verify-grade", { body: { image: await toDataUrl(f) } });
+      if (error || scan?.error) throw new Error(scan?.error || error?.message || "Could not read the document");
+      setDocScan({ file: f, extracted: scan.extracted ?? null, isDocument: !!scan.isDocument });
+      if (scan.isDocument && scan.extracted != null) {
+        setV((p) => ({ ...p, grade12: String(scan.extracted) }));
+        toast.success(`Grade 12 mark read from the document: ${scan.extracted}. Check it, then continue.`);
+      } else if (!scan.isDocument) {
+        toast.info("That file doesn't look like a Grade 12 result document — enter the mark manually.");
+      } else {
+        toast.info("Couldn't read the mark from the photo — enter it manually.");
+      }
+    } catch {
+      toast.info("Couldn't read the mark from the photo — enter it manually.");
+    } finally { setMarkReading(false); }
+  };
+
   const inEthiopia = v.country?.trim().toLowerCase() === "ethiopia";
   const inAddis = inEthiopia && v.city === "Addis Ababa";
   const cities = inEthiopia && v.region ? Object.keys(ETHIOPIA[v.region] ?? {}) : [];
@@ -149,12 +173,18 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
 
-      toast.info("Verifying your result document...");
-      const image = await toDataUrl(resultDoc);
-      const { data: ver, error: verErr } = await supabase.functions.invoke("verify-grade", {
-        body: { image, enteredScore: parsed.data.grade12 },
-      });
-      if (verErr || ver?.error) throw new Error(ver?.error || "Verification failed. Try again.");
+      let ver: { match: boolean; extracted?: number | null; isDocument: boolean };
+      if (docScan && docScan.file === resultDoc && docScan.isDocument && docScan.extracted != null) {
+        ver = { match: Math.abs(docScan.extracted - parsed.data.grade12) < 0.01, extracted: docScan.extracted, isDocument: true };
+      } else {
+        toast.info("Verifying your result document...");
+        const image = await toDataUrl(resultDoc);
+        const { data: scanned, error: verErr } = await supabase.functions.invoke("verify-grade", {
+          body: { image, enteredScore: parsed.data.grade12 },
+        });
+        if (verErr || scanned?.error) throw new Error(scanned?.error || "Verification failed. Try again.");
+        ver = scanned;
+      }
       if (!ver.isDocument) throw new Error("The uploaded file doesn't look like a Grade 12 result document.");
       if (!ver.match) throw new Error(`Entered result (${parsed.data.grade12}) does not match the document (${ver.extracted ?? "unreadable"}).`);
 
@@ -413,7 +443,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {field("grade12", "Grade 12 Exit Exam Result", { type: "text", inputMode: "decimal", pattern: "[0-9]{1,3}([.,][0-9]{1,2})?", title: "Enter a mark like 150.32", placeholder: "e.g., 150.32" })}
                       {field("grade12Year", "Year Grade 12 Completed", { type: "number", min: 1990, max: currentYear, placeholder: `e.g., ${currentYear - 1}` })}
-                      {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", setResultDoc, "The result on this document must match the result you entered.")}
+                      {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading the mark from the document..." : "The Grade 12 mark fills in automatically from this photo — check it before submitting.")}
                       {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.")}
                       <div>
                         <Label htmlFor="transcript">Transcript (Grade 9–12) *</Label>

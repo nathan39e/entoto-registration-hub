@@ -49,6 +49,8 @@ const DocumentsZipExport = () => {
         if (!d.grade12 && a.result_doc_path) d.grade12 = a.result_doc_path;
         const folder = `${safe(a.first_choice)}/${safe(p?.student_code ?? a.user_id)}_${safe(p?.full_name ?? "")}`;
         for (const [k, n] of DOCS) if (d[k]) jobs.push({ path: d[k], entry: `${folder}/${n}.${d[k].split(".").pop() || "jpg"}` });
+        const extra = (Array.isArray(d.transcripts) ? (d.transcripts as string[]) : []).slice(d.transcript ? 1 : 0);
+        for (const [i, p] of extra.entries()) jobs.push({ path: p, entry: `${folder}/transcript_${i + 2}.${p.split(".").pop() || "jpg"}` });
       }
       if (!jobs.length) { toast.error("No uploaded documents found."); return; }
       setTotal(jobs.length);

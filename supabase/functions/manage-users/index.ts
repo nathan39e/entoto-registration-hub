@@ -137,7 +137,9 @@ Deno.serve(async (req) => {
       const a = body.application ?? {};
       const docs = a.documents ?? {};
       for (const v of Object.values(docs)) {
-        if (typeof v !== "string" || !v.startsWith(`${id}/`)) return json({ error: "Invalid document path" }, 400);
+        const ok = (typeof v === "string" && v.startsWith(`${id}/`)) ||
+          (Array.isArray(v) && v.length > 0 && v.every((p) => typeof p === "string" && p.startsWith(`${id}/`)));
+        if (!ok) return json({ error: "Invalid document path" }, 400);
       }
       const { error } = await admin.from("applications").insert({
         user_id: id, grade_12_results: a.grade_12_results ?? {},

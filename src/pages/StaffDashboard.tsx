@@ -111,6 +111,9 @@ const StaffDashboard = () => {
                       {DOCS.map(([k, label]) => (
                         <Button key={k} size="sm" variant="outline" disabled={!docs[k]} onClick={() => open(docs[k])}>{label}</Button>
                       ))}
+                      {(Array.isArray(docs.transcripts) ? (docs.transcripts as string[]) : [])
+                        .slice(docs.transcript ? 1 : 0)
+                        .map((p, i) => <Button key={p} size="sm" variant="outline" onClick={() => open(p)}>Transcript {i + 2}</Button>)}
                       <StudentRecordActions key={found.profile.id} studentId={found.profile.id} canEdit={canEdit} onSaved={() => selectStudent(found.profile)} />
                     </div>
                   </>

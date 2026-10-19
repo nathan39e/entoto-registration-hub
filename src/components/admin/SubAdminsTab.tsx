@@ -7,24 +7,25 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 
-type Row = { id: string; full_name: string; email: string; count: number; canEdit: boolean };
+type Row = { id: string; full_name: string; email: string; phone: string; count: number; canEdit: boolean };
 
 const SubAdminsTab = () => {
   const [rows, setRows] = useState<Row[]>([]);
   const [email, setEmail] = useState("");
+  const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [nw, setNw] = useState({ full_name: "", email: "", password: "" });
 
   const load = async () => {
     const [{ data: roles }, { data: profs }, { data: permissions }] = await Promise.all([
       supabase.from("user_roles").select("user_id").eq("role", "sub_admin"),
-      supabase.from("profiles").select("id, full_name, email, registered_by"),
+      supabase.from("profiles").select("id, full_name, email, phone, registered_by"),
       supabase.from("staff_permissions").select("user_id, can_edit_departments"),
     ]);
     const all = profs ?? [];
     setRows((roles ?? []).map((r) => {
       const p = all.find((x) => x.id === r.user_id);
-      return { id: r.user_id, full_name: p?.full_name ?? "Unknown", email: p?.email ?? "", count: all.filter((x) => x.registered_by === r.user_id).length, canEdit: permissions?.some((x) => x.user_id === r.user_id && x.can_edit_departments) ?? false };
+      return { id: r.user_id, full_name: p?.full_name ?? "Unknown", email: p?.email ?? "", phone: p?.phone ?? "", count: all.filter((x) => x.registered_by === r.user_id).length, canEdit: permissions?.some((x) => x.user_id === r.user_id && x.can_edit_departments) ?? false };
     }));
   };
   useEffect(() => { load(); }, []);
@@ -52,12 +53,13 @@ const SubAdminsTab = () => {
           <Input type="email" required placeholder="Email of the account" value={email} onChange={(e) => setEmail(e.target.value)} className="max-w-sm" />
           <Button type="submit" disabled={busy}>Promote Existing Account</Button>
         </form>
+        <Input aria-label="Search sub admins" placeholder="Search sub admins by name, email or phone" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm mt-2" />
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Students Registered</TableHead><TableHead>Edit Department Choices</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
-            {rows.map((r) => (
+            {rows.filter((r) => !q.trim() || [r.full_name, r.email, r.phone].some((x) => x.toLowerCase().includes(q.trim().toLowerCase()))).map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="font-medium">{r.full_name}</TableCell>
                 <TableCell>{r.email}</TableCell>

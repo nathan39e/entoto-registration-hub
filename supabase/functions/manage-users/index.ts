@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin } from "./record-rules.ts";
+import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin, canManageCreatedAdmin } from "./record-rules.ts";
 import { DEPARTMENT_FIELDS } from "./departments.ts";
 
 const cors = {
@@ -165,7 +165,36 @@ Deno.serve(async (req) => {
       if (roleError) { await admin.auth.admin.deleteUser(id); return json({ error: "Could not assign admin role" }, 500); }
       const { error: cleanupError } = await admin.from("user_roles").delete().eq("user_id", id).eq("role", "student");
       if (cleanupError) { await admin.auth.admin.deleteUser(id); return json({ error: "Could not finalize admin account" }, 500); }
+      await admin.from("profiles").update({ registered_by: user.id }).eq("id", id);
       // Intentionally do not grant admin_creation_authority to newly created admins.
+      return json({ ok: true });
+    }
+
+    if (action === "update_admin" || action === "delete_admin") {
+      const id = str(body.id, 64);
+      if (!id || id === user.id) return json({ error: "Use Account settings to change your own account." }, 400);
+      const [{ data: target }, { data: role }] = await Promise.all([
+        admin.from("profiles").select("registered_by").eq("id", id).maybeSingle(),
+        admin.from("user_roles").select("user_id").eq("user_id", id).eq("role", "admin").maybeSingle(),
+      ]);
+      if (!role || !canManageCreatedAdmin(user.id, target?.registered_by ?? null)) return json({ error: "You can only manage admins you created." }, 403);
+      if (action === "delete_admin") {
+        await admin.from("admin_creation_authority").delete().eq("user_id", id);
+        await admin.from("user_roles").delete().eq("user_id", id);
+        await admin.from("staff_permissions").delete().eq("user_id", id);
+        await admin.from("profiles").delete().eq("id", id);
+        const { error } = await admin.auth.admin.deleteUser(id);
+        if (error) return json({ error: error.message }, 400);
+        return json({ ok: true });
+      }
+      const full_name = str(body.full_name, 100), email = str(body.email, 255).toLowerCase(), phone = str(body.phone, 20);
+      if (!full_name || !/^\S+@\S+\.\S+$/.test(email)) return json({ error: "Name and a valid email are required." }, 400);
+      const password = typeof body.password === "string" ? body.password : "";
+      if (password && password.length < 8) return json({ error: "Password must be at least 8 characters." }, 400);
+      const { error: authError } = await admin.auth.admin.updateUserById(id, { email, email_confirm: true, ...(password ? { password } : {}), user_metadata: { full_name } });
+      if (authError) return json({ error: authError.message }, 400);
+      const { error } = await admin.from("profiles").update({ full_name, email, phone: phone || null }).eq("id", id);
+      if (error) return json({ error: error.message }, 400);
       return json({ ok: true });
     }
 

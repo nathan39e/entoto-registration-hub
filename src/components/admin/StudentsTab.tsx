@@ -214,7 +214,7 @@ const StudentsTab = () => {
             <div><Label htmlFor="dl-from">From day</Label><Input id="dl-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
             <div><Label htmlFor="dl-to">To day</Label><Input id="dl-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
           </div>
-          <Input aria-label="Export student search" placeholder="Search name, email or student code" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input aria-label="Export student search" placeholder="Search name, phone, email or student code" value={q} onChange={(e) => setQ(e.target.value)} />
           {filterControls}
           <p className="text-sm">{filtered.length} students will be included.</p>
           <DialogFooter>

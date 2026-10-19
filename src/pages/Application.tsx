@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { staffHome } from "@/lib/staffHome";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -16,6 +16,7 @@ import { DEPARTMENTS, DEPARTMENT_FIELDS } from "@/data/departments";
 import { ETHIOPIA, REGIONS } from "@/data/ethiopia";
 import { validManualForm } from "../../supabase/functions/manage-users/record-rules";
 import EthiopianDatePicker from "@/components/EthiopianDatePicker";
+import { SUBJECTS, normalizeGradeResult } from "../../supabase/functions/verify-grade/grade-results";
 
 const text = (max = 100) => z.string().trim().min(1, "Required").max(max);
 const currentYear = new Date().getFullYear();
@@ -43,7 +44,6 @@ const toDataUrl = (f: File) => new Promise<string>((res, rej) => {
 const MAX = 5 * 1024 * 1024;
 const isImg = (f: File) => f.type.startsWith("image/");
 const isDoc = (f: File) => isImg(f) || f.type === "application/pdf";
-const SUBJECTS: [string, string][] = [["english", "English"], ["physics", "Physics"], ["civics", "Civics"], ["geography", "Geography"], ["naturalMath", "Natural Math"], ["biology", "Biology"], ["socialMath", "Social Math"], ["economics", "Economics"], ["aptitude", "Aptitude"], ["chemistry", "Chemistry"], ["history", "History"]];
 const EXTRA_KEYS = ["emergencySex", "motherFirstName", "motherMiddleName", "motherLastName", "emergencyRegion", "emergencySubcity", "emergencyWereda", "emergencyHouseNumber", "disability", "disabilityDetail", "highSchoolName", "grade8Result", "grade8Year", "stream", "receiptNo", ...SUBJECTS.map(([k]) => k)];
 export const DEFAULT_PASSWORD = "123456789";
 export const autoEmail = (first: string) => { const b = first.toLowerCase().replace(/[^a-z0-9]/g, ""); return b ? `${b}@gmail.com` : ""; };
@@ -57,6 +57,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const [resultDoc, setResultDoc] = useState<File | null>(null);
   const [docScan, setDocScan] = useState<{ file: File; extracted: number | null; isDocument: boolean } | null>(null);
   const [markReading, setMarkReading] = useState(false);
+  const resultScanVersion = useRef(0);
   const [photo, setPhoto] = useState<File | null>(null);
   const [grade8, setGrade8] = useState<File | null>(null);
   const [transcripts, setTranscripts] = useState<File[]>([]);
@@ -125,25 +126,30 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   };
 
   const pickResultDoc = async (f: File | null) => {
+    const version = ++resultScanVersion.current;
     setResultDoc(f);
     setDocScan(null);
+    setMarkReading(false);
     if (!f || !isImg(f) || f.size > MAX) return;
     setMarkReading(true);
     try {
       const { data: scan, error } = await supabase.functions.invoke("verify-grade", { body: { image: await toDataUrl(f) } });
+      if (version !== resultScanVersion.current) return;
       if (error || scan?.error) throw new Error(scan?.error || error?.message || "Could not read the document");
       setDocScan({ file: f, extracted: scan.extracted ?? null, isDocument: !!scan.isDocument });
-      if (scan.isDocument && scan.extracted != null) {
-        setV((p) => ({ ...p, grade12: String(scan.extracted) }));
-        toast.success(`Grade 12 mark read from the document: ${scan.extracted}. Check it, then continue.`);
+      const result = normalizeGradeResult({ is_result_document: scan.isDocument, score: scan.extracted, subject_marks: scan.subjects });
+      const subjectCount = Object.keys(result.subjects).length;
+      if (result.isDocument && (result.extracted !== null || subjectCount > 0)) {
+        setV((p) => ({ ...p, ...Object.fromEntries(Object.entries(result.subjects).map(([key, score]) => [key, String(score)])), ...(result.extracted !== null ? { grade12: String(result.extracted) } : {}) }));
+        toast.success(`Read ${subjectCount} subject marks${result.extracted !== null ? ` and total ${result.extracted}` : ""}. Check the marks before continuing.`);
       } else if (!scan.isDocument) {
         toast.info("That file doesn't look like a Grade 12 result document — enter the mark manually.");
       } else {
         toast.info("Couldn't read the mark from the photo — enter it manually.");
       }
     } catch {
-      toast.info("Couldn't read the mark from the photo — enter it manually.");
-    } finally { setMarkReading(false); }
+      if (version === resultScanVersion.current) toast.info("Couldn't read the marks from the photo — enter them manually.");
+    } finally { if (version === resultScanVersion.current) setMarkReading(false); }
   };
 
   const inEthiopia = v.country?.trim().toLowerCase() === "ethiopia";
@@ -443,7 +449,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {field("grade12", "Grade 12 Exit Exam Result", { type: "text", inputMode: "decimal", pattern: "[0-9]{1,3}([.,][0-9]{1,2})?", title: "Enter a mark like 150.32", placeholder: "e.g., 150.32" })}
                       {field("grade12Year", "Year Grade 12 Completed", { type: "number", min: 1990, max: currentYear, placeholder: `e.g., ${currentYear - 1}` })}
-                      {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading the mark from the document..." : "The Grade 12 mark fills in automatically from this photo — check it before submitting.")}
+                      {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading total and subject marks..." : "Image under 5MB.")}
                       {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.")}
                       <div>
                         <Label htmlFor="transcript">Transcript (Grade 9–12) *</Label>
@@ -470,7 +476,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                   </div>
 
                   <div className="max-w-sm">{opt("receiptNo", "Receipt No")}</div>
-                  <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                  <Button type="submit" size="lg" className="w-full" disabled={loading || markReading}>
                     {loading ? "Verifying & submitting..." : "Submit Application"}
                   </Button>
                 </form>

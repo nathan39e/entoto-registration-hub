@@ -57,7 +57,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const [resultDoc, setResultDoc] = useState<File | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [grade8, setGrade8] = useState<File | null>(null);
-  const [transcript, setTranscript] = useState<File | null>(null);
+  const [transcripts, setTranscripts] = useState<File[]>([]);
   const [manualForm, setManualForm] = useState<File | null>(null);
   const set = (k: string) => (val: string) => setV((p) => {
     const n = { ...p, [k]: val };
@@ -140,7 +140,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
     if (!photo || !isImg(photo) || photo.size > MAX) return toast.error("Please upload a personal photo (image under 5MB).");
     if (!resultDoc || !isImg(resultDoc) || resultDoc.size > MAX) return toast.error("Grade 12 result must be an image (JPG/PNG) under 5MB.");
     if (!grade8 || !isDoc(grade8) || grade8.size > MAX) return toast.error("Please upload your Grade 8 result (image or PDF under 5MB).");
-    if (!transcript || !isDoc(transcript) || transcript.size > MAX) return toast.error("Please upload your Grade 9–12 transcript (image or PDF under 5MB).");
+    if (!transcripts.length || transcripts.some((f) => !isDoc(f) || f.size > MAX)) return toast.error("Please upload your Grade 9–12 transcript(s) — image or PDF, each under 5MB.");
     if (!validManualForm(manualForm)) return toast.error("Manual form must be a JPG, PNG, WebP or PDF under 5MB.");
     if (staffMode && (v.password ?? "").length < 8) return toast.error("Password must be at least 8 characters.");
 
@@ -185,11 +185,14 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         return p;
       };
       const path = await upload(resultDoc, "grade12");
+      const transcriptPaths: string[] = [];
+      for (const f of transcripts) transcriptPaths.push(await upload(f, "transcript"));
       const documents = {
         photo: await upload(photo, "photo"),
         grade12: path,
         grade8: await upload(grade8, "grade8"),
-        transcript: await upload(transcript, "transcript"),
+        transcript: transcriptPaths[0],
+        transcripts: transcriptPaths,
         ...(manualForm ? { manualForm: await upload(manualForm, "manualForm") } : {}),
       };
 
@@ -210,7 +213,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
           : `Student registered on the waiting list because the result is below ${cutoff}.`);
         setV(initial());
         (e.target as HTMLFormElement).reset();
-        setPhoto(null); setResultDoc(null); setGrade8(null); setTranscript(null); setManualForm(null);
+        setPhoto(null); setResultDoc(null); setGrade8(null); setTranscripts([]); setManualForm(null);
         return;
       }
       const { data: saved, error } = await supabase.from("applications").insert({ user_id: user.id, ...appRow }).select("status").single();
@@ -412,7 +415,16 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {field("grade12Year", "Year Grade 12 Completed", { type: "number", min: 1990, max: currentYear, placeholder: `e.g., ${currentYear - 1}` })}
                       {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", setResultDoc, "The result on this document must match the result you entered.")}
                       {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.")}
-                      {fileInput("transcript", "Transcript (Grade 9–12)", "image/*,application/pdf", setTranscript, "Image or PDF, under 5MB.")}
+                      <div>
+                        <Label htmlFor="transcript">Transcript (Grade 9–12) *</Label>
+                        <Input id="transcript" type="file" accept="image/*,application/pdf" multiple required={!transcripts.length}
+                          onChange={(e) => setTranscripts(Array.from(e.target.files ?? []))} />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {transcripts.length
+                            ? `${transcripts.length} file${transcripts.length > 1 ? "s" : ""} selected: ${transcripts.map((f) => f.name).join(", ")}`
+                            : "You can select more than one file — images or PDFs, each under 5MB."}
+                        </p>
+                      </div>
                       {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, manualForm ? `Attached: ${manualForm.name}` : "Scan or photo of the completed paper form — image or PDF, under 5MB.")}
                     </div>
                   </div>

@@ -50,14 +50,16 @@ const StaffDashboard = () => {
     setSearched(true); setFound(null); setMatches([]);
     const term = code.trim().replace(/[%_]/g, "");
     if (!term) return;
-    const [{ data: byCode, error }, { data: byName }, { data: staff }] = await Promise.all([
+    const phone = term.replace(/[^\d+]/g, "").replace(/^\+?251/, "").replace(/^0/, "");
+    const [{ data: byCode, error }, { data: byName }, { data: byPhone }, { data: staff }] = await Promise.all([
       supabase.from("profiles").select("*").ilike("student_code", term).limit(20),
       supabase.from("profiles").select("*").ilike("full_name", `%${term}%`).limit(20),
+      phone.length >= 3 ? supabase.from("profiles").select("*").ilike("phone", `%${phone}%`).limit(20) : Promise.resolve({ data: [] as any[] }),
       supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head"]),
     ]);
     if (error) return toast.error(error.message);
     const excluded = new Set((staff ?? []).map((r) => r.user_id));
-    const results = [...new Map([...(byCode ?? []), ...(byName ?? [])].map((p) => [p.id, p])).values()].filter((p) => !excluded.has(p.id));
+    const results = [...new Map([...(byCode ?? []), ...(byName ?? []), ...(byPhone ?? [])].map((p) => [p.id, p])).values()].filter((p) => !excluded.has(p.id));
     setMatches(results);
     if (results.length === 1) await selectStudent(results[0]);
   };
@@ -86,11 +88,11 @@ const StaffDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Check a Student</CardTitle>
-            <CardDescription>Search by student name or ID.</CardDescription>
+            <CardDescription>Search by student name, phone number or ID.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={search} className="flex flex-wrap gap-2">
-              <Input required aria-label="Student name or ID" placeholder="Student name or ID" value={code} onChange={(e) => setCode(e.target.value)} className="max-w-sm" />
+              <Input required aria-label="Student name, phone or ID" placeholder="Student name, phone or ID" value={code} onChange={(e) => setCode(e.target.value)} className="max-w-sm" />
               <Button type="submit">Search</Button>
             </form>
             {searched && !matches.length && <p className="text-muted-foreground">No student found.</p>}

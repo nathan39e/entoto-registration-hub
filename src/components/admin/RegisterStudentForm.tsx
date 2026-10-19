@@ -7,14 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { DEPARTMENTS } from "@/data/departments";
+import { DEFAULT_PASSWORD, autoEmail } from "@/pages/Application";
 
 export const PROGRAMS = ["Regular", "Extension", "Weekend"];
 
 const RegisterStudentForm = ({ onDone }: { onDone?: () => void }) => {
-  const [v, setV] = useState<Record<string, string>>({ program: "Regular" });
+  const [v, setV] = useState<Record<string, string>>({ program: "Regular", password: DEFAULT_PASSWORD });
   const [busy, setBusy] = useState(false);
   const [code, setCode] = useState<string | null>(null);
-  const set = (k: string) => (val: string) => setV((p) => ({ ...p, [k]: val }));
+  const set = (k: string) => (val: string) => setV((p) => ({ ...p, [k]: val, ...(k === "full_name" ? { email: autoEmail(val.trim().split(/\s+/)[0] ?? "") } : {}) }));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +26,7 @@ const RegisterStudentForm = ({ onDone }: { onDone?: () => void }) => {
     if (error || data?.error) return toast.error(data?.error || error?.message || "Failed");
     setCode(data.student_code);
     toast.success("Student registered");
-    setV({ program: "Regular" });
+    setV({ program: "Regular", password: DEFAULT_PASSWORD });
     onDone?.();
   };
 
@@ -55,9 +56,9 @@ const RegisterStudentForm = ({ onDone }: { onDone?: () => void }) => {
           {inp("phone", "Phone", { type: "tel", maxLength: 20 })}
           {inp("grade12", "Grade 12 Result", { type: "text", inputMode: "decimal", pattern: "[0-9]{1,3}([.,][0-9]{1,2})?", title: "Enter a mark like 150.32", placeholder: "e.g., 150.32" })}
           {pick("program", "Program", PROGRAMS)}
-          {pick("choice1", "First Choice", DEPARTMENTS)}
-          {pick("choice2", "Second Choice", DEPARTMENTS)}
-          {pick("choice3", "Third Choice", DEPARTMENTS)}
+          {pick("choice1", "First Choice", DEPARTMENTS.filter((d) => d !== v.choice2 && d !== v.choice3))}
+          {pick("choice2", "Second Choice", DEPARTMENTS.filter((d) => d !== v.choice1 && d !== v.choice3))}
+          {pick("choice3", "Third Choice", DEPARTMENTS.filter((d) => d !== v.choice1 && d !== v.choice2))}
           <div className="md:col-span-3 flex flex-wrap items-center gap-4">
             <Button type="submit" disabled={busy}>{busy ? "Registering..." : "Register Student"}</Button>
             {code && <span className="text-sm">New student code: <b className="text-primary">{code}</b></span>}

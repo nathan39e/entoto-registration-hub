@@ -213,7 +213,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
           : `Student registered on the waiting list because the result is below ${cutoff}.`);
         setV(initial());
         (e.target as HTMLFormElement).reset();
-        setPhoto(null); setResultDoc(null); setGrade8(null); setTranscript(null); setManualForm(null);
+        setPhoto(null); setResultDoc(null); setGrade8(null); setTranscripts([]); setManualForm(null);
         return;
       }
       const { data: saved, error } = await supabase.from("applications").insert({ user_id: user.id, ...appRow }).select("status").single();
@@ -415,7 +415,16 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {field("grade12Year", "Year Grade 12 Completed", { type: "number", min: 1990, max: currentYear, placeholder: `e.g., ${currentYear - 1}` })}
                       {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", setResultDoc, "The result on this document must match the result you entered.")}
                       {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.")}
-                      {fileInput("transcript", "Transcript (Grade 9–12)", "image/*,application/pdf", setTranscript, "Image or PDF, under 5MB.")}
+                      <div>
+                        <Label htmlFor="transcript">Transcript (Grade 9–12) *</Label>
+                        <Input id="transcript" type="file" accept="image/*,application/pdf" multiple required={!transcripts.length}
+                          onChange={(e) => setTranscripts(Array.from(e.target.files ?? []))} />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {transcripts.length
+                            ? `${transcripts.length} file${transcripts.length > 1 ? "s" : ""} selected: ${transcripts.map((f) => f.name).join(", ")}`
+                            : "You can select more than one file — images or PDFs, each under 5MB."}
+                        </p>
+                      </div>
                       {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, manualForm ? `Attached: ${manualForm.name}` : "Scan or photo of the completed paper form — image or PDF, under 5MB.")}
                     </div>
                   </div>

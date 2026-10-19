@@ -119,6 +119,7 @@ const StudentsTab = () => {
         "Registered By": s.registered_by ? names.get(s.registered_by) ?? "Staff" : "Self",
         "Photo (7-day link)": await link(d.photo), "Grade 12 Doc": await link(d.grade12 ?? a?.result_doc_path),
         "Grade 8 Doc": await link(d.grade8), Transcript: await link(d.transcript), "Manual Form": await link(d.manualForm),
+        "Additional Transcripts": (Array.isArray(d.transcripts) ? await Promise.all((d.transcripts as string[]).slice(d.transcript ? 1 : 0).map(link)) : []).join("\n"),
         Registered: new Date(s.created_at).toLocaleDateString(),
       });
     }

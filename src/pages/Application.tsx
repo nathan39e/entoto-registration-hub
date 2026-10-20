@@ -467,19 +467,22 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {field("grade12", "Grade 12 Exit Exam Result", { type: "text", inputMode: "decimal", pattern: "[0-9]{1,3}([.,][0-9]{1,2})?", title: "Enter a mark like 150.32", placeholder: "e.g., 150.32" })}
                       {field("grade12Year", "Year Grade 12 Completed", { type: "number", min: 1990, max: currentYear, placeholder: `e.g., ${currentYear - 1}` })}
-                      {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading total and subject marks..." : "Image under 5MB.")}
-                      {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.")}
+                      {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading total and subject marks..." : "Image under 5MB.", resultDoc?.name)}
+                      {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.", grade8?.name)}
                       <div>
                         <Label htmlFor="transcript">Transcript (Grade 9–12) *</Label>
-                        <Input id="transcript" type="file" accept="image/*,application/pdf" multiple required={!transcripts.length}
-                          onChange={(e) => setTranscripts(Array.from(e.target.files ?? []))} />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Input id="transcript" type="file" accept="image/*,application/pdf" multiple
+                            onChange={(e) => setTranscripts(Array.from(e.target.files ?? []))} className="flex-1 min-w-44" />
+                          {cameraButton("transcript", (f) => setTranscripts((p) => [...p, f]))}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-1">
                           {transcripts.length
                             ? `${transcripts.length} file${transcripts.length > 1 ? "s" : ""} selected: ${transcripts.map((f) => f.name).join(", ")}`
                             : "You can select more than one file — images or PDFs, each under 5MB."}
                         </p>
                       </div>
-                      {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, manualForm ? `Attached: ${manualForm.name}` : "Scan or photo of the completed paper form — image or PDF, under 5MB.")}
+                      {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, "Scan or photo of the completed paper form — image or PDF, under 5MB.", manualForm?.name)}
                     </div>
                   </div>
 

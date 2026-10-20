@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import DocumentsZipExport from "@/components/admin/DocumentsZipExport";
 import StudentRecordActions from "@/components/StudentRecordActions";
+import StudentFilterList from "@/components/StudentFilterList";
 
 
 const DOCS: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript"], ["manualForm", "Manual Form"]];
@@ -85,6 +86,7 @@ const StaffDashboard = () => {
           <h1 className="text-4xl font-bold">Staff Dashboard</h1>
           <DocumentsZipExport />
         </div>
+        <StudentFilterList />
         <Card>
           <CardHeader>
             <CardTitle>Check a Student</CardTitle>

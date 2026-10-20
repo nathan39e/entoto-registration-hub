@@ -362,8 +362,11 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                 {staffMode && (
                   <div className="mb-8 rounded-lg border border-dashed border-primary/50 bg-primary/5 p-4">
                     <Label htmlFor="formPhoto" className="font-semibold">Fill from a photo of the paper form</Label>
-                    <Input id="formPhoto" type="file" accept="image/*" disabled={reading} className="mt-2"
-                      onChange={(e) => { autofill(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input id="formPhoto" type="file" accept="image/*" disabled={reading} className="mt-2 flex-1 min-w-44"
+                        onChange={(e) => { autofill(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+                      {cameraButton("formPhoto", autofill, reading)}
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">{reading ? "Reading the form..." : "Upload a clear photo of the filled application form. Fields are filled automatically — check them before submitting."}</p>
                   </div>
                 )}
@@ -389,7 +392,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                           </SelectContent>
                         </Select>
                       </div>
-                      {fileInput("photo", "Personal Photo", "image/*", setPhoto, "Clear passport-style photo, under 5MB.")}
+                      {fileInput("photo", "Personal Photo", "image/*", setPhoto, "Clear passport-style photo, under 5MB.", photo?.name)}
                     </div>
                   </div>
 

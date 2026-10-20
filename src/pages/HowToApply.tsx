@@ -6,7 +6,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { UserPlus, FileText, Receipt, ClipboardCheck, IdCard } from "lucide-react";
 
 // The recorded walkthrough tutorial, hosted on the college's YouTube channel.
-const TUTORIAL_VIDEO_URL = "https://www.youtube.com/embed/A4idvfz3gRY";
+// https://youtu.be/zcRZiG38NWM — "How to apply and register into Tafari makonnen
+// poly technic college portal" by Tafarimakonnennpolytechnic-college.
+const TUTORIAL_VIDEO_URL = "https://www.youtube.com/embed/zcRZiG38NWM";
 
 
 const steps = [

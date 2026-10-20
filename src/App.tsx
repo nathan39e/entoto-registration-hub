@@ -24,7 +24,6 @@ import { LanguageProvider } from "./lib/i18n";
 import { ThemeProvider } from "./lib/theme";
 import { HelmetProvider } from "react-helmet-async";
 import RouteMeta from "./components/RouteMeta";
-import SessionGuard from "./components/SessionGuard";
 import DepartmentExam from "./pages/DepartmentExam";
 import HowToApply from "./pages/HowToApply";
 
@@ -40,7 +39,6 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <RouteMeta />
-        <SessionGuard />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />

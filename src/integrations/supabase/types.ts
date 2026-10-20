@@ -563,6 +563,30 @@ export type Database = {
         }
         Relationships: []
       }
+      site_visits: {
+        Row: {
+          created_at: string
+          device: string
+          id: string
+          path: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          device?: string
+          id?: string
+          path: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          device?: string
+          id?: string
+          path?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       staff_permissions: {
         Row: {
           can_edit_departments: boolean

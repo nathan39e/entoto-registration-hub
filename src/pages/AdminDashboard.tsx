@@ -81,6 +81,9 @@ const AdminDashboard = () => {
     toast({ title: "Exam schedule saved" });
   };
   const knownPaymentIds = useRef<Set<string> | null>(null);
+  const [tab, setTab] = useState("students");
+  const pendingCount = payments.filter((p) => p.status === "pending").length;
+  const TABS: [string, string][] = [["students", "Students"], ["subadmins", "Sub Admins"], ["admins", "Admins"], ["applications", "Applications"], ["results", "Test Results"], ["exams", "Exams"], ["heads", "Dept Heads"], ["news", "News"], ["payments", "Payments"]];
 
   useEffect(() => {
     checkAdminAccess();
@@ -358,17 +361,17 @@ const AdminDashboard = () => {
 
         <div className="mb-8"><StudentQRScanner /></div>
 
-        <Tabs defaultValue="students" className="w-full">
-          <TabsList className="flex flex-wrap h-auto w-full gap-1">
-            <TabsTrigger value="students" className="flex-1 min-w-[7rem]">Students</TabsTrigger>
-            <TabsTrigger value="subadmins" className="flex-1 min-w-[7rem]">Sub Admins</TabsTrigger>
-            <TabsTrigger value="admins" className="flex-1 min-w-[7rem]">Admins</TabsTrigger>
-            <TabsTrigger value="applications" className="flex-1 min-w-[7rem]">Applications</TabsTrigger>
-            <TabsTrigger value="results" className="flex-1 min-w-[7rem]">Test Results</TabsTrigger>
-            <TabsTrigger value="exams" className="flex-1 min-w-[7rem]">Exams</TabsTrigger>
-            <TabsTrigger value="heads" className="flex-1 min-w-[7rem]">Dept Heads</TabsTrigger>
-            <TabsTrigger value="news" className="flex-1 min-w-[7rem]">News</TabsTrigger>
-            <TabsTrigger value="payments" className="flex-1 min-w-[7rem]">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
+        <Tabs value={tab} onValueChange={setTab} className="w-full">
+          <div className="md:hidden">
+            <Label htmlFor="admin-section" className="mb-1 block">Section</Label>
+            <select id="admin-section" value={tab} onChange={(e) => setTab(e.target.value)} className="w-full h-11 rounded-md border border-input bg-background px-3 text-base">
+              {TABS.map(([v, l]) => <option key={v} value={v}>{l}{v === "payments" && pendingCount ? ` (${pendingCount} pending)` : ""}</option>)}
+            </select>
+          </div>
+          <TabsList className="hidden md:flex flex-wrap h-auto w-full gap-1">
+            {TABS.map(([v, l]) => (
+              <TabsTrigger key={v} value={v} className="flex-1 min-w-[7rem]">{l}{v === "payments" && pendingCount > 0 && <Badge variant="destructive" className="ml-2">{pendingCount}</Badge>}</TabsTrigger>
+            ))}
           </TabsList>
 
           <TabsContent value="students" className="mt-6"><StudentsTab /></TabsContent>

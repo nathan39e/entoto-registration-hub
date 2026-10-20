@@ -26,6 +26,7 @@ const DepartmentHeadDashboard = () => {
   const [students, setStudents] = useState<any[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [field, setField] = useState("All");
+  const [programFilter, setProgramFilter] = useState("All");
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(true);
@@ -95,7 +96,7 @@ const DepartmentHeadDashboard = () => {
     setEvalFor(null); loadStudents(dept);
   };
   const fields = dept ? DEPARTMENT_FIELDS[dept] ?? [] : [];
-  const shown = students.filter((s) => (field === "All" || fieldOf(choiceOf(s)) === field) && (decisionFilter === "all" || decisionOf(s) === decisionFilter));
+  const shown = students.filter((s) => (field === "All" || fieldOf(choiceOf(s)) === field) && (programFilter === "All" || s.program === programFilter) && (decisionFilter === "all" || decisionOf(s) === decisionFilter));
 
   const addExam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,8 +180,12 @@ const DepartmentHeadDashboard = () => {
               {["All", ...fields].map((f) => <Button key={f} size="sm" variant={field === f ? "default" : "outline"} onClick={() => setField(f)}>{f}</Button>)}
             </div>
             <div className="flex flex-wrap gap-2 pt-1">
+              {["All", "Regular", "Extension", "Weekend"].map((p) => <Button key={p} size="sm" variant={programFilter === p ? "default" : "outline"} onClick={() => setProgramFilter(p)}>{p === "All" ? "All programs" : p}</Button>)}
+            </div>
+            <div className="flex flex-wrap gap-2 pt-1">
               {[["all", "All decisions"], ...Object.entries(DECISIONS)].map(([k, v]) => <Button key={k} size="sm" variant={decisionFilter === k ? "secondary" : "ghost"} onClick={() => setDecisionFilter(k)}>{v}</Button>)}
             </div>
+            <FilterCounts items={shown.map((s) => ({ program: s.program, occupation: fieldOf(choiceOf(s)) }))} />
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>

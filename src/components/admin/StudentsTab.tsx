@@ -159,7 +159,25 @@ const StudentsTab = () => {
           <FilterCounts items={filtered.map((p) => { const a = applications.find((x) => x.user_id === p.id); return { program: a?.program, occupation: occupationOf(a?.first_choice) }; })} />
         </CardHeader>
         <CardContent>
-          <div className="max-h-[500px] w-full max-w-full overflow-auto">
+          <div className="sm:hidden max-h-[600px] overflow-y-auto space-y-3">
+            {filtered.length === 0 && <p className="text-sm text-muted-foreground">No students match.</p>}
+            {filtered.map((p) => (
+              <div key={p.id} className="rounded-md border p-3 space-y-1 text-sm">
+                <p className="font-semibold break-words">{p.full_name}</p>
+                <p className="text-muted-foreground break-all">{p.email}</p>
+                <p>{p.student_code} · {p.phone || "—"}</p>
+                <p className="text-xs text-muted-foreground">Registered {new Date(p.created_at).toLocaleDateString()}</p>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Button size="sm" variant="outline" onClick={() => showDocs(p)}>Documents</Button>
+                  <StudentRecordActions studentId={p.id} canEdit={true} onSaved={() => showDocs(p)} />
+                  <Button size="sm" variant="outline" onClick={() => setEdit({ ...p })}>Edit</Button>
+                  <Button size="sm" variant="outline" onClick={() => sendReset(p.email)}>Reset email</Button>
+                  <Button size="sm" variant="destructive" onClick={() => setDel(p)}>Delete</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden sm:block max-h-[500px] w-full max-w-full overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>

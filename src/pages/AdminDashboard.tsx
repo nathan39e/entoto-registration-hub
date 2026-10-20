@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import VisitorsTab from "@/components/admin/VisitorsTab";
 import { useToast } from "@/hooks/use-toast";
 import { Users, FileText, CreditCard, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -367,6 +368,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="exams" className="flex-1 min-w-[7rem]">Exams</TabsTrigger>
             <TabsTrigger value="heads" className="flex-1 min-w-[7rem]">Dept Heads</TabsTrigger>
             <TabsTrigger value="news" className="flex-1 min-w-[7rem]">News</TabsTrigger>
+            <TabsTrigger value="visitors" className="flex-1 min-w-[7rem]">Visitors</TabsTrigger>
             <TabsTrigger value="payments" className="flex-1 min-w-[7rem]">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
           </TabsList>
 
@@ -376,6 +378,7 @@ const AdminDashboard = () => {
           <TabsContent value="exams" className="mt-6"><ExamFormsTab /></TabsContent>
           <TabsContent value="heads" className="mt-6"><DepartmentHeadsTab /></TabsContent>
           <TabsContent value="news" className="mt-6"><NewsTab /></TabsContent>
+          <TabsContent value="visitors" className="mt-6"><VisitorsTab /></TabsContent>
 
 
           <TabsContent value="applications" className="mt-6">

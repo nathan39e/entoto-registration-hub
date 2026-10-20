@@ -389,7 +389,7 @@ const AdminDashboard = () => {
                 <CardDescription>Review and manage student applications</CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[500px]">
+                <div className="max-h-[500px] w-full overflow-auto overscroll-x-contain rounded-md border [-webkit-overflow-scrolling:touch]">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -438,7 +438,7 @@ const AdminDashboard = () => {
                       ))}
                     </TableBody>
                   </Table>
-                </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -506,7 +506,7 @@ const AdminDashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                 <ScrollArea className="h-[500px] w-full">
+                 <div className="max-h-[500px] w-full overflow-auto overscroll-x-contain rounded-md border [-webkit-overflow-scrolling:touch]">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -552,7 +552,7 @@ const AdminDashboard = () => {
                       ))}
                     </TableBody>
                   </Table>
-                </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

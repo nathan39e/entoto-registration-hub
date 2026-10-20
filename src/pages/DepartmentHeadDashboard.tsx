@@ -116,7 +116,7 @@ const DepartmentHeadDashboard = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow container mx-auto px-4 py-8 space-y-6">
+      <main className="flex-grow container mx-auto px-4 py-8 space-y-6 min-w-0 max-w-full overflow-x-hidden">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">{dept} Department</h1>
           <Button className="mt-3" onClick={() => navigate("/staff/apply")}>Register a Student</Button>

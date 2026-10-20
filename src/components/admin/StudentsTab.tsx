@@ -3,7 +3,6 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -160,7 +159,7 @@ const StudentsTab = () => {
           <FilterCounts items={filtered.map((p) => { const a = applications.find((x) => x.user_id === p.id); return { program: a?.program, occupation: occupationOf(a?.first_choice) }; })} />
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[500px]">
+          <div className="max-h-[500px] w-full max-w-full overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -187,7 +186,7 @@ const StudentsTab = () => {
                 ))}
               </TableBody>
             </Table>
-          </ScrollArea>
+          </div>
         </CardContent>
       </Card>
 

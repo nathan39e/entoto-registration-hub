@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Users, FileText, CreditCard, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -300,7 +299,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 min-w-0 max-w-full overflow-x-hidden">
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-2">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage student applications, test results, and payments</p>
@@ -386,7 +385,7 @@ const AdminDashboard = () => {
                 <CardDescription>Review and manage student applications</CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[500px]">
+                <div className="max-h-[500px] w-full max-w-full overflow-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -435,7 +434,7 @@ const AdminDashboard = () => {
                       ))}
                     </TableBody>
                   </Table>
-                </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -447,7 +446,7 @@ const AdminDashboard = () => {
                 <CardDescription>View student assessment results</CardDescription>
               </CardHeader>
               <CardContent>
-                <ScrollArea className="h-[500px]">
+                <div className="max-h-[500px] w-full max-w-full overflow-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -484,7 +483,7 @@ const AdminDashboard = () => {
                       ))}
                     </TableBody>
                   </Table>
-                </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -503,7 +502,7 @@ const AdminDashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                 <ScrollArea className="h-[500px] w-full">
+                 <div className="max-h-[500px] w-full max-w-full overflow-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -549,7 +548,7 @@ const AdminDashboard = () => {
                       ))}
                     </TableBody>
                   </Table>
-                </ScrollArea>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

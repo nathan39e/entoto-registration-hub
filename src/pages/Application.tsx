@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Camera } from "lucide-react";
 import { staffHome } from "@/lib/staffHome";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -308,10 +309,24 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       </Select>
     </div>
   );
-  const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string) => (
+  const cameraButton = (id: string, onPick: (f: File) => void, disabled?: boolean) => (
+    <>
+      <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => document.getElementById(`${id}-camera`)?.click()}>
+        <Camera className="mr-1 h-4 w-4" /> Take a photo
+      </Button>
+      <input id={`${id}-camera`} type="file" accept="image/*" capture="environment" className="hidden" aria-hidden="true" tabIndex={-1}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onPick(f); e.target.value = ""; }} />
+    </>
+  );
+  const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string, selected?: string) => (
     <div>
       <Label htmlFor={id}>{label}{id === "manualForm" ? " (optional)" : " *"}</Label>
-      <Input id={id} type="file" accept={accept} required={id !== "manualForm"} onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
+      <div className="flex flex-wrap items-center gap-2">
+        <Input id={id} type="file" accept={accept} className="flex-1 min-w-44"
+          onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
+        {cameraButton(id, (f) => onPick(f))}
+      </div>
+      {selected && <p className="text-xs text-primary mt-1 truncate">Selected: {selected}</p>}
       <p className="text-xs text-muted-foreground mt-1">{hint}</p>
     </div>
   );

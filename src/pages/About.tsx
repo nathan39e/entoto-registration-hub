@@ -35,87 +35,234 @@ const About = () => {
               </div>
 
               <div>
-                <h2 className="text-3xl font-bold mb-4">Our History</h2>
-                <p className="text-lg text-muted-foreground">
-                  A Legacy of Education, Skills and National Service
+                <h1>Our History</h1>
+        <h2>A Legacy of Education, Skills, and National Service</h2>
 
-Tafari Makonnen Polytechnic College carries a remarkable educational heritage that dates back to 1925, making it one of Ethiopia's historic educational institutions. The institution was established by **Ras Tafari Makonnen**, who later became Emperor Haile Selassie I, during his regency.
+        <p>
+          Tafari Makonnen Polytechnic College carries a remarkable
+          educational heritage dating back to 1925. Its history began
+          with the establishment of Tafari Makonnen School by Ras
+          Tafari Makonnen, who later became Emperor Haile Selassie I.
+          The institution was established during an important period
+          in Ethiopia's efforts to expand modern education and support
+          national development.
+        </p>
 
-The establishment of the school was part of a broader vision to introduce and strengthen modern education in Ethiopia. At a time when traditional forms of education were predominant, Ras Tafari recognized that education was essential to Ethiopia's development, modernization and ability to preserve its independence.
+        <p>
+          Over the decades, the institution has evolved alongside
+          Ethiopia's educational, social, and economic development.
+          From its origins as a pioneering modern school to its
+          present role in technical and vocational education and
+          training, it has continued to contribute to the development
+          of knowledge, professional skills, and human resources.
+        </p>
+      </section>
 
-### The Beginning — 1925
+      <section id="foundation">
+        <h2>The Beginning: 1925</h2>
 
-The Tafari Makonnen School was officially opened in **April 1925**, with its opening ceremony taking place on **May 2, 1925**. The establishment of the school represented an important step in the development of modern state education in Ethiopia.
+        <p>
+          Tafari Makonnen School was officially opened in April 1925,
+          with its opening ceremony held on May 2, 1925. Its
+          establishment represented an important milestone in the
+          development of modern education in Ethiopia.
+        </p>
 
-The institution was designed to provide students with a broader modern education than was commonly available at the time. Its facilities included classrooms, a library, laboratory, dormitories, dining facilities, gardens and recreational grounds. Historical accounts report that the construction of the school cost approximately **300,000 Maria Theresa dollars**, with an additional 130,000 dollars allocated for the dormitory facilities.
+        <p>
+          The school introduced a broad academic curriculum designed
+          to prepare students for public service, professional life,
+          and national development. Historical accounts describe
+          facilities including classrooms, a library, laboratories,
+          dormitories, dining facilities, gardens, and recreational
+          areas.
+        </p>
 
-The early curriculum was broad and reflected the institution's modern educational vision. Students studied subjects including **Amharic, French, Arabic, English, mathematics, chemistry, physics, history, geography, gymnastics and sports**. The school initially had a strong French educational influence, including French administrators and teachers.
+        <p>
+          The early curriculum included Amharic, French, Arabic,
+          English, mathematics, chemistry, physics, history,
+          geography, physical education, and sports. The school
+          initially had a strong French educational influence.
+        </p>
 
-The school grew rapidly. Approximately **50 students** were enrolled when it first opened, and enrollment increased to around **184 students later in its first year**. By 1928–29, approximately 200 students were enrolled, and the number continued to grow in subsequent years.
+        <p>
+          The institution gradually attracted more students and
+          became part of the growing movement to expand modern
+          education throughout Ethiopia.
+        </p>
+      </section>
 
-### Building a New Generation
+      <section id="educational-development">
+        <h2>Building a New Generation</h2>
 
-From its earliest years, Tafari Makonnen School was intended to do more than provide classroom education. It became part of Ethiopia's effort to develop a generation of educated citizens capable of contributing to the country's modernization and public service.
+        <p>
+          From its earliest years, Tafari Makonnen School aimed to
+          do more than provide classroom instruction. It formed part
+          of Ethiopia's broader effort to develop educated citizens
+          who could contribute to national progress, public
+          administration, and professional services.
+        </p>
 
-Historical accounts describe the institution as an important source of educated Ethiopians, including students who later received opportunities for further education abroad and went on to serve Ethiopia in government and other professional fields.
+        <p>
+          The school helped create educational opportunities for
+          young Ethiopians at a time when access to modern schooling
+          was still limited. Its academic programs introduced
+          students to a variety of disciplines and encouraged
+          knowledge, discipline, and intellectual curiosity.
+        </p>
+      </section>
 
-The school's development also reflected Ras Tafari's wider philosophy that education should be a foundation for national progress. In 1926, an education tax was introduced as part of efforts to finance the country's expanding educational system.
+      <section id="italian-occupation">
+        <h2>The Italian Occupation and the Interruption of Education</h2>
 
-### The Italian Occupation and the Interruption of Education
+        <p>
+          Ethiopia's educational development suffered a major setback
+          following the Italian invasion of 1935 and the subsequent
+          occupation. The disruption affected schools and educational
+          institutions throughout the country, interrupting many
+          of the advances made during the preceding years.
+        </p>
 
-The development of modern education in Ethiopia was severely disrupted by the **Italian invasion of 1935** and the subsequent occupation.
+        <p>
+          Following Ethiopia's liberation in 1941, renewed efforts
+          were made to rebuild educational institutions and continue
+          the expansion of modern schooling.
+        </p>
+      </section>
 
-The occupation brought major interruptions to Ethiopia's emerging educational system. Schools were closed and the progress made during the preceding decades was severely affected. Historical accounts describe the period as a major break in the development of modern Ethiopian education.
+      <section id="postwar-reorganization">
+        <h2>Reorganization After the Second World War</h2>
 
-The liberation of Ethiopia in 1941 created an opportunity to rebuild the country's educational institutions and continue the modernization of education.
+        <p>
+          A new chapter began in 1945, when Emperor Haile Selassie I
+          invited Canadian Jesuits to assist in reorganizing the
+          institution.
+        </p>
 
-### Reorganization After 1945
+        <p>
+          The reorganized school reopened in October 1945. Its
+          educational activities included academic instruction
+          alongside sports, athletics, theatre, scouting, and other
+          extracurricular activities.
+        </p>
 
-A significant new chapter in the history of Tafari Makonnen School began after the Second World War.
+        <p>
+          This period contributed to the school's development as an
+          important secondary educational institution. Its students
+          received opportunities to pursue further education and
+          prepare for careers in government, education, professional
+          services, and other fields.
+        </p>
+      </section>
 
-In **1945**, Emperor Haile Selassie invited Canadian Jesuits to help reorganize the institution. The Jesuits arrived in Addis Ababa in the late summer of that year and were tasked with preparing the school for the new academic year.
+      <section id="technical-education">
+        <h2>The Development of Technical and Vocational Education</h2>
 
-When the reorganized Tafari Makonnen School opened in **October 1945**, it welcomed approximately **650 students, including 165 boarders**.
+        <p>
+          As Ethiopia's economy and educational priorities evolved,
+          the institution's role also changed. The historic school
+          eventually became associated with technical and vocational
+          education and training, reflecting the country's growing
+          need for skilled workers and technically trained
+          professionals.
+        </p>
 
-The institution subsequently expanded its secondary education program. Under the Jesuits, education was broadened beyond classroom instruction to include activities such as **sports, athletics, theatre and scouting**, reflecting an emphasis on developing students academically, physically and socially.
+        <p>
+          Technical and vocational education connects theoretical
+          knowledge with practical application. This approach helps
+          learners develop occupational skills that can be applied
+          in workplaces, industries, businesses, and other sectors
+          of the economy.
+        </p>
 
-The school became an important part of Ethiopia's post-war educational development and developed a reputation as a significant secondary institution. Former students and teachers later contributed to education, government, professional services and other areas of national life.
+        <p>
+          Through this transformation, the institution continued
+          its broader educational mission while adapting to changing
+          employment needs and national development priorities.
+        </p>
+      </section>
 
-### From General Education to Technical and Vocational Training
+      <section id="polytechnic-era">
+        <h2>The Polytechnic Era</h2>
 
-As Ethiopia's educational and economic needs evolved, the institution's role also changed.
+        <p>
+          Today, Tafari Makonnen Polytechnic College continues the
+          institution's educational legacy through technical and
+          vocational education and training. Its role focuses on
+          preparing learners with practical knowledge, occupational
+          competence, and skills relevant to the world of work.
+        </p>
 
-Over the decades, the historic school developed into a technical and vocational education institution. It became known as **Entoto Technical and Vocational Education and Training College**, focusing increasingly on practical education, occupational skills and technical training.
+        <p>
+          The college provides training across occupational fields.
+          Depending on the programs currently offered, these may
+          include business, textile and garment production,
+          hospitality and tourism, aesthetics, and other technical
+          and professional disciplines.
+        </p>
 
-This transformation reflected Ethiopia's growing need for skilled professionals and technicians capable of supporting industrial development, construction, manufacturing, services and other sectors of the economy.
+        <p>
+          By combining classroom learning with practical training,
+          the college seeks to help students develop the capabilities
+          needed for employment, entrepreneurship, and continued
+          professional growth.
+        </p>
 
-The institution's historic educational mission therefore continued in a new form: **preparing young people with practical knowledge and skills that can contribute directly to society and the national economy.**
+        <p>
+          The institution also supports skills development, industry
+          engagement, technology transfer, and the preparation of
+          a competent workforce for Ethiopia.
+        </p>
+      </section>
 
-### The Polytechnic Era
+      <section id="centenary">
+        <h2>Celebrating a Century of Educational Heritage</h2>
 
-Today, the institution is known as **Tafari Makonnen Polytechnic College**, continuing its long tradition of education while placing strong emphasis on technical and vocational skills.
+        <p>
+          In 2025, the institution reached a century of educational
+          history dating from its establishment in 1925. This
+          centenary provided an opportunity to recognize its
+          historical contributions, reflect on its development,
+          and look toward the future of technical and vocational
+          education.
+        </p>
 
-The college provides practical training across a range of occupational areas, including fields such as **aesthetics, textile and garment production, hotel and tourism services, business, and other technical and occupational disciplines**. Its programs combine theoretical knowledge with practical, workshop-based learning.
+        <p>
+          Its journey from a pioneering modern school to a
+          polytechnic college reflects the continuing importance
+          of education and skills development in Ethiopia.
+        </p>
+      </section>
 
-The college also emphasizes the connection between education, industry and employment. Its current activities include practical training, industry extension, technology transfer and efforts to connect graduates with employment opportunities.
+      <section id="our-legacy">
+        <h2>Our Continuing Legacy</h2>
 
-### A Century of Educational Heritage
+        <p>
+          Tafari Makonnen Polytechnic College builds on a long
+          educational heritage while continuing to respond to the
+          needs of modern society. Its commitment to learning,
+          practical skills, professional competence, and national
+          development remains central to its identity.
+        </p>
 
-In **2025**, the institution reached an important milestone: **100 years of educational history** dating from its establishment in 1925. The institution's name was also associated with its centenary as **Tafari Makonnen Polytechnic College**, marking the continuation of its historic identity into a new era of technical and vocational education.
+        <p>
+          The college seeks to empower learners with the knowledge,
+          technical abilities, creativity, discipline, and
+          confidence needed to pursue meaningful careers and
+          contribute to their communities.
+        </p>
 
-From a pioneering modern school established during the regency of Ras Tafari Makonnen, through the disruption of the Italian occupation, its post-war reorganization, its development as a secondary institution, and its later transformation into a technical and vocational college, the institution has continually adapted to Ethiopia's changing educational and economic needs.
+        <p>
+          Looking to the future, Tafari Makonnen Polytechnic College
+          remains committed to strengthening technical and vocational
+          education, supporting workforce development, and
+          contributing to Ethiopia's social and economic progress.
+        </p>
 
-## Our Continuing Legacy
-
-For a century, Tafari Makonnen's educational mission has remained connected to a simple but powerful principle: **education is a foundation for individual opportunity and national development.**
-
-Today, Tafari Makonnen Polytechnic College continues that legacy by combining its historic heritage with modern technical and vocational education. The college seeks to equip learners with **knowledge, practical skills, creativity, discipline and professional competence**, enabling them to participate meaningfully in the world of work and contribute to the development of Ethiopia.
-
-With its long history and continuing commitment to skills development, Tafari Makonnen Polytechnic College looks toward the future while preserving the educational legacy established more than a century ago.
-
-**From 1925 to today, the journey continues — from education to skills, from skills to opportunity, and from opportunity to national development.**
-
-                </p>
+        <blockquote>
+          From 1925 to today, the journey continues — from education
+          to skills, from skills to opportunity, and from opportunity
+          to national development.
+        </blockquote>
               </div>
 
               <div>

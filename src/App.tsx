@@ -26,6 +26,7 @@ import { HelmetProvider } from "react-helmet-async";
 import RouteMeta from "./components/RouteMeta";
 import DepartmentExam from "./pages/DepartmentExam";
 import HowToApply from "./pages/HowToApply";
+import VisitTracker from "./components/VisitTracker";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <RouteMeta />
+        <VisitTracker />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />

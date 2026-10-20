@@ -56,7 +56,7 @@ const SubAdminsTab = () => {
         <Input aria-label="Search sub admins" placeholder="Search sub admins by name, email or phone" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm mt-2" />
       </CardHeader>
       <CardContent>
-        <Table>
+        <div className="w-full overflow-x-auto overscroll-x-contain rounded-md border [-webkit-overflow-scrolling:touch]"><Table className="min-w-[44rem]">
           <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Students Registered</TableHead><TableHead>Edit Department Choices</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
             {rows.filter((r) => !q.trim() || [r.full_name, r.email, r.phone].some((x) => x.toLowerCase().includes(q.trim().toLowerCase()))).map((r) => (
@@ -69,7 +69,7 @@ const SubAdminsTab = () => {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+        </Table></div>
       </CardContent>
     </Card>
   );

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Wifi, Hotel, Shirt, Car, TrendingUp, Sparkles, Zap, Leaf, Building, Hammer } from "lucide-react";
+import Reveal from "@/components/Reveal";
 
 const Departments = () => {
   const navigate = useNavigate();
@@ -93,12 +94,13 @@ const Departments = () => {
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {departments.map((dept) => {
+          {departments.map((dept, i) => {
             const Icon = dept.icon;
             return (
-              <Card key={dept.name} className="hover:shadow-lg transition-shadow">
+              <Reveal key={dept.name} delay={(i % 3) * 120} className="h-full">
+              <Card className="card-lift h-full">
                 <CardHeader>
-                  <div className={`${dept.color} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
+                  <div className={`${dept.color} card-icon w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
                     <Icon className="h-6 w-6 text-white" />
                   </div>
                   <CardTitle className="text-xl">{dept.name}</CardTitle>
@@ -111,6 +113,7 @@ const Departments = () => {
                   </Button>
                 </CardContent>
               </Card>
+              </Reveal>
             );
           })}
         </div>

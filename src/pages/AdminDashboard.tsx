@@ -390,7 +390,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="max-h-[500px] w-full overflow-auto overscroll-x-contain rounded-md border [-webkit-overflow-scrolling:touch]">
-                  <Table>
+                  <Table className="min-w-[64rem]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Student</TableHead>
@@ -507,7 +507,7 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                  <div className="max-h-[500px] w-full overflow-auto overscroll-x-contain rounded-md border [-webkit-overflow-scrolling:touch]">
-                  <Table>
+                  <Table className="min-w-[56rem]">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Student</TableHead>

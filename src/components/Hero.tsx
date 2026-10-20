@@ -25,8 +25,17 @@ const Hero = () => {
   return (
     <section className="relative min-h-[540px] md:min-h-[600px] flex items-center justify-center overflow-hidden bg-primary-dark" aria-label="College photo slideshow">
       <div className="absolute inset-0" aria-live="off">
-        {slides.map((slide, index) => <img key={slide.src} src={slide.src} alt={slide.alt} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${index === current ? "opacity-100" : "opacity-0"}`} aria-hidden={index !== current} />)}
+        {slides.map((slide, index) => <img key={slide.src} src={slide.src} alt={slide.alt} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 motion-reduce:transition-none ${index === current ? "opacity-100 animate-kenburns" : "opacity-0"}`} aria-hidden={index !== current} />)}
         <div className="absolute inset-0 bg-primary-dark/50" />
+        <div className="ambient-glow pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full bg-primary blur-3xl" />
+        <div className="ambient-glow pointer-events-none absolute -bottom-32 -right-24 h-[28rem] w-[28rem] rounded-full bg-accent blur-3xl" style={{ animationDelay: "-6s" }} />
+      </div>
+
+      <div className="hidden md:flex absolute z-10 top-8 left-8 animate-float items-center gap-2 rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-4 py-2 text-sm font-semibold text-primary-foreground backdrop-blur-md">
+        ISO 21001 Certified
+      </div>
+      <div className="hidden md:flex absolute z-10 top-8 right-8 animate-float items-center gap-2 rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-4 py-2 text-sm font-semibold text-primary-foreground backdrop-blur-md" style={{ animationDelay: "-2s" }}>
+        <span className="h-2 w-2 rounded-full bg-primary-foreground animate-pulse" /> Admissions Open
       </div>
 
       {/* Content */}
@@ -40,7 +49,7 @@ const Hero = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
             <Link to="/application">
-              <Button size="lg" variant="secondary" className="text-lg">
+              <Button size="lg" variant="secondary" className="text-lg animate-cta-pulse transition-transform hover:scale-105">
                 Apply Now
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>

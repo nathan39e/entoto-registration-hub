@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Camera } from "lucide-react";
 import { staffHome } from "@/lib/staffHome";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -308,10 +309,24 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       </Select>
     </div>
   );
-  const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string) => (
+  const cameraButton = (id: string, onPick: (f: File) => void, disabled?: boolean) => (
+    <>
+      <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => document.getElementById(`${id}-camera`)?.click()}>
+        <Camera className="mr-1 h-4 w-4" /> Take a photo
+      </Button>
+      <input id={`${id}-camera`} type="file" accept="image/*" capture="environment" className="hidden" aria-hidden="true" tabIndex={-1}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onPick(f); e.target.value = ""; }} />
+    </>
+  );
+  const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string, selected?: string) => (
     <div>
       <Label htmlFor={id}>{label}{id === "manualForm" ? " (optional)" : " *"}</Label>
-      <Input id={id} type="file" accept={accept} required={id !== "manualForm"} onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
+      <div className="flex flex-wrap items-center gap-2">
+        <Input id={id} type="file" accept={accept} className="flex-1 min-w-44"
+          onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
+        {cameraButton(id, (f) => onPick(f))}
+      </div>
+      {selected && <p className="text-xs text-primary mt-1 truncate">Selected: {selected}</p>}
       <p className="text-xs text-muted-foreground mt-1">{hint}</p>
     </div>
   );
@@ -347,8 +362,11 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                 {staffMode && (
                   <div className="mb-8 rounded-lg border border-dashed border-primary/50 bg-primary/5 p-4">
                     <Label htmlFor="formPhoto" className="font-semibold">Fill from a photo of the paper form</Label>
-                    <Input id="formPhoto" type="file" accept="image/*" disabled={reading} className="mt-2"
-                      onChange={(e) => { autofill(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input id="formPhoto" type="file" accept="image/*" disabled={reading} className="mt-2 flex-1 min-w-44"
+                        onChange={(e) => { autofill(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+                      {cameraButton("formPhoto", autofill, reading)}
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">{reading ? "Reading the form..." : "Upload a clear photo of the filled application form. Fields are filled automatically — check them before submitting."}</p>
                   </div>
                 )}
@@ -374,7 +392,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                           </SelectContent>
                         </Select>
                       </div>
-                      {fileInput("photo", "Personal Photo", "image/*", setPhoto, "Clear passport-style photo, under 5MB.")}
+                      {fileInput("photo", "Personal Photo", "image/*", setPhoto, "Clear passport-style photo, under 5MB.", photo?.name)}
                     </div>
                   </div>
 
@@ -449,19 +467,22 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {field("grade12", "Grade 12 Exit Exam Result", { type: "text", inputMode: "decimal", pattern: "[0-9]{1,3}([.,][0-9]{1,2})?", title: "Enter a mark like 150.32", placeholder: "e.g., 150.32" })}
                       {field("grade12Year", "Year Grade 12 Completed", { type: "number", min: 1990, max: currentYear, placeholder: `e.g., ${currentYear - 1}` })}
-                      {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading total and subject marks..." : "Image under 5MB.")}
-                      {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.")}
+                      {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading total and subject marks..." : "Image under 5MB.", resultDoc?.name)}
+                      {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.", grade8?.name)}
                       <div>
                         <Label htmlFor="transcript">Transcript (Grade 9–12) *</Label>
-                        <Input id="transcript" type="file" accept="image/*,application/pdf" multiple required={!transcripts.length}
-                          onChange={(e) => setTranscripts(Array.from(e.target.files ?? []))} />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Input id="transcript" type="file" accept="image/*,application/pdf" multiple
+                            onChange={(e) => setTranscripts(Array.from(e.target.files ?? []))} className="flex-1 min-w-44" />
+                          {cameraButton("transcript", (f) => setTranscripts((p) => [...p, f]))}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-1">
                           {transcripts.length
                             ? `${transcripts.length} file${transcripts.length > 1 ? "s" : ""} selected: ${transcripts.map((f) => f.name).join(", ")}`
                             : "You can select more than one file — images or PDFs, each under 5MB."}
                         </p>
                       </div>
-                      {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, manualForm ? `Attached: ${manualForm.name}` : "Scan or photo of the completed paper form — image or PDF, under 5MB.")}
+                      {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, "Scan or photo of the completed paper form — image or PDF, under 5MB.", manualForm?.name)}
                     </div>
                   </div>
 

@@ -45,7 +45,8 @@ const SessionGuard = () => {
   const resetTimer = useCallback(() => {
     if (!activeRef.current) return;
     clearTimer();
-    timerRef.current = setTimeout(lock, IDLE_LIMIT_MS);
+    const limit = (window as unknown as { __SESSION_IDLE_MS?: number }).__SESSION_IDLE_MS ?? IDLE_LIMIT_MS;
+    timerRef.current = setTimeout(lock, limit);
   }, [lock]);
 
   useEffect(() => {

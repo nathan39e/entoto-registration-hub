@@ -50,15 +50,6 @@ const ApplyReminder = () => {
         <p className="text-sm text-muted-foreground" data-no-translate>ማመልከቻዎን አላጠናቀቁም። እባክዎ ሙሉ ፎርሙን ይሙሉ።</p>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={() => navigate("/application")}>Complete Application</Button>
-          {localStorage.getItem("pushEnabled") !== "1" && (
-            <Button size="sm" variant="outline" onClick={async () => {
-              try {
-                const s = await enablePush();
-                if (s === "registered") toast.success("Notifications turned on.");
-                else toast.error(pushMessages[s]);
-              } catch { toast.error("Could not turn on notifications."); }
-            }}><Bell className="h-4 w-4 mr-1" />Turn on notifications</Button>
-          )}
         </div>
       </div>
       <button aria-label="Dismiss" onClick={() => setDismissed(true)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>

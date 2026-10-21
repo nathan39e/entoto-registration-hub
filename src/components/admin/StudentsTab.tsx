@@ -76,6 +76,7 @@ const StudentsTab = () => {
     setStudents(((data as Profile[]) ?? []).filter((p) => !admins.has(p.id)));
   };
   useEffect(() => { load(); }, []);
+  const refresh = async () => { setRefreshing(true); await load(); setRefreshing(false); toast.success("Student list refreshed"); };
   const [pickOpen, setPickOpen] = useState(false);
 
   const call = async (body: Record<string, unknown>) => {
@@ -153,7 +154,7 @@ const StudentsTab = () => {
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle>Registered Students ({students.length})</CardTitle>
-            <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => navigate("/staff/apply")}>Register Student</Button><DocumentsZipExport /><Button onClick={() => setPickOpen(true)}>Download Excel</Button></div>
+            <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={refresh} disabled={refreshing} aria-label="Refresh student list"><RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} />{refreshing ? "Refreshing..." : "Refresh"}</Button><Button variant="outline" onClick={() => navigate("/staff/apply")}>Register Student</Button><DocumentsZipExport /><Button onClick={() => setPickOpen(true)}>Download Excel</Button></div>
           </div>
           <CardDescription>Search by name, email or student code. The Excel file includes the application form and document links.</CardDescription>
           <div className="flex flex-wrap items-end gap-3 mt-2">

@@ -127,16 +127,31 @@ Deno.serve(async (req) => {
   }
 
   const code = input.replace(/\s+/g, "").toUpperCase().slice(0, 40);
-  if (!/^[A-Z0-9\-\/]{3,40}$/.test(code)) {
-    await send(chatId, "⚠️ ትክክለኛ የተማሪ መለያ ቁጥር ያስገቡ።\nPlease send a valid Student ID.");
+  const digits = code.replace(/[^0-9]/g, "");
+  const isPhone = /^\+?[0-9\-]{9,15}$/.test(code) && digits.length >= 9 && digits.length <= 13;
+  if (!isPhone && !/^[A-Z0-9\-\/]{3,40}$/.test(code)) {
+    await send(chatId, "⚠️ ትክክለኛ የተማሪ መለያ ቁጥር ወይም ስልክ ቁጥር ያስገቡ።\nPlease send a valid Student ID or phone number.");
     return Response.json({ ok: true });
   }
 
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  const { data: profile } = await db.from("profiles").select("id, full_name, student_code").ilike("student_code", code).maybeSingle();
+  let profile: { id: string; full_name: string; student_code: string } | null = null;
+  if (isPhone) {
+    const last9 = digits.slice(-9);
+    const { data: rows } = await db.from("profiles").select("id, full_name, student_code, phone").not("phone", "is", null).ilike("phone", `%${last9.slice(0, 3)}%`).limit(5000);
+    const matches = (rows ?? []).filter((r) => (r.phone ?? "").replace(/[^0-9]/g, "").endsWith(last9));
+    if (matches.length > 1) {
+      await send(chatId, `📱 ይህ ስልክ ቁጥር ከአንድ በላይ ተማሪ ጋር ተያይዟል። እባክዎ የተማሪ መለያ ቁጥርዎን ይላኩ።\nThis phone number is linked to more than one student. Please send your <b>Student ID</b> instead.`);
+      return Response.json({ ok: true });
+    }
+    profile = matches[0] ?? null;
+  } else {
+    const { data } = await db.from("profiles").select("id, full_name, student_code").ilike("student_code", code).maybeSingle();
+    profile = data;
+  }
 
   if (!profile) {
-    await send(chatId, `🔍 <b>${esc(code)}</b> አልተገኘም / not found.\nእባክዎ ቁጥሩን አረጋግጠው እንደገና ይሞክሩ። Please check the ID and try again.`);
+    await send(chatId, `🔍 <b>${esc(code)}</b> አልተገኘም / not found.\nእባክዎ ቁጥሩን አረጋግጠው እንደገና ይሞክሩ። Please check the Student ID or phone number and try again.`);
     return Response.json({ ok: true });
   }
 

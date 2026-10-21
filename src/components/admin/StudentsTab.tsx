@@ -131,7 +131,13 @@ const StudentsTab = () => {
     XLSX.writeFile(wb, `students-${from || "start"}-to-${to || new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const filtered = students.filter((p) => matchesStudentExport(p, applications.find((a) => a.user_id === p.id), { from, to, department, program, status, search: q, occupation }));
+  const filtered = students.filter((p) => {
+    const a = applications.find((x) => x.user_id === p.id);
+    const docs = (a?.documents ?? {}) as Record<string, unknown>;
+    const hasDocs = !!a?.result_doc_path || Object.values(docs).some((v) => !!v && (!Array.isArray(v) || v.length > 0));
+    if (!a && !hasDocs) return false;
+    return matchesStudentExport(p, a, { from, to, department, program, status, search: q, occupation });
+  });
   const filterControls = <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
     <div><Label>Department</Label><Select value={department} onValueChange={(v) => { setDepartment(v); setOccupation("All"); }}><SelectTrigger aria-label="Export department"><SelectValue /></SelectTrigger><SelectContent>{["All", ...DEPARTMENTS].map((d) => <SelectItem key={d} value={d}>{d === "All" ? "All departments" : d}</SelectItem>)}</SelectContent></Select></div>
     <div><Label>Program</Label><Select value={program} onValueChange={setProgram}><SelectTrigger aria-label="Export program"><SelectValue /></SelectTrigger><SelectContent>{["All", "Regular", "Extension", "Weekend"].map((p) => <SelectItem key={p} value={p}>{p === "All" ? "All programs" : p}</SelectItem>)}</SelectContent></Select></div>

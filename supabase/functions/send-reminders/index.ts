@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
 
     const { data: tokens } = await admin.from("push_tokens").select("token, user_id");
     const { data: apps } = await admin.from("applications").select("user_id");
-    const { data: staff } = await admin.from("user_roles").select("user_id");
+    const { data: staff } = await admin.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head"]);
     const done = new Set([...(apps ?? []), ...(staff ?? [])].map((a) => a.user_id));
     const targets = (tokens ?? []).filter((t) => !done.has(t.user_id));
 

@@ -23,7 +23,7 @@ const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
   "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> to check your application status.\n\nMenu: /status /departments /contact /website /help";
 
-const SITE = "https://entoto-pathfinder.lovable.app";
+const SITE = "https://tafarimakonnenn.onrender.com";
 
 const HELP =
   "ℹ️ <b>እገዛ / Help</b>\n\n" +

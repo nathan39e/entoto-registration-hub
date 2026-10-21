@@ -8,7 +8,7 @@ export function matchesStudentExport(student: { created_at: string; full_name: s
     && (f.department === "All" || application?.first_department === f.department)
     && (f.program === "All" || application?.program === f.program)
     && (!f.occupation || f.occupation === "All" || occupationOf(application?.first_choice) === f.occupation)
-    && (f.status === "All" || (application?.status ?? "not_applied") === f.status)
+    && (f.status === "All" || (f.status === "applied_any" ? !!application : (application?.status ?? "not_applied") === f.status))
     && (!search || [student.full_name, student.email, student.student_code, student.phone ?? ""].some((x) => x.toLowerCase().includes(search))
       || (digits.length >= 3 && (student.phone ?? "").replace(/\D/g, "").includes(digits)));
 }

@@ -13,11 +13,19 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const jwt = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
-    const { data: { user } } = await admin.auth.getUser(jwt);
-    if (!user) return json({ error: "Not signed in" }, 401);
-    const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", user.id);
-    if (!roles?.some((r) => r.role === "admin" || r.role === "sub_admin")) return json({ error: "Not allowed" }, 403);
+    const cronHeader = req.headers.get("x-cron-secret");
+    let isCron = false;
+    if (cronHeader) {
+      const { data } = await admin.rpc("verify_reminder_cron", { p_secret: cronHeader });
+      isCron = data === true;
+    }
+    if (!isCron) {
+      const jwt = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
+      const { data: { user } } = await admin.auth.getUser(jwt);
+      if (!user) return json({ error: "Not signed in" }, 401);
+      const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", user.id);
+      if (!roles?.some((r) => r.role === "admin" || r.role === "sub_admin")) return json({ error: "Not allowed" }, 403);
+    }
 
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     const fcmKey = Deno.env.get("FIREBASE_MESSAGING_API_KEY");

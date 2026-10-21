@@ -21,7 +21,47 @@ const APPLY_WARNING = "እባክዎ ሳይን አፕ (Sign Up) ካደረጉ በ�
 
 const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
-  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> to check your application status.";
+  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> to check your application status.\n\nMenu: /status /departments /contact /website /help";
+
+const SITE = "https://entoto-pathfinder.lovable.app";
+
+const HELP =
+  "ℹ️ <b>እገዛ / Help</b>\n\n" +
+  "/status — የማመልከቻ ሁኔታ / Check application status\n" +
+  "/departments — ዲፓርትመንቶች / Departments & programs\n" +
+  "/contact — አድራሻ / Contact the college\n" +
+  "/website — ድረ-ገጽ / Portal links\n" +
+  "/help — ይህ መልዕክት / This message\n\n" +
+  "💡 የተማሪ መለያ ቁጥርዎን በቀጥታ መላክም ይችላሉ።\nYou can also just send your Student ID directly.";
+
+const DEPT_LIST: [string, string[]][] = [
+  ["Aesthetics", ["Painting", "Sculpture", "Graphics Art", "Photography & Videography", "Music Instrument", "Cultural Music Instrument", "Vocal Performance", "Theatrical Art", "Football Coaching", "Athletics Coaching"]],
+  ["ICT", ["Web Development & Database Administration", "Hardware & Networking Service"]],
+  ["Garment and Textile", ["Fashion Design", "Garment Production", "Textile Processing", "Footwear Production", "Weaving & Knitting", "Leather Garment & Good Production"]],
+  ["Hotel and Tourism", ["Front Office", "Food & Beverage Service", "Culinary Art", "Tour Guiding", "Tour Operation", "Hair Dressing & Beautification"]],
+  ["Automotive Technology", ["Automotive Mechanics", "Automotive Electrical & Electronics"]],
+  ["Business and Finance", ["Marketing & Sales Management", "Accounting & Finance", "Human Resource Management", "Secretarial & Office Admin"]],
+  ["Electrical and Electronics", ["Electrical Electronics Equipment Service", "Industrial Electrical Electronics Control", "Building Electrical Installation"]],
+  ["Urban Agriculture", ["Animal Production", "Crop Production"]],
+  ["Construction Technology", ["Finishing Construction", "Structural Construction", "Plumbing Installation", "Road Construction"]],
+  ["Wood Work and Metal Technology", ["Furniture Making", "Welding", "Mechanics", "Machine"]],
+];
+
+const DEPARTMENTS =
+  "🏫 <b>ዲፓርትመንቶች / Departments</b>\n\n" +
+  DEPT_LIST.map(([d, f]) => `<b>${d}</b>\n• ${f.join("\n• ")}`).join("\n\n") +
+  `\n\nዝርዝር መረጃ / Details: ${SITE}/departments`;
+
+const CONTACT =
+  "📞 <b>አድራሻ / Contact</b>\n\n" +
+  "Teferi Mekonnen Polytechnic College\n" +
+  "📱 Phone: +251945753837\n" +
+  `🌐 ${SITE}/contact\n\n` +
+  "ለበለጠ መረጃ የሬጅስትራር ቢሮን በአካል ይጎብኙ።\nFor more information, visit the Registrar Office in person.";
+
+const WEBSITE =
+  "🌐 <b>ድረ-ገጽ / Website</b>\n\n" +
+  `🏠 Home: ${SITE}\n📝 Apply / Sign up: ${SITE}/auth\n📖 How to apply: ${SITE}/how-to-apply\n📰 News: ${SITE}/news`;
 
 function statusText(status: string, dept: string | null, missingDocs: boolean) {
   const bringDocs = missingDocs
@@ -68,12 +108,25 @@ Deno.serve(async (req) => {
   const text: string = (msg?.text ?? "").trim();
   if (!chatId) return Response.json({ ok: true });
 
-  if (!text || text.startsWith("/start") || text.startsWith("/help")) {
-    await send(chatId, WELCOME);
+  const cmd = text.startsWith("/") ? text.split(/\s+/)[0].split("@")[0].toLowerCase() : "";
+  let input = text;
+  if (!text || cmd === "/start") { await send(chatId, WELCOME); return Response.json({ ok: true }); }
+  if (cmd === "/help") { await send(chatId, HELP); return Response.json({ ok: true }); }
+  if (cmd === "/departments") { await send(chatId, DEPARTMENTS); return Response.json({ ok: true }); }
+  if (cmd === "/contact") { await send(chatId, CONTACT); return Response.json({ ok: true }); }
+  if (cmd === "/website") { await send(chatId, WEBSITE); return Response.json({ ok: true }); }
+  if (cmd === "/status") {
+    input = text.split(/\s+/).slice(1).join("");
+    if (!input) {
+      await send(chatId, "🔎 የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nPlease send your <b>Student ID</b> now (e.g. <code>/status TMP-2026-0001</code> or just the ID).");
+      return Response.json({ ok: true });
+    }
+  } else if (cmd) {
+    await send(chatId, HELP);
     return Response.json({ ok: true });
   }
 
-  const code = text.replace(/\s+/g, "").toUpperCase().slice(0, 40);
+  const code = input.replace(/\s+/g, "").toUpperCase().slice(0, 40);
   if (!/^[A-Z0-9\-\/]{3,40}$/.test(code)) {
     await send(chatId, "⚠️ ትክክለኛ የተማሪ መለያ ቁጥር ያስገቡ።\nPlease send a valid Student ID.");
     return Response.json({ ok: true });

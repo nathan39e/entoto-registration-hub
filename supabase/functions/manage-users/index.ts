@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin, canManageCreatedAdmin } from "./record-rules.ts";
+import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin, canManageCreatedAdmin, canEditStudentForm, canSaveStudentChoices } from "./record-rules.ts";
 import { DEPARTMENT_FIELDS } from "./departments.ts";
 
 const cors = {
@@ -82,7 +82,10 @@ Deno.serve(async (req) => {
           ((name === "photo" || name === "grade12") && mime === "application/pdf"))
         return json({ error: "Unsupported document type" }, 400);
       const { data: owner } = await admin.from("profiles").select("registered_by").eq("id", id).maybeSingle();
-      if (!owner || (!isAdmin && owner.registered_by !== user.id)) return json({ error: "Not allowed for this student" }, 403);
+      const editing = body.editing === true && canEditStudentForm(roleNames);
+      if (!owner || (!isAdmin && owner.registered_by !== user.id && !editing)) return json({ error: "Not allowed for this student" }, 403);
+      const { data: targetRoles, error: targetError } = await admin.from("user_roles").select("role").eq("user_id", id).in("role", ["admin", "sub_admin", "department_head"]);
+      if (targetError || targetRoles?.length) return json({ error: "Select a student account" }, 403);
       const encoded = typeof body.content === "string" ? body.content : "";
       if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length > 7_000_000 || encoded.length < 4)
         return json({ error: "Invalid or oversized document" }, 400);
@@ -146,6 +149,42 @@ Deno.serve(async (req) => {
         first_choice: str(a.first_choice, 300), second_choice: str(a.second_choice, 300), third_choice: str(a.third_choice, 300),
         result_doc_path: docs.grade12 ?? null, documents: docs,
       });
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true });
+    }
+
+    if (action === "update_student_application") {
+      if (!canEditStudentForm(roleNames)) return json({ error: "Admins and sub-admins only" }, 403);
+      const id = str(body.id, 64);
+      const [{ data: targetRoles, error: rolesError }, { data: application }, { data: permission }] = await Promise.all([
+        admin.from("user_roles").select("role").eq("user_id", id).in("role", ["admin", "sub_admin", "department_head"]),
+        admin.from("applications").select("first_choice,second_choice,third_choice").eq("user_id", id).maybeSingle(),
+        admin.from("staff_permissions").select("can_edit_departments").eq("user_id", user.id).maybeSingle(),
+      ]);
+      if (rolesError || targetRoles?.length || !application) return json({ error: "Select a student with an application" }, 403);
+      const choices = Array.isArray(body.choices) ? body.choices : [];
+      const fields = Array.isArray(body.fields) ? body.fields : [];
+      if (choices.length !== 3 || fields.length !== 3 || new Set(choices).size !== 3 || choices.some((d, i) => typeof d !== "string" || !DEPARTMENT_FIELDS[d]?.includes(fields[i]))) return json({ error: "Choose three different departments and valid occupations" }, 400);
+      if (!canSaveStudentChoices(roleNames, permission?.can_edit_departments === true, [application.first_choice, application.second_choice, application.third_choice], choices.map((d, i) => `${d} — ${fields[i]}`))) return json({ error: "Your admin has not granted permission to edit department choices." }, 403);
+      if (!body.personal || typeof body.personal !== "object" || Array.isArray(body.personal)) return json({ error: "Invalid student form" }, 400);
+      const personal = Object.fromEntries(Object.entries(body.personal).map(([k, v]) => [k, str(v, 300)]));
+      const required = ["firstName", "middleName", "lastName", "email", "phone", "dob", "gender", "country", "region", "city", "subcity", "wereda", "kebele", "houseNumber", "emergencyName", "emergencyRelation", "emergencyPhone", "emergencyAddress", "grade12Year", "program"];
+      const score = Number(body.score);
+      if (required.some((k) => !personal[k]) || !/^\S+@\S+\.\S+$/.test(personal.email) || !/^\+?[0-9]{9,15}$/.test(personal.phone) || !/^\+?[0-9]{9,15}$/.test(personal.emergencyPhone) || !Number.isFinite(score) || score < 0 || score > 700) return json({ error: "Complete the required fields with valid marks, email and phone numbers." }, 400);
+      const documents = body.documents ?? {};
+      if (typeof documents !== "object" || Array.isArray(documents)) return json({ error: "Invalid documents" }, 400);
+      for (const [name, value] of Object.entries(documents)) {
+        if (!["photo", "grade12", "grade8", "transcript", "transcripts", "manualForm"].includes(name)) return json({ error: "Invalid document" }, 400);
+        const paths = Array.isArray(value) ? value : [value];
+        if (!paths.length || paths.some((p) => typeof p !== "string" || !p.startsWith(`${id}/`) || p.includes(".."))) return json({ error: "Invalid document path" }, 400);
+      }
+      const { data: account, error: accountError } = await admin.auth.admin.getUserById(id);
+      if (accountError || !account.user) return json({ error: "Student account not found" }, 400);
+      if (account.user.email?.toLowerCase() !== personal.email.toLowerCase()) {
+        const { error } = await admin.auth.admin.updateUserById(id, { email: personal.email });
+        if (error) return json({ error: error.message }, 400);
+      }
+      const { error } = await admin.rpc("update_student_application", { _actor: user.id, _student: id, _personal: personal, _score: score, _choices: choices, _fields: fields, _documents: documents });
       if (error) return json({ error: error.message }, 400);
       return json({ ok: true });
     }

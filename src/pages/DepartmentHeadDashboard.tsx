@@ -37,6 +37,15 @@ const DepartmentHeadDashboard = () => {
   const [score, setScore] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refresh = async () => {
+    if (!dept) return;
+    setRefreshing(true);
+    await Promise.all([loadStudents(dept), loadExits(dept)]);
+    setRefreshing(false);
+    toast.success("Student list refreshed");
+  };
 
   const loadStudents = async (d: string) => {
     const [{ data: apps }, { data: profs }, { data: pls }] = await Promise.all([
@@ -177,7 +186,10 @@ const DepartmentHeadDashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Students ({shown.length})</CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle>Students ({shown.length})</CardTitle>
+              <Button variant="outline" size="sm" onClick={refresh} disabled={refreshing} aria-label="Refresh student list"><RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} />{refreshing ? "Refreshing..." : "Refresh"}</Button>
+            </div>
             <div className="flex flex-wrap gap-2 pt-2">
               {["All", ...fields].map((f) => <Button key={f} size="sm" variant={field === f ? "default" : "outline"} onClick={() => setField(f)}>{f}</Button>)}
             </div>

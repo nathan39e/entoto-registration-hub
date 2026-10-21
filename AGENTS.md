@@ -14,3 +14,4 @@
 - Shared application birth-date controls use Ethiopian calendar conversion while retaining Gregorian ISO storage, so existing records, age calculations and photo autofill remain compatible.
 - Student Excel exports use the shared filter predicate for dates, department, program, status and search, so preview counts match downloaded records.
 - Grade 12 total and subject extraction share the verify-grade subject catalog and normalization with the Application page, so student and staff autofill use identical keys and reject unreadable scores.
+- Reuse Application in existing-student edit mode; save through a service-only actor-validated RPC that preserves documents and resets placement only for authorized choice changes, so edits cannot bypass staff permissions.

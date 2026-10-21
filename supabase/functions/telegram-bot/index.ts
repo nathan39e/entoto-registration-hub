@@ -23,11 +23,15 @@ const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
   "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> to check your application status.";
 
-function statusText(status: string, dept: string | null) {
+function statusText(status: string, dept: string | null, missingDocs: boolean) {
+  const bringDocs = missingDocs
+    ? "\n\nእባክዎ አይዲዎን እና ከ8ኛ–12ኛ ክፍል ማስረጃዎችዎን ይዘው ወደ ኮሌጁ በአካል ይቅረቡ።\nPlease bring your ID and Grade 8–12 documents to the college in person."
+    : "";
   switch (status) {
     case "approved":
     case "completed":
-      return `✅ <b>ተቀባይነት አግኝቷል / APPROVED</b>${dept ? `\nDepartment: <b>${esc(dept)}</b>` : ""}\n\nእባክዎ አይዲዎን እና ከ8ኛ–12ኛ ክፍል ማስረጃዎችዎን ይዘው ወደ ኮሌጁ በአካል ይቅረቡ።\nPlease bring your ID and Grade 8–12 documents to the college in person.`;
+      return `✅ <b>ተቀባይነት አግኝቷል / APPROVED</b>${dept ? `\nDepartment: <b>${esc(dept)}</b>` : ""}${bringDocs}`;
+
     case "waiting_list":
       return "🕒 <b>በተጠባባቂ ዝርዝር / WAITING LIST</b>\nYour application is on the waiting list.";
     case "rejected":
@@ -107,7 +111,7 @@ Deno.serve(async (req) => {
   const depts = `🏫 <b>Department choices:</b>\n1. ${esc(app.first_choice)}\n2. ${esc(app.second_choice)}\n3. ${esc(app.third_choice)}`;
 
   const { data: placement } = await db.from("department_placements").select("placed_department").eq("application_id", app.id).maybeSingle();
-  let reply = `${header}\n\n${depts}\n\n📄 <b>Documents / ማስረጃዎች:</b>\n${docLines}\n\n${statusText(app.status ?? "pending", placement?.placed_department ?? null)}`;
+  let reply = `${header}\n\n${depts}\n\n📄 <b>Documents / ማስረጃዎች:</b>\n${docLines}\n\n${statusText(app.status ?? "pending", placement?.placed_department ?? null, missing)}`;
   if (missing) reply += `\n\n⚠️ <b>ሁሉንም ማስረጃዎች አልጫኑም / Documents missing</b>\n${APPLY_WARNING}`;
   await send(chatId, reply);
   return Response.json({ ok: true });

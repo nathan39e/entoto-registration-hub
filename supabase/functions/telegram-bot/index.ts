@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   if (cmd === "/status") {
     input = text.split(/\s+/).slice(1).join("");
     if (!input) {
-      await send(chatId, "🔎 የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nPlease send your <b>Student ID</b> now (e.g. <code>/status TMP-2026-0001</code> or just the ID).");
+      await send(chatId, "🔎 የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nPlease send your <b>Student ID</b> or <b>phone number</b> now (e.g. <code>/status TMP-2026-0001</code> or <code>0912345678</code>).");
       return Response.json({ ok: true });
     }
   } else if (cmd) {

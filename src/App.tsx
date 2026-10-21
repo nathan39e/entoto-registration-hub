@@ -27,6 +27,7 @@ import RouteMeta from "./components/RouteMeta";
 import DepartmentExam from "./pages/DepartmentExam";
 import HowToApply from "./pages/HowToApply";
 import VisitTracker from "./components/VisitTracker";
+import ApplyReminder from "./components/ApplyReminder";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
       <BrowserRouter>
         <RouteMeta />
         <VisitTracker />
+        <ApplyReminder />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />

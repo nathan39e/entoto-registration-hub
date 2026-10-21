@@ -19,3 +19,5 @@
 - [x] Use Ethiopian calendar birth-date selection on the shared application form.
 - [x] Allow existing admins to create admins without delegating admin-creation authority.
 - [x] Test department isolation, grading, calendar dates, export filters and admin-creation restrictions.
+- [ ] Add shared full-application editing for admins and sub-admins with protected department changes and retained documents.
+- [ ] Test full-form permissions and verify saving and reading back an existing student's form.

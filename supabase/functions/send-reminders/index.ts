@@ -13,8 +13,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const cronSecret = Deno.env.get("REMINDER_CRON_SECRET");
-    const isCron = !!cronSecret && req.headers.get("x-cron-secret") === cronSecret;
+    const cronHeader = req.headers.get("x-cron-secret");
+    let isCron = false;
+    if (cronHeader) {
+      const { data } = await admin.rpc("verify_reminder_cron", { p_secret: cronHeader });
+      isCron = data === true;
+    }
     if (!isCron) {
       const jwt = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
       const { data: { user } } = await admin.auth.getUser(jwt);

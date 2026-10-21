@@ -14,7 +14,10 @@ function safeEqual(a: string | null, b: string) {
   return d === 0;
 }
 
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const esc = (s: string) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// Keep in sync with src/components/ApplyWarning.tsx
+const APPLY_WARNING = "እባክዎ ሳይን አፕ (Sign Up) ካደረጉ በኋላ ሙሉ ፎርሙን አጠናቀው ይሙሉ፤ በመጨረሻም የሚሰጥዎትን አይዲ (ID) እና ከ8ኛ እስከ 12ኛ ክፍል ያሉትን የትምህርት ዶክመንቶች (ማስረጃዎች) ይዘው ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ እና ሙያ ኮሌጅ በአካል በመቅረብ ያስገቡ።";
 
 const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
@@ -80,15 +83,32 @@ Deno.serve(async (req) => {
     return Response.json({ ok: true });
   }
 
-  const { data: app } = await db.from("applications").select("id, status, first_choice").eq("user_id", profile.id).maybeSingle();
-  const firstName = esc((profile.full_name ?? "").split(" ")[0] || "Student");
+  const { data: app } = await db.from("applications")
+    .select("id, status, first_choice, second_choice, third_choice, documents, result_doc_path")
+    .eq("user_id", profile.id).maybeSingle();
+  const header = `👤 <b>${esc(profile.full_name || "Student")}</b>\n🆔 ${esc(profile.student_code)}`;
 
   if (!app) {
-    await send(chatId, `👤 ${firstName} (${esc(profile.student_code)})\n\n📝 ማመልከቻዎን አላጠናቀቁም። / You have not completed your application yet. Please finish it on the portal.`);
+    await send(chatId, `${header}\n\n📝 ማመልከቻዎን አላጠናቀቁም። / You have not completed your application yet. Please finish it on the portal.\n\n⚠️ ${APPLY_WARNING}`);
     return Response.json({ ok: true });
   }
 
+  const docs = (app.documents ?? {}) as Record<string, unknown>;
+  const has = (k: string) => !!docs[k] && (!Array.isArray(docs[k]) || (docs[k] as unknown[]).length > 0);
+  const checks: [string, boolean][] = [
+    ["Grade 12 result", has("grade12") || !!app.result_doc_path],
+    ["Grade 8 certificate", has("grade8")],
+    ["Transcripts (9–12)", has("transcript") || has("transcripts")],
+    ["Photo", has("photo")],
+  ];
+  const missing = checks.some(([, ok]) => !ok);
+  const docLines = checks.map(([n, ok]) => `${ok ? "✅" : "❌"} ${n}`).join("\n");
+
+  const depts = `🏫 <b>Department choices:</b>\n1. ${esc(app.first_choice)}\n2. ${esc(app.second_choice)}\n3. ${esc(app.third_choice)}`;
+
   const { data: placement } = await db.from("department_placements").select("placed_department").eq("application_id", app.id).maybeSingle();
-  await send(chatId, `👤 ${firstName} (${esc(profile.student_code)})\n\n${statusText(app.status ?? "pending", placement?.placed_department ?? null)}`);
+  let reply = `${header}\n\n${depts}\n\n📄 <b>Documents / ማስረጃዎች:</b>\n${docLines}\n\n${statusText(app.status ?? "pending", placement?.placed_department ?? null)}`;
+  if (missing) reply += `\n\n⚠️ <b>ሁሉንም ማስረጃዎች አልጫኑም / Documents missing</b>\n${APPLY_WARNING}`;
+  await send(chatId, reply);
   return Response.json({ ok: true });
 });

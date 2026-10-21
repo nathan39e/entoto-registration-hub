@@ -258,7 +258,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
       };
 
       const { choice1: c1, choice2: c2, choice3: c3, field1, field2, field3, grade12, ...personal } = parsed.data;
-      const form_details = Object.fromEntries(EXTRA_KEYS.filter((k) => editMode || (v[k] ?? "").trim()).map((k) => [k, v[k].trim().slice(0, 300)]));
+      const form_details = Object.fromEntries(EXTRA_KEYS.filter((k) => editMode || (v[k] ?? "").trim()).map((k) => [k, (v[k] ?? "").trim().slice(0, 300)]));
       const appRow = {
         grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: { ...personal, ...form_details }, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
         first_choice: `${c1} — ${field1}`, second_choice: `${c2} — ${field2}`, third_choice: `${c3} — ${field3}`,
@@ -354,7 +354,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
   );
   const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string, selected?: string) => (
     <div>
-      <Label htmlFor={id}>{label}{id === "manualForm" ? " (optional)" : " *"}</Label>
+      <Label htmlFor={id}>{label}{editMode ? " (optional replacement)" : id === "manualForm" ? " (optional)" : " *"}</Label>
       <div className="flex flex-wrap items-center gap-2">
         <Input id={id} type="file" accept={accept} className="flex-1 min-w-44"
           onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
@@ -512,7 +512,8 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
                       {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading total and subject marks..." : "Image under 5MB.", resultDoc?.name)}
                       {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.", grade8?.name)}
                       <div>
-                        <Label htmlFor="transcript">Transcript (Grade 9–12) *</Label>
+                        <Label htmlFor="transcript">Transcript (Grade 9–12){editMode ? " (add documents)" : " *"}</Label>
+                        {editMode && <p className="text-xs text-muted-foreground">Existing transcripts remain attached. New files are added to them.</p>}
                         <div className="flex flex-wrap items-center gap-2">
                           <Input id="transcript" type="file" accept="image/*,application/pdf" multiple
                             onChange={(e) => setTranscripts(Array.from(e.target.files ?? []))} className="flex-1 min-w-44" />

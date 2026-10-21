@@ -169,6 +169,13 @@
       "when": 1792559249020,
       "tag": "0023_edit_full_student_application",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792573759878,
+      "tag": "0024_save_signup_phone",
+      "breakpoints": true
     }
   ]
 }

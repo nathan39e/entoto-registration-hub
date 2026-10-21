@@ -112,7 +112,8 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
       }
       const staffPath = await staffHome(user.id);
       if (staffPath) return navigate(staffPath, { replace: true });
-      setV((p) => ({ ...p, email: p.email ?? user.email ?? "" }));
+      const { data: profile } = await supabase.from("profiles").select("phone").eq("id", user.id).maybeSingle();
+      setV((p) => ({ ...p, email: p.email ?? user.email ?? "", phone: p.phone ?? profile?.phone ?? user.user_metadata?.phone ?? "" }));
       const { data } = await supabase.from("applications").select("*").eq("user_id", user.id).maybeSingle();
       setExisting(data);
       setChecking(false);

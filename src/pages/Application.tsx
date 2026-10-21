@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera } from "lucide-react";
+import ApplyWarning from "@/components/ApplyWarning";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { staffHome } from "@/lib/staffHome";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -56,6 +58,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
   const [returnPath, setReturnPath] = useState("/staff");
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [doneTarget, setDoneTarget] = useState<string | null>(null);
   const initial = (): Record<string, string> => ({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa", ...(staffMode ? { password: DEFAULT_PASSWORD } : {}) });
   const [v, setV] = useState<Record<string, string>>(initial);
   const [resultDoc, setResultDoc] = useState<File | null>(null);
@@ -294,11 +297,11 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
         throw error;
       }
       if (saved?.status !== "waiting_list") {
-        toast.success("Application submitted! Your documents are awaiting admin review. Proceeding to the exam.");
-        setTimeout(() => navigate("/psychometric-exam"), 1200);
+        toast.success("Application submitted! Your documents are awaiting admin review.");
+        setDoneTarget("/psychometric-exam");
       } else {
         toast.info("Application submitted to the waiting list because the result is below the current minimum.");
-        setTimeout(() => navigate("/student-dashboard"), 1200);
+        setDoneTarget("/student-dashboard");
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -395,6 +398,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
 
         <section className="py-12 md:py-20 bg-background">
           <div className="container mx-auto px-4 min-w-0">
+            {!staffMode && !editMode && <div className="max-w-4xl mx-auto mb-6"><ApplyWarning large /></div>}
             <Card className="max-w-4xl mx-auto min-w-0">
               <CardHeader>
                 <CardTitle className="text-2xl md:text-3xl">Student Registration Form</CardTitle>
@@ -552,6 +556,13 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
           </div>
         </section>
       </main>
+      <Dialog open={!!doneTarget} onOpenChange={(o) => { if (!o && doneTarget) navigate(doneTarget); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle className="text-2xl">Application Submitted — Important!</DialogTitle></DialogHeader>
+          <ApplyWarning large />
+          <Button size="lg" className="w-full" onClick={() => doneTarget && navigate(doneTarget)}>እሺ / OK, I understand</Button>
+        </DialogContent>
+      </Dialog>
       <Footer />
     </div>
   );

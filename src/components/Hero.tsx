@@ -8,7 +8,7 @@ import historicBuilding from "@/assets/history-23.jpg.asset.json";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 
 const slides = [
-  { src: heroImage, alt: "Teferi Mekonnen Polytechnic College entrance" },
+  { src: heroImage, alt: "Tafari Makonnen Polytechnic College entrance" },
   { src: `https://id-preview--813b587f-bf72-44da-ad24-4b4123495f66.lovable.app${regalPortrait.url}`, alt: "Historical royal portrait in military regalia" },
   { src: `https://id-preview--813b587f-bf72-44da-ad24-4b4123495f66.lovable.app${graduates.url}`, alt: "First graduates of T.M.S. in 1950" },
   { src: `https://id-preview--813b587f-bf72-44da-ad24-4b4123495f66.lovable.app${historicBuilding.url}`, alt: "Historic college building" },
@@ -45,7 +45,7 @@ const Hero = () => {
             Build Your Future with Excellence
           </h1>
           <p className="text-xl md:text-2xl mb-8 opacity-95 animate-slide-up">
-            Join Teferi Mekonnen Polytechnic College and embark on a journey of quality technical education that transforms lives
+            Join Tafari Makonnen Polytechnic College and embark on a journey of quality technical education that transforms lives
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-up">
             <Link to="/application">

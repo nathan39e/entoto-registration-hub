@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
       if (choices.length !== 3 || fields.length !== 3 || new Set(choices).size !== 3 || choices.some((d, i) => typeof d !== "string" || !DEPARTMENT_FIELDS[d]?.includes(fields[i]))) return json({ error: "Choose three different departments and valid occupations" }, 400);
       if (!canSaveStudentChoices(roleNames, permission?.can_edit_departments === true, [application.first_choice, application.second_choice, application.third_choice], choices.map((d, i) => `${d} — ${fields[i]}`))) return json({ error: "Your admin has not granted permission to edit department choices." }, 403);
       if (!body.personal || typeof body.personal !== "object" || Array.isArray(body.personal)) return json({ error: "Invalid student form" }, 400);
-      const personal = Object.fromEntries(Object.entries(body.personal).map(([k, v]) => [k, str(v, 300)]));
+      const personal = Object.fromEntries(Object.entries(body.personal).map(([k, v]) => [k, str(typeof v === "number" ? String(v) : v, 300)]));
       const required = ["firstName", "middleName", "lastName", "email", "phone", "dob", "gender", "country", "region", "city", "subcity", "wereda", "kebele", "houseNumber", "emergencyName", "emergencyRelation", "emergencyPhone", "emergencyAddress", "grade12Year", "program"];
       const score = Number(body.score);
       if (required.some((k) => !personal[k]) || !/^\S+@\S+\.\S+$/.test(personal.email) || !/^\+?[0-9]{9,15}$/.test(personal.phone) || !/^\+?[0-9]{9,15}$/.test(personal.emergencyPhone) || !Number.isFinite(score) || score < 0 || score > 700) return json({ error: "Complete the required fields with valid marks, email and phone numbers." }, 400);

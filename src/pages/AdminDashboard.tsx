@@ -86,6 +86,7 @@ const AdminDashboard = () => {
   const studentsRef = useRef<HTMLDivElement>(null);
   const [studentStatus, setStudentStatus] = useState<{ value: string; n: number }>({ value: "All", n: 0 });
   const [signedUpOnly, setSignedUpOnly] = useState(0);
+  const [filledCount, setFilledCount] = useState(0);
 
   const goToStudents = () => {
     setTab("students");
@@ -148,6 +149,7 @@ const AdminDashboard = () => {
       const staffIds = new Set((staffResponse.data ?? []).map((r) => r.user_id));
       const appliedIds = new Set((appsResponse.data ?? []).map((a) => a.user_id));
       setSignedUpOnly((profilesResponse.data ?? []).filter((p) => !staffIds.has(p.id) && !appliedIds.has(p.id)).length);
+      setFilledCount((appsResponse.data ?? []).filter((a) => !staffIds.has(a.user_id)).length);
       const empty = { full_name: "Unknown", email: "", student_code: "-" };
       const attach = (rows: any[] | null) => (rows ?? []).map((r) => ({ ...r, profiles: map.get(r.user_id) ?? empty }));
       setApplications(attach(appsResponse.data));
@@ -285,7 +287,7 @@ const AdminDashboard = () => {
       onSelect: goToStudents,
       actions: (
         <>
-          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setStudentStatus((s) => ({ value: "applied_any", n: s.n + 1 })); goToStudents(); }}>Filled form ({applications.length})</Button>
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setStudentStatus((s) => ({ value: "applied_any", n: s.n + 1 })); goToStudents(); }}>Filled form ({filledCount})</Button>
           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setStudentStatus((s) => ({ value: "not_applied", n: s.n + 1 })); goToStudents(); }}>Sign-up only ({signedUpOnly})</Button>
         </>
       ),

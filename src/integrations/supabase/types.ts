@@ -764,6 +764,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      verify_reminder_cron: { Args: { p_secret: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "student" | "sub_admin" | "department_head"

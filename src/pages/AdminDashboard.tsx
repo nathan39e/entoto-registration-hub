@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import VisitorsTab from "@/components/admin/VisitorsTab";
 import { useToast } from "@/hooks/use-toast";
-import { Users, FileText, CreditCard, TrendingUp } from "lucide-react";
+import { Users, FileText, CreditCard, TrendingUp, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,6 +82,17 @@ const AdminDashboard = () => {
     toast({ title: "Exam schedule saved" });
   };
   const knownPaymentIds = useRef<Set<string> | null>(null);
+  const [tab, setTab] = useState("students");
+  const studentsRef = useRef<HTMLDivElement>(null);
+
+  const goToStudents = () => {
+    setTab("students");
+    window.setTimeout(() => {
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      studentsRef.current?.scrollIntoView({ behavior, block: "start" });
+    }, 80);
+  };
+
 
   useEffect(() => {
     checkAdminAccess();
@@ -259,13 +270,15 @@ const AdminDashboard = () => {
     }
   };
 
-  const stats = [
+  const stats: { title: string; value: number; icon: LucideIcon; description: string; onSelect?: () => void }[] = [
     {
       title: "Total Applications",
       value: applications.length,
       icon: FileText,
       description: `${applications.filter(a => a.status === "pending").length} pending`,
+      onSelect: goToStudents,
     },
+
     {
       title: "Test Results",
       value: results.length,
@@ -308,18 +321,31 @@ const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat) => (
-            <Card key={stat.title}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
-              </CardContent>
-            </Card>
-          ))}
+          {stats.map((stat) => {
+            const interactive = Boolean(stat.onSelect);
+            return (
+              <Card
+                key={stat.title}
+                role={interactive ? "button" : undefined}
+                tabIndex={interactive ? 0 : undefined}
+                aria-label={interactive ? `${stat.title} — open the registered students list` : undefined}
+                onClick={stat.onSelect}
+                onKeyDown={interactive ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); stat.onSelect!(); } } : undefined}
+                className={interactive ? "cursor-pointer transition-all hover:border-primary/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""}
+              >
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <stat.icon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                  {interactive && <p className="text-xs font-medium text-primary mt-2">View registered students ↓</p>}
+                </CardContent>
+              </Card>
+            );
+          })}
+
         </div>
 
         <Card className="mb-8">
@@ -373,7 +399,7 @@ const AdminDashboard = () => {
 
         <div className="mb-8"><StudentQRScanner /></div>
 
-        <Tabs defaultValue="students" className="w-full">
+        <Tabs value={tab} onValueChange={setTab} className="w-full">
           <TabsList className="flex flex-wrap h-auto w-full gap-1">
             <TabsTrigger value="students" className="flex-1 min-w-[7rem]">Students</TabsTrigger>
             <TabsTrigger value="subadmins" className="flex-1 min-w-[7rem]">Sub Admins</TabsTrigger>
@@ -387,7 +413,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="payments" className="flex-1 min-w-[7rem]">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="students" className="mt-6"><StudentsTab /></TabsContent>
+          <TabsContent value="students" className="mt-6"><div ref={studentsRef} id="registered-students" className="scroll-mt-28"><StudentsTab /></div></TabsContent>
           <TabsContent value="subadmins" className="mt-6"><SubAdminsTab /></TabsContent>
           <TabsContent value="admins" className="mt-6"><AdminsTab /></TabsContent>
           <TabsContent value="exams" className="mt-6"><ExamFormsTab /></TabsContent>

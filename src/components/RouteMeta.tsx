@@ -25,7 +25,7 @@ const PRIVATE: Record<string, string> = {
 
 const RouteMeta = () => {
   const { pathname } = useLocation();
-  const m = pathname.startsWith("/department-exam/") ? { title: `Department Entry Exam — ${SITE}`, description: `Secure department entry exam for ${SITE} students.`, noindex: true } : META[pathname] ?? (PRIVATE[pathname]
+  const m = pathname.startsWith("/staff/students/") ? { title: `Edit Student Application — ${SITE}`, description: "Authorized staff student application editing.", noindex: true } : pathname.startsWith("/department-exam/") ? { title: `Department Entry Exam — ${SITE}`, description: `Secure department entry exam for ${SITE} students.`, noindex: true } : META[pathname] ?? (PRIVATE[pathname]
     ? { title: `${PRIVATE[pathname]} — ${SITE}`, description: `${PRIVATE[pathname]} for ${SITE} members.`, noindex: true }
     : { title: `Page Not Found — ${SITE}`, description: "The page you're looking for doesn't exist.", noindex: true });
   const url = `${BASE}${pathname}`;

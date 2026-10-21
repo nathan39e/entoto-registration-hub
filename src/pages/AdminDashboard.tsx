@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { toast as notify } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -353,6 +354,20 @@ const AdminDashboard = () => {
               <div className="space-y-2 flex-1"><Label htmlFor="exam-end">Closes</Label><Input id="exam-end" type="datetime-local" value={examEnd} onChange={(e) => setExamEnd(e.target.value)} /></div>
               <Button onClick={saveExamWindow}>Save Schedule</Button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Unfinished Application Reminders</CardTitle>
+            <CardDescription>Send a phone/browser notification to every student who turned on notifications but has not submitted the application.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={async () => {
+              const { data, error } = await supabase.functions.invoke("send-reminders", { body: {} });
+              if (error || data?.error) notify.error(data?.error ?? "Could not send reminders");
+              else notify.success(`Sent ${data.sent} reminder(s)`);
+            }}>Send Reminders Now</Button>
           </CardContent>
         </Card>
 

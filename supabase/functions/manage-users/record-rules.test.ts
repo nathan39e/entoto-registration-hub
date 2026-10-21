@@ -1,7 +1,14 @@
 import { describe, test, expect } from "bun:test";
-import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin, canManageCreatedAdmin } from "./record-rules";
+import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin, canManageCreatedAdmin, canEditStudentForm, canSaveStudentChoices } from "./record-rules";
 
 describe("student record rules", () => {
+  test("admins can edit the full student form", () => expect(canEditStudentForm(["admin"])).toBe(true));
+  test("sub-admins can edit the full student form", () => expect(canEditStudentForm(["sub_admin"])).toBe(true));
+  test("students cannot edit forms as staff", () => expect(canEditStudentForm(["student"])).toBe(false));
+  test("department heads cannot edit full student forms", () => expect(canEditStudentForm(["department_head"])).toBe(false));
+  test("ungranted sub-admins can save other fields with unchanged choices", () => expect(canSaveStudentChoices(["sub_admin"], false, ["A", "B", "C"], ["A", "B", "C"])).toBe(true));
+  test("full form cannot bypass department-change permissions", () => expect(canSaveStudentChoices(["sub_admin"], false, ["A", "B", "C"], ["B", "A", "C"])).toBe(false));
+  test("granted sub-admins can change choices in the full form", () => expect(canSaveStudentChoices(["sub_admin"], true, ["A", "B", "C"], ["B", "A", "C"])).toBe(true));
   test("admins can manage admins they created", () => expect(canManageCreatedAdmin("a", "a")).toBe(true));
   test("admins cannot manage admins created by others", () => expect(canManageCreatedAdmin("a", "b")).toBe(false));
   test("admins without a creator record cannot be managed", () => expect(canManageCreatedAdmin("a", null)).toBe(false));

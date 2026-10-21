@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import ApplicationSummary from "@/components/ApplicationSummary";
@@ -50,7 +50,10 @@ export const DEFAULT_PASSWORD = "123456789";
 export const autoEmail = (first: string) => { const b = first.toLowerCase().replace(/[^a-z0-9]/g, ""); return b ? `${b}@gmail.com` : ""; };
 const ageFrom = (dob?: string) => { if (!dob) return ""; const d = new Date(dob); if (isNaN(+d)) return ""; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a >= 0 ? String(a) : ""; };
 
-const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
+const Application = ({ staffMode = false, editMode = false }: { staffMode?: boolean; editMode?: boolean }) => {
+  const { studentId } = useParams();
+  const [canChangeChoices, setCanChangeChoices] = useState(false);
+  const [returnPath, setReturnPath] = useState("/staff");
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const initial = (): Record<string, string> => ({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa", ...(staffMode ? { password: DEFAULT_PASSWORD } : {}) });
@@ -68,7 +71,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
     if (k === "region") { n.city = ""; n.subcity = ""; }
     if (k === "city") n.subcity = "";
     if (k.startsWith("choice")) n[`field${k.slice(-1)}`] = "";
-    if (k === "firstName" && staffMode) n.email = autoEmail(val);
+    if (k === "firstName" && staffMode && !editMode) n.email = autoEmail(val);
     if (k === "kebele" && val) n.wereda = String(Number(val));
     if (k === "wereda") { const w = Number(val.trim()); if (Number.isInteger(w) && w >= 1 && w <= 15) n.kebele = String(w).padStart(2, "0"); }
     return n;
@@ -87,6 +90,24 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       if (staffMode) {
         const { data: r } = await supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin", "department_head"]);
         if (!r?.length) { toast.error("Access denied"); return navigate("/"); }
+        setReturnPath(r.some((role) => role.role === "admin") ? "/admin-dashboard" : "/staff");
+        if (editMode) {
+          if (!studentId || !r.some((role) => role.role === "admin" || role.role === "sub_admin")) { toast.error("Access denied"); return navigate("/"); }
+          const [{ data: app, error }, { data: profile }, { data: permission }, { data: targetRoles }] = await Promise.all([
+            supabase.from("applications").select("*").eq("user_id", studentId).maybeSingle(),
+            supabase.from("profiles").select("full_name,email,phone").eq("id", studentId).maybeSingle(),
+            supabase.from("staff_permissions").select("can_edit_departments").eq("user_id", user.id).maybeSingle(),
+            supabase.from("user_roles").select("role").eq("user_id", studentId).in("role", ["admin", "sub_admin", "department_head"]),
+          ]);
+          if (error || !app || !profile || targetRoles?.length) { toast.error("Student application not found"); return navigate("/staff"); }
+          setCanChangeChoices(r.some((role) => role.role === "admin") || permission?.can_edit_departments === true);
+          setExisting(app);
+          const g = app.grade_12_results as Record<string, any>;
+          const values = Object.fromEntries(Object.entries(g.personal_info ?? {}).map(([k, value]) => [k, String(value ?? "")]));
+          const names = profile.full_name.split(" ");
+          const preferences = [app.first_choice, app.second_choice, app.third_choice].map((c) => c.split(" — "));
+          setV({ ...values, firstName: values.firstName ?? names[0] ?? "", middleName: values.middleName ?? names[1] ?? "", lastName: values.lastName ?? names.slice(2).join(" "), email: profile.email, phone: profile.phone ?? values.phone ?? "", grade12: String(g.score ?? ""), program: app.program ?? values.program ?? "", ...Object.fromEntries(preferences.flatMap((parts, i) => [[`choice${i+1}`, parts[0] ?? ""], [`field${i+1}`, parts[1] ?? ""]])) });
+        }
         setChecking(false); return;
       }
       const staffPath = await staffHome(user.id);
@@ -96,7 +117,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       setExisting(data);
       setChecking(false);
     });
-  }, [navigate, staffMode]);
+  }, [navigate, staffMode, editMode, studentId]);
 
   const [reading, setReading] = useState(false);
   const autofill = async (f: File | null) => {
@@ -110,13 +131,13 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       const matchDept = (s?: string) => s ? DEPARTMENTS.find((d) => d.toLowerCase().includes(s.toLowerCase().split(" ")[0]) || s.toLowerCase().includes(d.toLowerCase().split(" ")[0])) : undefined;
       setV((p) => {
         const n: Record<string, string> = { ...p };
-        for (const [k, val] of Object.entries(x)) if (!k.startsWith("dept") && !k.startsWith("occupation")) n[k] = val;
+        for (const [k, val] of Object.entries(x)) if (!k.startsWith("dept") && !k.startsWith("occupation") && (!editMode || k !== "email")) n[k] = val;
         if (x.gender) n.gender = x.gender.toLowerCase().startsWith("f") ? "female" : "male";
         if (x.program) n.program = ["Regular", "Extension", "Weekend"].find((o) => o.toLowerCase() === x.program.toLowerCase()) ?? "";
         if (x.emergencyFirstName && !p.emergencyName) n.emergencyName = [x.emergencyFirstName, x.emergencyMiddleName, x.emergencyLastName].filter(Boolean).join(" ");
         if (x.emergencyRegion && !p.emergencyAddress) n.emergencyAddress = [x.emergencyRegion, x.emergencySubcity, x.emergencyWereda, x.emergencyHouseNumber].filter(Boolean).join(", ");
         if (x.kebele) n.kebele = x.kebele.padStart(2, "0");
-        [1, 2, 3].forEach((i) => { const d = matchDept(x[`dept${i}`]); if (d) { n[`choice${i}`] = d; n[`field${i}`] = ""; } });
+        [1, 2, 3].forEach((i) => { const d = matchDept(x[`dept${i}`]); if (d && (!editMode || canChangeChoices)) { n[`choice${i}`] = d; n[`field${i}`] = ""; } });
         return n;
       });
       setManualForm(f);
@@ -168,19 +189,20 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
     if (!inAddis && !parsed.data.specificPlace) return toast.error("Please enter your specific place/address.");
     const { choice1, choice2, choice3 } = parsed.data;
     if (new Set([choice1, choice2, choice3]).size < 3) return toast.error("Please choose 3 different departments.");
-    if (!photo || !isImg(photo) || photo.size > MAX) return toast.error("Please upload a personal photo (image under 5MB).");
-    if (!resultDoc || !isImg(resultDoc) || resultDoc.size > MAX) return toast.error("Grade 12 result must be an image (JPG/PNG) under 5MB.");
-    if (!grade8 || !isDoc(grade8) || grade8.size > MAX) return toast.error("Please upload your Grade 8 result (image or PDF under 5MB).");
-    if (!transcripts.length || transcripts.some((f) => !isDoc(f) || f.size > MAX)) return toast.error("Please upload your Grade 9–12 transcript(s) — image or PDF, each under 5MB.");
+    if ((!editMode && !photo) || (photo && (!isImg(photo) || photo.size > MAX))) return toast.error("Please upload a personal photo (image under 5MB).");
+    if ((!editMode && !resultDoc) || (resultDoc && (!isImg(resultDoc) || resultDoc.size > MAX))) return toast.error("Grade 12 result must be an image (JPG/PNG) under 5MB.");
+    if ((!editMode && !grade8) || (grade8 && (!isDoc(grade8) || grade8.size > MAX))) return toast.error("Please upload your Grade 8 result (image or PDF under 5MB).");
+    if ((!editMode && !transcripts.length) || transcripts.some((f) => !isDoc(f) || f.size > MAX)) return toast.error("Please upload your Grade 9–12 transcript(s) — image or PDF, each under 5MB.");
     if (!validManualForm(manualForm)) return toast.error("Manual form must be a JPG, PNG, WebP or PDF under 5MB.");
-    if (staffMode && (v.password ?? "").length < 8) return toast.error("Password must be at least 8 characters.");
+    if (staffMode && !editMode && (v.password ?? "").length < 8) return toast.error("Password must be at least 8 characters.");
 
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
 
-      let ver: { match: boolean; extracted?: number | null; isDocument: boolean };
+      let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { match: true, isDocument: true };
+      if (resultDoc) {
       if (docScan && docScan.file === resultDoc && docScan.isDocument && docScan.extracted != null) {
         ver = { match: Math.abs(docScan.extracted - parsed.data.grade12) < 0.01, extracted: docScan.extracted, isDocument: true };
       } else {
@@ -195,8 +217,9 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       if (!ver.isDocument) throw new Error("The uploaded file doesn't look like a Grade 12 result document.");
       if (!ver.match) throw new Error(`Entered result (${parsed.data.grade12}) does not match the document (${ver.extracted ?? "unreadable"}).`);
 
-      let ownerId = user.id;
-      if (staffMode) {
+      }
+      let ownerId = editMode && studentId ? studentId : user.id;
+      if (staffMode && !editMode) {
         const d = parsed.data;
         const { data: reg, error: regErr } = await supabase.functions.invoke("manage-users", { body: {
           action: "register_student", full_name: `${d.firstName} ${d.middleName} ${d.lastName}`, email: d.email,
@@ -210,7 +233,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         if (staffMode) {
           const content = (await toDataUrl(f)).split(",")[1];
           const { data, error } = await supabase.functions.invoke("manage-users", {
-            body: { action: "upload_student_document", id: ownerId, name, mime: f.type, content },
+            body: { action: "upload_student_document", id: ownerId, name, mime: f.type, content, editing: editMode },
           });
           if (error || data?.error || !data?.path) throw new Error(data?.error || error?.message || "Document upload failed");
           return data.path as string;
@@ -221,26 +244,37 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
         if (error) throw error;
         return p;
       };
-      const path = await upload(resultDoc, "grade12");
-      const transcriptPaths: string[] = [];
+      const storedDocs = editMode ? existing?.documents ?? {} : {};
+      const path = resultDoc ? await upload(resultDoc, "grade12") : storedDocs.grade12 ?? existing?.result_doc_path;
+      const transcriptPaths: string[] = editMode ? [...(Array.isArray(storedDocs.transcripts) ? storedDocs.transcripts : storedDocs.transcript ? [storedDocs.transcript] : [])] : [];
       for (const f of transcripts) transcriptPaths.push(await upload(f, "transcript"));
       const documents = {
-        photo: await upload(photo, "photo"),
-        grade12: path,
-        grade8: await upload(grade8, "grade8"),
-        transcript: transcriptPaths[0],
-        transcripts: transcriptPaths,
+        ...storedDocs,
+        ...(photo ? { photo: await upload(photo, "photo") } : {}),
+        ...(path ? { grade12: path } : {}),
+        ...(grade8 ? { grade8: await upload(grade8, "grade8") } : {}),
+        ...(transcriptPaths.length ? { transcript: transcriptPaths[0], transcripts: transcriptPaths } : {}),
         ...(manualForm ? { manualForm: await upload(manualForm, "manualForm") } : {}),
       };
 
       const { choice1: c1, choice2: c2, choice3: c3, field1, field2, field3, grade12, ...personal } = parsed.data;
-      const form_details = Object.fromEntries(EXTRA_KEYS.filter((k) => (v[k] ?? "").trim()).map((k) => [k, v[k].trim().slice(0, 300)]));
+      const form_details = Object.fromEntries(EXTRA_KEYS.filter((k) => editMode || (v[k] ?? "").trim()).map((k) => [k, (v[k] ?? "").trim().slice(0, 300)]));
       const appRow = {
         grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: { ...personal, ...form_details }, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
         first_choice: `${c1} — ${field1}`, second_choice: `${c2} — ${field2}`, third_choice: `${c3} — ${field3}`,
         result_doc_path: path,
         documents,
       };
+      if (editMode) {
+        const { data, error } = await supabase.functions.invoke("manage-users", { body: { action: "update_student_application", id: ownerId, personal: { ...personal, ...form_details }, score: grade12, choices: [c1, c2, c3], fields: [field1, field2, field3], documents } });
+        if (error || data?.error) {
+          const detail = error?.context instanceof Response ? await error.context.json().catch(() => null) : null;
+          throw new Error(data?.error || detail?.error || error?.message || "Could not save student form");
+        }
+        toast.success("Student's full application updated");
+        navigate(returnPath);
+        return;
+      }
       if (staffMode) {
         const { data: sa, error: saErr } = await supabase.functions.invoke("manage-users", { body: { action: "staff_application", id: ownerId, application: appRow } });
         if (saErr || sa?.error) throw new Error(sa?.error || "Could not save the application");
@@ -281,7 +315,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const pick = (id: string, label: string, options: string[], placeholder: string) => (
     <div>
       <Label>{label} *</Label>
-      <Select value={v[id] ?? ""} onValueChange={set(id)}>
+      <Select disabled={editMode && !canChangeChoices && (id.startsWith("choice") || id.startsWith("field"))} value={v[id] ?? ""} onValueChange={set(id)}>
         <SelectTrigger><SelectValue placeholder={placeholder} /></SelectTrigger>
         <SelectContent>{options.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
       </Select>
@@ -303,7 +337,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   const optPick = (id: string, label: string, options: string[]) => (
     <div>
       <Label>{label}</Label>
-      <Select value={v[id] ?? ""} onValueChange={set(id)}>
+      <Select disabled={editMode && !canChangeChoices && (id.startsWith("choice") || id.startsWith("field"))} value={v[id] ?? ""} onValueChange={set(id)}>
         <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
         <SelectContent>{options.map((o) => <SelectItem key={o} value={o} className="capitalize">{o[0].toUpperCase() + o.slice(1)}</SelectItem>)}</SelectContent>
       </Select>
@@ -320,12 +354,20 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
   );
   const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string, selected?: string) => (
     <div>
-      <Label htmlFor={id}>{label}{id === "manualForm" ? " (optional)" : " *"}</Label>
+      <Label htmlFor={id}>{label}{editMode ? " (optional replacement)" : id === "manualForm" ? " (optional)" : " *"}</Label>
       <div className="flex flex-wrap items-center gap-2">
         <Input id={id} type="file" accept={accept} className="flex-1 min-w-44"
           onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
         {cameraButton(id, (f) => onPick(f))}
       </div>
+      {editMode && (() => {
+        const key = id === "resultDoc" ? "grade12" : id;
+        const path = existing?.documents?.[key] ?? (key === "grade12" ? existing?.result_doc_path : null);
+        return path ? <Button type="button" variant="link" size="sm" onClick={async () => {
+          const { data, error } = await supabase.storage.from("result-docs").createSignedUrl(path, 600);
+          if (error) toast.error(error.message); else if (data) window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+        }}>View current document</Button> : null;
+      })()}
       {selected && <p className="text-xs text-primary mt-1 truncate">Selected: {selected}</p>}
       <p className="text-xs text-muted-foreground mt-1">{hint}</p>
     </div>
@@ -335,7 +377,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
     <div className="min-h-screen flex flex-col"><Header />
       <main className="flex-grow flex items-center justify-center text-muted-foreground">Loading...</main><Footer /></div>
   );
-  if (existing) return <ApplicationSummary app={existing} />;
+  if (existing && !editMode) return <ApplicationSummary app={existing} />;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -343,9 +385,9 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
       <main className="flex-grow">
          <section className="py-10 md:py-20 bg-gradient-hero">
           <div className="container mx-auto px-4">
-            <h1 className="text-3xl md:text-5xl font-bold text-center mb-4">{staffMode ? "Register a Student" : "Apply Now"}</h1>
+            <h1 className="text-3xl md:text-5xl font-bold text-center mb-4">{editMode ? "Edit Student Application" : staffMode ? "Register a Student" : "Apply Now"}</h1>
             <p className="text-xl text-center text-muted-foreground max-w-3xl mx-auto">
-              {staffMode ? "Complete the student's full application below." : "Take the first step towards your future. Complete the application form below."}
+              {editMode ? "" : staffMode ? "Complete the student's full application below." : "Take the first step towards your future. Complete the application form below."}
             </p>
           </div>
         </section>
@@ -355,7 +397,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
             <Card className="max-w-4xl mx-auto min-w-0">
               <CardHeader>
                 <CardTitle className="text-2xl md:text-3xl">Student Registration Form</CardTitle>
-                <CardDescription>Fields marked with * are mandatory.{staffMode && ` The current Grade 12 minimum is ${cutoffs.male} for male and ${cutoffs.female} for female. You are registering a student — they log in with the email and password below.`}</CardDescription>
+                <CardDescription>Fields marked with * are mandatory.{staffMode && !editMode && ` The current Grade 12 minimum is ${cutoffs.male} for male and ${cutoffs.female} for female. You are registering a student — they log in with the email and password below.`}</CardDescription>
                 {staffMode && newCode && <p className="text-sm mt-2">Last registered student code: <b className="text-primary">{newCode}</b></p>}
               </CardHeader>
               <CardContent>
@@ -378,7 +420,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {field("middleName", "Middle Name", { maxLength: 100 })}
                       {field("lastName", "Last Name", { maxLength: 100 })}
                       {field("email", "Email Address", { type: "email", maxLength: 255 })}
-                      {staffMode && field("password", "Student Password (min 8)", { type: "text", minLength: 8, autoComplete: "new-password" })}
+                      {staffMode && !editMode && field("password", "Student Password (min 8)", { type: "text", minLength: 8, autoComplete: "new-password" })}
                       {field("phone", "Phone Number", { type: "tel", placeholder: "+2519..." })}
                       <EthiopianDatePicker value={v.dob ?? ""} onChange={set("dob")} />
                       <div><Label>Age</Label><Input value={ageFrom(v.dob)} readOnly placeholder="From date of birth" /></div>
@@ -470,7 +512,8 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                       {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading total and subject marks..." : "Image under 5MB.", resultDoc?.name)}
                       {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.", grade8?.name)}
                       <div>
-                        <Label htmlFor="transcript">Transcript (Grade 9–12) *</Label>
+                        <Label htmlFor="transcript">Transcript (Grade 9–12){editMode ? " (add documents)" : " *"}</Label>
+                        {editMode && <p className="text-xs text-muted-foreground">Existing transcripts remain attached. New files are added to them.</p>}
                         <div className="flex flex-wrap items-center gap-2">
                           <Input id="transcript" type="file" accept="image/*,application/pdf" multiple
                             onChange={(e) => setTranscripts(Array.from(e.target.files ?? []))} className="flex-1 min-w-44" />
@@ -488,6 +531,7 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
 
                   <div>
                     <h3 className="text-xl font-semibold mb-4">Department Preferences</h3>
+                    {editMode && !canChangeChoices && <p className="text-sm text-muted-foreground mb-4">Department choices require permission from your admin.</p>}
                     <div className="space-y-4">
                       <div className="max-w-sm">{pick("program", "Program", ["Regular", "Extension", "Weekend"], "Select program")}</div>
                       {deptSelect(1, "First Choice")}
@@ -497,8 +541,9 @@ const Application = ({ staffMode = false }: { staffMode?: boolean }) => {
                   </div>
 
                   <div className="max-w-sm">{opt("receiptNo", "Receipt No")}</div>
+                  {editMode && <Button type="button" variant="outline" onClick={() => navigate(returnPath)} disabled={loading}>Cancel</Button>}
                   <Button type="submit" size="lg" className="w-full" disabled={loading || markReading}>
-                    {loading ? "Verifying & submitting..." : "Submit Application"}
+                    {loading ? (editMode ? "Saving..." : "Verifying & submitting...") : editMode ? "Save Changes" : "Submit Application"}
                   </Button>
                 </form>
               </CardContent>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 type Props = { studentId: string; canEdit: boolean; onSaved: () => void | Promise<void> };
 
 export default function StudentRecordActions({ studentId, canEdit, onSaved }: Props) {
+  const navigate = useNavigate();
   const [dialog, setDialog] = useState<"manual" | "choices" | null>(null);
   const [busy, setBusy] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -62,6 +64,7 @@ export default function StudentRecordActions({ studentId, canEdit, onSaved }: Pr
   };
 
   return <>
+    <Button size="sm" variant="outline" onClick={() => navigate(`/staff/students/${studentId}/edit`)}><Pencil className="mr-2 h-4 w-4" />Edit Full Form</Button>
     <Button size="sm" variant="outline" disabled={busy} onClick={() => { setFile(null); setDialog("manual"); }}><Upload className="mr-2 h-4 w-4" />Attach Manual Form</Button>
     {canEdit && <Button size="sm" variant="outline" disabled={busy} onClick={openChoices}><Pencil className="mr-2 h-4 w-4" />Edit Department Choices</Button>}
     <Dialog open={dialog !== null} onOpenChange={(open) => { if (!open && !busy) setDialog(null); }}>

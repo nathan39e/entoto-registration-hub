@@ -731,6 +731,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_student_application: {
+        Args: {
+          _actor: string
+          _choices: string[]
+          _documents: Json
+          _fields: string[]
+          _personal: Json
+          _score: number
+          _student: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "student" | "sub_admin" | "department_head"

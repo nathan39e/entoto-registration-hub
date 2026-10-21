@@ -356,6 +356,20 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Unfinished Application Reminders</CardTitle>
+            <CardDescription>Send a phone/browser notification to every student who turned on notifications but has not submitted the application.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={async () => {
+              const { data, error } = await supabase.functions.invoke("send-reminders", { body: {} });
+              if (error || data?.error) toast.error(data?.error ?? "Could not send reminders");
+              else toast.success(`Sent ${data.sent} reminder(s)`);
+            }}>Send Reminders Now</Button>
+          </CardContent>
+        </Card>
+
         <div className="mb-8"><StudentQRScanner /></div>
 
         <Tabs defaultValue="students" className="w-full">

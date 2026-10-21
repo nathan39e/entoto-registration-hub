@@ -21,4 +21,4 @@
 - [x] Test department isolation, grading, calendar dates, export filters and admin-creation restrictions.
 - [x] Add shared full-application editing for admins and sub-admins with protected department changes and retained documents.
 - [x] Test full-form permissions and verify saving and reading back an existing student's form.
-- [ ] Require a phone number at student signup, save it, and check application prefill.
+- [x] Require a phone number at student signup, save it, and check application prefill.

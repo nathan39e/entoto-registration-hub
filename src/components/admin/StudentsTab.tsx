@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ const StudentsTab = () => {
   const [edit, setEdit] = useState<Profile | null>(null);
   const [del, setDel] = useState<Profile | null>(null);
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [department, setDepartment] = useState("All");

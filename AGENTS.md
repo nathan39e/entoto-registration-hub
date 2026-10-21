@@ -11,6 +11,7 @@
 - Share student-record validation in manage-users/record-rules.ts and run its Bun tests when permissions or manual-form rules change.
 - Native department exams use server-validated RPCs and immutable attempt question snapshots/deadlines; students cannot write grades or reset attempts, so browser controls are deterrents rather than authority.
 - Admin creation authority is backfilled only for existing admins and never delegated to created admins; enforce it in manage-users and a user_roles trigger to prevent direct privilege escalation.
+- Admins holding creation authority may edit, block (auth ban) or delete any other admin; other admins manage only admins they created, enforced in manage-users.
 - Shared application birth-date controls use Ethiopian calendar conversion while retaining Gregorian ISO storage, so existing records, age calculations and photo autofill remain compatible.
 - Student Excel exports use the shared filter predicate for dates, department, program, status and search, so preview counts match downloaded records.
 - Grade 12 total and subject extraction share the verify-grade subject catalog and normalization with the Application page, so student and staff autofill use identical keys and reject unreadable scores.

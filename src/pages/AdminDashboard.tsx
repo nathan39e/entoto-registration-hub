@@ -136,7 +136,7 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [appsResponse, resultsResponse, paymentsResponse, profilesResponse, settingsResponse] = await Promise.all([
+      const [appsResponse, resultsResponse, paymentsResponse, profilesResponse, settingsResponse, staffResponse] = await Promise.all([
         supabase.from("applications").select("*").order("submitted_at", { ascending: false }),
         supabase.from("psychometric_results").select("*").order("completed_at", { ascending: false }),
         supabase.from("payments").select("*").order("created_at", { ascending: false }),
@@ -276,13 +276,19 @@ const AdminDashboard = () => {
     }
   };
 
-  const stats: { title: string; value: number; icon: LucideIcon; description: string; onSelect?: () => void }[] = [
+  const stats: { title: string; value: number; icon: LucideIcon; description: string; onSelect?: () => void; actions?: ReactNode }[] = [
     {
       title: "Total Applications",
       value: applications.length,
       icon: FileText,
-      description: `${applications.filter(a => a.status === "pending").length} pending`,
+      description: `${applications.filter(a => a.status === "pending").length} pending · ${signedUpOnly} sign-up only`,
       onSelect: goToStudents,
+      actions: (
+        <>
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setStudentStatus((s) => ({ value: "applied_any", n: s.n + 1 })); goToStudents(); }}>Filled form ({applications.length})</Button>
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setStudentStatus((s) => ({ value: "not_applied", n: s.n + 1 })); goToStudents(); }}>Sign-up only ({signedUpOnly})</Button>
+        </>
+      ),
     },
 
     {
@@ -346,6 +352,7 @@ const AdminDashboard = () => {
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
                   <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                  {stat.actions && <div className="flex flex-wrap gap-1.5 mt-2" onClick={(e) => e.stopPropagation()}>{stat.actions}</div>}
                   {interactive && <p className="text-xs font-medium text-primary mt-2">View registered students ↓</p>}
                 </CardContent>
               </Card>
@@ -419,7 +426,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="payments" className="flex-1 min-w-[7rem]">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="students" className="mt-6"><div ref={studentsRef} id="registered-students" className="scroll-mt-28"><StudentsTab /></div></TabsContent>
+          <TabsContent value="students" className="mt-6"><div ref={studentsRef} id="registered-students" className="scroll-mt-28"><StudentsTab statusPreset={studentStatus} /></div></TabsContent>
           <TabsContent value="subadmins" className="mt-6"><SubAdminsTab /></TabsContent>
           <TabsContent value="admins" className="mt-6"><AdminsTab /></TabsContent>
           <TabsContent value="exams" className="mt-6"><ExamFormsTab /></TabsContent>

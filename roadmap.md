@@ -25,3 +25,4 @@
 - [x] Make the Total Applications card scroll to the registered students list.
 
 - [x] Add a Refresh button for admins, sub admins and department heads to load newly registered students (tested on /staff and /admin-dashboard).
+- [x] Show all students in Registered Students and split Filled form / Sign-up only from the Total Applications card.

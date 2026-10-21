@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast as notify } from "sonner";
@@ -84,6 +84,9 @@ const AdminDashboard = () => {
   const knownPaymentIds = useRef<Set<string> | null>(null);
   const [tab, setTab] = useState("students");
   const studentsRef = useRef<HTMLDivElement>(null);
+  const [studentStatus, setStudentStatus] = useState<{ value: string; n: number }>({ value: "All", n: 0 });
+  const [signedUpOnly, setSignedUpOnly] = useState(0);
+  const [filledCount, setFilledCount] = useState(0);
 
   const goToStudents = () => {
     setTab("students");
@@ -134,14 +137,19 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [appsResponse, resultsResponse, paymentsResponse, profilesResponse, settingsResponse] = await Promise.all([
+      const [appsResponse, resultsResponse, paymentsResponse, profilesResponse, settingsResponse, staffResponse] = await Promise.all([
         supabase.from("applications").select("*").order("submitted_at", { ascending: false }),
         supabase.from("psychometric_results").select("*").order("completed_at", { ascending: false }),
         supabase.from("payments").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("id, full_name, email, student_code"),
         supabase.from("admission_settings").select("grade_12_cutoff, female_grade_12_cutoff, exam_start, exam_end").eq("id", true).maybeSingle(),
+        supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head"]),
       ]);
       const map = new Map((profilesResponse.data ?? []).map((p) => [p.id, p]));
+      const staffIds = new Set((staffResponse.data ?? []).map((r) => r.user_id));
+      const appliedIds = new Set((appsResponse.data ?? []).map((a) => a.user_id));
+      setSignedUpOnly((profilesResponse.data ?? []).filter((p) => !staffIds.has(p.id) && !appliedIds.has(p.id)).length);
+      setFilledCount((appsResponse.data ?? []).filter((a) => !staffIds.has(a.user_id)).length);
       const empty = { full_name: "Unknown", email: "", student_code: "-" };
       const attach = (rows: any[] | null) => (rows ?? []).map((r) => ({ ...r, profiles: map.get(r.user_id) ?? empty }));
       setApplications(attach(appsResponse.data));
@@ -270,13 +278,19 @@ const AdminDashboard = () => {
     }
   };
 
-  const stats: { title: string; value: number; icon: LucideIcon; description: string; onSelect?: () => void }[] = [
+  const stats: { title: string; value: number; icon: LucideIcon; description: string; onSelect?: () => void; actions?: ReactNode }[] = [
     {
       title: "Total Applications",
       value: applications.length,
       icon: FileText,
-      description: `${applications.filter(a => a.status === "pending").length} pending`,
+      description: `${applications.filter(a => a.status === "pending").length} pending · ${signedUpOnly} sign-up only`,
       onSelect: goToStudents,
+      actions: (
+        <>
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setStudentStatus((s) => ({ value: "applied_any", n: s.n + 1 })); goToStudents(); }}>Filled form ({filledCount})</Button>
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => { setStudentStatus((s) => ({ value: "not_applied", n: s.n + 1 })); goToStudents(); }}>Sign-up only ({signedUpOnly})</Button>
+        </>
+      ),
     },
 
     {
@@ -340,6 +354,7 @@ const AdminDashboard = () => {
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>
                   <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                  {stat.actions && <div className="flex flex-wrap gap-1.5 mt-2" onClick={(e) => e.stopPropagation()}>{stat.actions}</div>}
                   {interactive && <p className="text-xs font-medium text-primary mt-2">View registered students ↓</p>}
                 </CardContent>
               </Card>
@@ -413,7 +428,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="payments" className="flex-1 min-w-[7rem]">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="students" className="mt-6"><div ref={studentsRef} id="registered-students" className="scroll-mt-28"><StudentsTab /></div></TabsContent>
+          <TabsContent value="students" className="mt-6"><div ref={studentsRef} id="registered-students" className="scroll-mt-28"><StudentsTab statusPreset={studentStatus} /></div></TabsContent>
           <TabsContent value="subadmins" className="mt-6"><SubAdminsTab /></TabsContent>
           <TabsContent value="admins" className="mt-6"><AdminsTab /></TabsContent>
           <TabsContent value="exams" className="mt-6"><ExamFormsTab /></TabsContent>

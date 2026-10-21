@@ -23,7 +23,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Profile = { id: string; full_name: string; email: string; phone: string | null; student_code: string; created_at: string; registered_by: string | null };
 
-const StudentsTab = () => {
+const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: number } }) => {
   const [students, setStudents] = useState<Profile[]>([]);
   const [q, setQ] = useState("");
   const [edit, setEdit] = useState<Profile | null>(null);
@@ -35,6 +35,7 @@ const StudentsTab = () => {
   const [department, setDepartment] = useState("All");
   const [program, setProgram] = useState("All");
   const [status, setStatus] = useState("All");
+  useEffect(() => { if (statusPreset && statusPreset.n > 0) setStatus(statusPreset.value); }, [statusPreset]);
   const [occupation, setOccupation] = useState("All");
   const [applications, setApplications] = useState<Database["public"]["Tables"]["applications"]["Row"][]>([]);
   const [docs, setDocs] = useState<{ name: string; links: [string, string][] } | null>(null);
@@ -134,18 +135,12 @@ const StudentsTab = () => {
     XLSX.writeFile(wb, `students-${from || "start"}-to-${to || new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const filtered = students.filter((p) => {
-    const a = applications.find((x) => x.user_id === p.id);
-    const docs = (a?.documents ?? {}) as Record<string, unknown>;
-    const hasDocs = !!a?.result_doc_path || Object.values(docs).some((v) => !!v && (!Array.isArray(v) || v.length > 0));
-    if (!a && !hasDocs) return false;
-    return matchesStudentExport(p, a, { from, to, department, program, status, search: q, occupation });
-  });
+  const filtered = students.filter((p) => matchesStudentExport(p, applications.find((x) => x.user_id === p.id), { from, to, department, program, status, search: q, occupation }));
   const filterControls = <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
     <div><Label>Department</Label><Select value={department} onValueChange={(v) => { setDepartment(v); setOccupation("All"); }}><SelectTrigger aria-label="Export department"><SelectValue /></SelectTrigger><SelectContent>{["All", ...DEPARTMENTS].map((d) => <SelectItem key={d} value={d}>{d === "All" ? "All departments" : d}</SelectItem>)}</SelectContent></Select></div>
     <div><Label>Program</Label><Select value={program} onValueChange={setProgram}><SelectTrigger aria-label="Export program"><SelectValue /></SelectTrigger><SelectContent>{["All", "Regular", "Extension", "Weekend"].map((p) => <SelectItem key={p} value={p}>{p === "All" ? "All programs" : p}</SelectItem>)}</SelectContent></Select></div>
     <div><Label>Occupation</Label><Select value={occupation} onValueChange={setOccupation}><SelectTrigger aria-label="Export occupation"><SelectValue /></SelectTrigger><SelectContent>{["All", ...(department === "All" ? Object.values(DEPARTMENT_FIELDS).flat() : DEPARTMENT_FIELDS[department] ?? [])].map((o) => <SelectItem key={o} value={o}>{o === "All" ? "All occupations" : o}</SelectItem>)}</SelectContent></Select></div>
-    <div><Label>Application status</Label><Select value={status} onValueChange={setStatus}><SelectTrigger aria-label="Export application status"><SelectValue /></SelectTrigger><SelectContent>{[["All", "All statuses"], ["approved", "Approved"], ["waiting_list", "Waiting list"], ["pending", "Document review"], ["rejected", "Rejected"], ["not_applied", "Not applied"]].map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
+    <div><Label>Application status</Label><Select value={status} onValueChange={setStatus}><SelectTrigger aria-label="Export application status"><SelectValue /></SelectTrigger><SelectContent>{[["All", "All statuses"], ["applied_any", "Filled the form"], ["approved", "Approved"], ["waiting_list", "Waiting list"], ["pending", "Document review"], ["rejected", "Rejected"], ["not_applied", "Sign-up only"]].map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
   </div>;
 
   return (

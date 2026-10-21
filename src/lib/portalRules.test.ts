@@ -16,6 +16,14 @@ test("Excel excludes registrations outside selected dates", () => expect(matches
 test("Excel department filter excludes other departments", () => expect(matchesStudentExport(student, app, { ...filters, department: "Automotive Technology" })).toBe(false));
 test("Excel program filter excludes other programs", () => expect(matchesStudentExport(student, app, { ...filters, program: "Weekend" })).toBe(false));
 test("Excel status filter excludes other statuses", () => expect(matchesStudentExport(student, app, { ...filters, status: "waiting_list" })).toBe(false));
+test("filled-form filter keeps applicants and drops sign-up-only students", () => {
+  expect(matchesStudentExport(student, app, { ...filters, status: "applied_any" })).toBe(true);
+  expect(matchesStudentExport(student, undefined, { ...filters, status: "applied_any" })).toBe(false);
+});
+test("not-applied filter keeps sign-up-only students and drops applicants", () => {
+  expect(matchesStudentExport(student, undefined, { ...filters, status: "not_applied" })).toBe(true);
+  expect(matchesStudentExport(student, app, { ...filters, status: "not_applied" })).toBe(false);
+});
 test("Excel search filter matches permanent student codes", () => expect(matchesStudentExport(student, app, { ...filters, search: "epc123" })).toBe(true));
 test("Excel search filter excludes unmatched names", () => expect(matchesStudentExport(student, app, { ...filters, search: "unrelated" })).toBe(false));
 test("grades cannot exceed the question points", () => expect(validAward(6, 5)).toBe(false));

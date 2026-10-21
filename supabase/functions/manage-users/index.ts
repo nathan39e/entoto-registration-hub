@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin, canManageCreatedAdmin, canEditStudentForm, canSaveStudentChoices } from "./record-rules.ts";
+import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin, canManageCreatedAdmin, canManageAdmin, canEditStudentForm, canSaveStudentChoices } from "./record-rules.ts";
 import { DEPARTMENT_FIELDS } from "./departments.ts";
 
 const cors = {
@@ -209,14 +209,31 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
-    if (action === "update_admin" || action === "delete_admin") {
+    if (action === "admin_block_status") {
+      const { data: ids } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+      const blocked: string[] = [];
+      for (const r of ids ?? []) {
+        const { data } = await admin.auth.admin.getUserById(r.user_id);
+        const until = (data?.user as { banned_until?: string } | undefined)?.banned_until;
+        if (until && new Date(until) > new Date()) blocked.push(r.user_id);
+      }
+      return json({ blocked });
+    }
+
+    if (action === "update_admin" || action === "delete_admin" || action === "block_admin") {
       const id = str(body.id, 64);
       if (!id || id === user.id) return json({ error: "Use Account settings to change your own account." }, 400);
       const [{ data: target }, { data: role }] = await Promise.all([
         admin.from("profiles").select("registered_by").eq("id", id).maybeSingle(),
         admin.from("user_roles").select("user_id").eq("user_id", id).eq("role", "admin").maybeSingle(),
       ]);
-      if (!role || !canManageCreatedAdmin(user.id, target?.registered_by ?? null)) return json({ error: "You can only manage admins you created." }, 403);
+      const { data: authority } = await admin.from("admin_creation_authority").select("user_id").eq("user_id", user.id).maybeSingle();
+      if (!role || !canManageAdmin(user.id, target?.registered_by ?? null, !!authority)) return json({ error: "You can only manage admins you created." }, 403);
+      if (action === "block_admin") {
+        const { error } = await admin.auth.admin.updateUserById(id, { ban_duration: body.blocked ? "876000h" : "none" });
+        if (error) return json({ error: error.message }, 400);
+        return json({ ok: true });
+      }
       if (action === "delete_admin") {
         await admin.from("admin_creation_authority").delete().eq("user_id", id);
         await admin.from("user_roles").delete().eq("user_id", id);

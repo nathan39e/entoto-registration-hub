@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin, canManageCreatedAdmin, canEditStudentForm, canSaveStudentChoices } from "./record-rules";
+import { canEditDepartments, canAttachManualForm, validManualForm, canCreateAdmin, canManageCreatedAdmin, canEditStudentForm, canSaveStudentChoices, canManageAdmin } from "./record-rules";
 
 describe("student record rules", () => {
   test("admins can edit the full student form", () => expect(canEditStudentForm(["admin"])).toBe(true));
@@ -15,6 +15,8 @@ describe("student record rules", () => {
   test("existing authorized admins can create admins", () => expect(canCreateAdmin(["admin"], true)).toBe(true));
   test("created admins cannot create further admins", () => expect(canCreateAdmin(["admin"], false)).toBe(false));
   test("non-admins cannot use creation authority", () => expect(canCreateAdmin(["sub_admin"], true)).toBe(false));
+  test("authority admins can manage older admins without creator", () => expect(canManageAdmin("a", null, true)).toBe(true));
+  test("created admins cannot manage admins they did not create", () => expect(canManageAdmin("a", "b", false)).toBe(false));
   test("manual form can be left empty", () => expect(validManualForm(null)).toBe(true));
   test("admins can attach a manual form", () => expect(canAttachManualForm(["admin"])).toBe(true));
   test("sub-admins can attach forms without department-edit permission", () => expect(canAttachManualForm(["sub_admin"])).toBe(true));

@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { signupPhone } from "@/lib/signupPhone";
 
 
 
@@ -97,6 +98,13 @@ const Auth = () => {
     const email = formData.get("signup-email") as string;
     const password = formData.get("signup-password") as string;
     const confirmPassword = formData.get("confirm-password") as string;
+    const phone = signupPhone(String(formData.get("signup-phone") ?? ""));
+
+    if (!phone) {
+      toast.error("Enter a valid phone number, such as 0912345678 or +251912345678.");
+      setLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       toast.error("Passwords do not match");
@@ -109,7 +117,7 @@ const Auth = () => {
       email,
       password,
       options: {
-        data: { full_name: fullname },
+        data: { full_name: fullname, phone },
         emailRedirectTo: `${window.location.origin}/application`,
       },
     });
@@ -211,6 +219,10 @@ const Auth = () => {
                   <div>
                     <Label htmlFor="signup-email">Email</Label>
                     <Input id="signup-email" name="signup-email" type="email" placeholder="your.email@example.com" required />
+                  </div>
+                  <div>
+                    <Label htmlFor="signup-phone">Phone Number</Label>
+                    <Input id="signup-phone" name="signup-phone" type="tel" autoComplete="tel" placeholder="0912345678 or +251912345678" required pattern="\+?[0-9]{9,15}" maxLength={16} title="Enter 9 to 15 digits, optionally starting with +" />
                   </div>
                   <div>
                     <Label htmlFor="signup-password">Password</Label>

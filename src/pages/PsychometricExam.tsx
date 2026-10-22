@@ -158,7 +158,7 @@ const PsychometricExam = () => {
     if (!queue || queue.length < 2) return toast.error("This is the last question — please answer it");
     const q = questions[queue[0]];
     setAnswers((a) => { const c = { ...a }; delete c[q.n]; return c; });
-    setSkippedCount(nextQueue(queue, "skip").filter((i) => i !== queue[0]).length === queue.length - 1 ? skippedCount + 1 : skippedCount);
+    setSkippedCount((c) => c + 1);
     setQueue(nextQueue(queue, "skip"));
   };
 

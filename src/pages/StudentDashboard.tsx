@@ -46,8 +46,7 @@ const StudentDashboard = () => {
       ]);
       if (p.error) toast.error("Failed to load student information");
       if (p.data?.exam_required && !r.data && a.data && !["waiting_list", "rejected"].includes(a.data.status ?? "pending")) {
-        toast.info("Please take your psychometric exam first.");
-        return navigate("/psychometric-exam");
+        toast.info("Please take your psychometric exam when you are ready.");
       }
       if (a.data) supabase.from("department_exams").select("id, title, form_url, department").eq("is_active", true).then(({ data }) => setDeptExams(data ?? []));
       supabase.from("department_placements").select("*").eq("user_id", uid).maybeSingle().then(({ data }) => setPlacement(data));
@@ -113,6 +112,15 @@ const StudentDashboard = () => {
                   <CardTitle>Waiting List</CardTitle>
                   <CardDescription>Your Grade 12 result is below the current minimum. An admin must approve your application before you continue.</CardDescription>
                 </CardHeader>
+              </Card>
+            )}
+            {canContinue && !result && (
+              <Card className="border-primary">
+                <CardHeader>
+                  <CardTitle>Next Step: Psychometric Exam</CardTitle>
+                  <CardDescription>Your application is submitted. Please take the psychometric exam to continue.</CardDescription>
+                </CardHeader>
+                <CardContent><Button onClick={() => navigate("/psychometric-exam")}>Take Psychometric Exam</Button></CardContent>
               </Card>
             )}
             {app?.status === "pending" && (

@@ -46,8 +46,7 @@ const StudentDashboard = () => {
       ]);
       if (p.error) toast.error("Failed to load student information");
       if (p.data?.exam_required && !r.data && a.data && !["waiting_list", "rejected"].includes(a.data.status ?? "pending")) {
-        toast.info("Please take your psychometric exam first.");
-        return navigate("/psychometric-exam");
+        toast.info("Please take your psychometric exam when you are ready.");
       }
       if (a.data) supabase.from("department_exams").select("id, title, form_url, department").eq("is_active", true).then(({ data }) => setDeptExams(data ?? []));
       supabase.from("department_placements").select("*").eq("user_id", uid).maybeSingle().then(({ data }) => setPlacement(data));

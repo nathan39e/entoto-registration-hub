@@ -10,15 +10,18 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { buildExam, ExamQuestion } from "@/data/examQuestions";
 import { DEPARTMENTS } from "@/data/departments";
+import { PSYCH_EXAM, PsychQuestion } from "@/data/psychExam80";
+import { gradePsychExam, nextQueue } from "@/lib/psychExam";
 
 const departmentName = (choice: string) => DEPARTMENTS.find((department) => choice === department || choice.startsWith(`${department} —`)) ?? choice;
 
 const PsychometricExam = () => {
   const navigate = useNavigate();
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [current, setCurrent] = useState(0);
+  const [queue, setQueue] = useState<number[] | null>(null);
+  const [skippedCount, setSkippedCount] = useState(0);
+  const [result, setResult] = useState<ReturnType<typeof gradePsychExam> | null>(null);
   const [exam, setExam] = useState<{ title: string; form_url: string } | null>(null);
   const [studentCode, setStudentCode] = useState("");
   const [choices, setChoices] = useState<string[] | null>(null);
@@ -31,6 +34,7 @@ const PsychometricExam = () => {
   const deptRef = useRef<string | null>(null);
   const userRef = useRef<string | null>(null);
   const lastLog = useRef(0);
+  const seenRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     supabase.from("exam_forms").select("title, form_url").eq("is_active", true)
@@ -61,11 +65,11 @@ const PsychometricExam = () => {
     });
   }, [navigate]);
 
-  // Random question order AND random answer order for every student.
-  const questions: ExamQuestion[] = useMemo(() => (choices ? buildExam(choices).map((q) => {
-    const order = q.options.map((_, i) => ({ i, r: Math.random() })).sort((a, b) => a.r - b.r).map((x) => x.i);
-    return { ...q, options: order.map((i) => q.options[i]), answer: order.indexOf(q.answer) };
-  }) : []), [choices]);
+  // Random question order for every student; skipped questions return at the end.
+  const questions: PsychQuestion[] = PSYCH_EXAM;
+  useEffect(() => {
+    if (choices && !queue) setQueue(PSYCH_EXAM.map((_, i) => i).sort(() => Math.random() - 0.5));
+  }, [choices, queue]);
 
   const logExit = useCallback(async (reason: string) => {
     if (!userRef.current || Date.now() - lastLog.current < 3000) return;
@@ -127,30 +131,62 @@ const PsychometricExam = () => {
     if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
   };
 
-  const handleSubmit = async () => {
-    if (Object.keys(answers).length < questions.length) return toast.error("Please answer all questions before submitting");
-    const tally: Record<string, { correct: number; total: number }> = {};
-    questions.forEach((q) => {
-      tally[q.dept] ??= { correct: 0, total: 0 };
-      tally[q.dept].total++;
-      if (answers[q.id] === q.answer) tally[q.dept].correct++;
-    });
-    const scores = Object.fromEntries(Object.entries(tally).map(([k, v]) => [k, Math.round((v.correct / v.total) * 100)]));
-    const ranked = Object.entries(scores).filter(([k]) => k !== "General")
-      .sort((a, b) => b[1] - a[1]);
-    const recommended = ranked.slice(0, 1).map(([k]) => k);
+  const handleSubmit = async (finalAnswers: Record<string, number>) => {
+    const graded = gradePsychExam(questions, finalAnswers);
+    const ranked = Object.entries(graded.scores).sort((x, y) => y[1] - x[1]);
     setSubmitting(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return navigate("/auth");
     const { error } = await supabase.from("psychometric_results").insert({
-      user_id: user.id, answers, scores, recommended_departments: recommended,
+      user_id: user.id, answers: finalAnswers, scores: { ...graded.scores, Overall: graded.percent }, recommended_departments: ranked.slice(0, 1).map(([k]) => k),
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);
     await finishSecure();
-    toast.success("Exam completed! View your department fit on your dashboard.");
-    setTimeout(() => navigate("/student-dashboard"), 1200);
+    setResult(graded);
   };
+
+  const answerAndNext = () => {
+    if (!queue) return;
+    const q = questions[queue[0]];
+    if (answers[q.n] === undefined) return toast.error("Please choose an answer, or tap Skip");
+    const rest = nextQueue(queue, "answer");
+    if (rest.length === 0) return handleSubmit(answers);
+    setQueue(rest);
+  };
+  const skip = () => {
+    if (!queue || queue.length < 2) return toast.error("This is the last question — please answer it");
+    const q = questions[queue[0]];
+    setAnswers((a) => { const c = { ...a }; delete c[q.n]; return c; });
+    setSkippedCount(nextQueue(queue, "skip").filter((i) => i !== queue[0]).length === queue.length - 1 ? skippedCount + 1 : skippedCount);
+    setQueue(nextQueue(queue, "skip"));
+  };
+
+  if (result) return (
+    <div className="min-h-screen flex flex-col"><Header />
+      <main className="flex-grow container mx-auto px-4 py-10">
+        <Card className="max-w-3xl mx-auto">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl">Your Result</CardTitle>
+            <p className="text-5xl font-bold text-primary mt-2">{result.correct} / {result.total}</p>
+            <CardDescription>{result.percent}% correct · personality questions are not scored</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <h3 className="font-semibold text-lg">Questions you missed ({result.missed.length})</h3>
+            {result.missed.length === 0 && <p className="text-muted-foreground">You answered every scored question correctly!</p>}
+            {result.missed.map(({ q, chosen }) => (
+              <div key={q.n} className="border rounded-lg p-3 space-y-1">
+                <Badge variant="secondary">{q.cat}</Badge>
+                <p className="font-medium whitespace-pre-line">{q.n}. {q.q}</p>
+                <p className="text-sm text-destructive">Your answer: {chosen === undefined ? "—" : q.options[chosen]}</p>
+                <p className="text-sm text-primary font-medium">Correct answer: {q.options[q.answer!]}</p>
+              </div>
+            ))}
+            <Button className="w-full" onClick={() => navigate("/student-dashboard")}>Go to Dashboard</Button>
+          </CardContent>
+        </Card>
+      </main><Footer /></div>
+  );
 
   if (blocked) return (
     <div className="min-h-screen flex flex-col"><Header />
@@ -181,7 +217,9 @@ const PsychometricExam = () => {
               <li>Do not leave the page, switch tabs, minimize, or exit full screen.</li>
               <li>Every exit is reported to your department head.</li>
               <li>Screenshots, copying and right-click are blocked.</li>
-              <li>Each student gets questions and answers in a different order.</li>
+              <li>Each student gets the questions in a different order.</li>
+              <li>You can skip a question — skipped questions come back after you answer the rest.</li>
+              <li>When you finish you will see your score and the questions you missed.</li>
             </ul>
             <Button className="w-full" onClick={startExam}>Start Exam</Button>
           </CardContent></Card>
@@ -220,12 +258,13 @@ const PsychometricExam = () => {
     );
   }
 
-  if (!choices) return (
+  if (!choices || !queue) return (
     <div className="min-h-screen flex flex-col"><Header /><main className="flex-grow flex items-center justify-center text-muted-foreground">Loading...</main><Footer /></div>
   );
 
-  const q = questions[current];
-  const progress = ((current + 1) / questions.length) * 100;
+  const q = questions[queue[0]];
+  const done = questions.length - queue.length;
+  const progress = (done / questions.length) * 100;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -235,7 +274,7 @@ const PsychometricExam = () => {
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Aptitude & Psychometric Exam</h1>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              {questions.length} questions, focused on your chosen departments{choices.length ? `: ${choices.join(", ")}` : ""}. Choose the correct answer.
+              {questions.length} questions. Choose the best answer, or skip and come back to it later.
             </p>
             {studentCode && <p className="mt-3">Student code: <span className="font-mono font-bold text-primary">{studentCode}</span></p>}
             {exitCount > 0 && <p className="mt-2 text-destructive font-semibold">Exits recorded: {exitCount}</p>}
@@ -246,15 +285,16 @@ const PsychometricExam = () => {
           <div className="container mx-auto px-4">
             <Card className="max-w-3xl mx-auto">
               <CardHeader>
-                <CardTitle>Question {current + 1} of {questions.length}</CardTitle>
+                <CardTitle>Answered {done} of {questions.length}{queue.length > 0 && skippedCount > 0 ? ` · ${queue.filter((i) => seenRef.current.has(i)).length} skipped left` : ""}</CardTitle>
                 <div className="w-full bg-muted rounded-full h-2 mt-2">
                   <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <Badge variant="secondary">{q.dept}</Badge>
-                <h3 className="text-xl font-semibold">{q.q}</h3>
-                <RadioGroup value={answers[q.id]?.toString() ?? ""} onValueChange={(v) => setAnswers({ ...answers, [q.id]: Number(v) })}>
+                <Badge variant="secondary">{q.cat}</Badge>
+                {seenRef.current.has(queue[0]) && <Badge variant="outline" className="ml-2">Skipped earlier</Badge>}
+                <h3 className="text-xl font-semibold whitespace-pre-line">{q.q}</h3>
+                <RadioGroup value={answers[q.n]?.toString() ?? ""} onValueChange={(v) => setAnswers({ ...answers, [q.n]: Number(v) })}>
                   <div className="space-y-3">
                     {q.options.map((opt, i) => (
                       <div key={i} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
@@ -265,12 +305,8 @@ const PsychometricExam = () => {
                   </div>
                 </RadioGroup>
                 <div className="flex justify-between gap-4 pt-4">
-                  <Button variant="outline" onClick={() => setCurrent(current - 1)} disabled={current === 0}>Previous</Button>
-                  {current < questions.length - 1 ? (
-                    <Button onClick={() => answers[q.id] === undefined ? toast.error("Please answer the question") : setCurrent(current + 1)}>Next</Button>
-                  ) : (
-                    <Button onClick={handleSubmit} disabled={submitting}>{submitting ? "Submitting..." : "Submit Exam"}</Button>
-                  )}
+                  <Button variant="outline" onClick={() => { seenRef.current.add(queue[0]); skip(); }} disabled={submitting || queue.length < 2}>Skip</Button>
+                  <Button onClick={answerAndNext} disabled={submitting}>{submitting ? "Submitting..." : queue.length === 1 ? "Submit Exam" : "Next"}</Button>
                 </div>
               </CardContent>
             </Card>

@@ -114,6 +114,15 @@ const StudentDashboard = () => {
                 </CardHeader>
               </Card>
             )}
+            {canContinue && !result && (
+              <Card className="border-primary">
+                <CardHeader>
+                  <CardTitle>Next Step: Psychometric Exam</CardTitle>
+                  <CardDescription>Your application is submitted. Please take the psychometric exam to continue.</CardDescription>
+                </CardHeader>
+                <CardContent><Button onClick={() => navigate("/psychometric-exam")}>Take Psychometric Exam</Button></CardContent>
+              </Card>
+            )}
             {app?.status === "pending" && (
               <Card className="border-primary/40">
                 <CardHeader>

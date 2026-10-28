@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { DEPARTMENTS } from "@/data/departments";
 import { PSYCH_EXAM, PsychQuestion } from "@/data/psychExam80";
-import { gradePsychExam, nextQueue } from "@/lib/psychExam";
+import { gradePsychExam, nextQueue, recommendPsychDepartments } from "@/lib/psychExam";
 
 const departmentName = (choice: string) => DEPARTMENTS.find((department) => choice === department || choice.startsWith(`${department} —`)) ?? choice;
 
@@ -133,12 +133,12 @@ const PsychometricExam = () => {
 
   const handleSubmit = async (finalAnswers: Record<string, number>) => {
     const graded = gradePsychExam(questions, finalAnswers);
-    const ranked = Object.entries(graded.scores).sort((x, y) => y[1] - x[1]);
+    const recommendedDepartments = recommendPsychDepartments(graded.scores);
     setSubmitting(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return navigate("/auth");
     const { error } = await supabase.from("psychometric_results").insert({
-      user_id: user.id, answers: finalAnswers, scores: { ...graded.scores, Overall: graded.percent }, recommended_departments: ranked.slice(0, 1).map(([k]) => k),
+      user_id: user.id, answers: finalAnswers, scores: { ...graded.scores, Overall: graded.percent }, recommended_departments: recommendedDepartments,
     });
     setSubmitting(false);
     if (error) return toast.error(error.message);

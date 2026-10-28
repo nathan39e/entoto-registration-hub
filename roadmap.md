@@ -26,3 +26,4 @@
 
 - [x] Add a Refresh button for admins, sub admins and department heads to load newly registered students (tested on /staff and /admin-dashboard).
 - [x] Show all students in Registered Students and split Filled form / Sign-up only from the Total Applications card.
+- [ ] Restrict psychometric recommendations to real departments, map exam section aliases, and verify regression tests.

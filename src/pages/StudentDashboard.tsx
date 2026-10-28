@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import RegistrationSlip from "@/components/RegistrationSlip";
 import StudentIDCard from "@/components/StudentIDCard";
-import { DEPARTMENTS } from "@/data/departments";
+import { recommendPsychDepartments } from "@/lib/psychExam";
 import StudentPortalExams from "@/components/department/StudentPortalExams";
 
 const statusBadge = (s?: string | null) => {
@@ -57,10 +57,7 @@ const StudentDashboard = () => {
   const selected: string[] = [app?.first_choice, app?.second_choice, app?.third_choice]
     .filter((choice): choice is string => typeof choice === "string" && choice.length > 0);
   const scores = result?.scores && typeof result.scores === "object" ? result.scores as Record<string, number> : null;
-  const bestFit = scores
-    ? Object.keys(scores).filter((name) => name !== "General" && DEPARTMENTS.includes(name) && typeof scores[name] === "number")
-        .sort((a, b) => scores[b] - scores[a])[0]
-    : null;
+  const bestFit = scores ? recommendPsychDepartments(scores)[0] ?? null : null;
   const approved = app?.status === "approved" && payment?.status === "completed";
   const canContinue = !!app && !["waiting_list", "rejected"].includes(app.status);
   const payStatus = payment?.status === "completed" ? "completed" : payment?.status === "rejected" ? "rejected" : payment ? "awaiting verification" : null;

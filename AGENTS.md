@@ -17,3 +17,4 @@
 - Grade 12 total and subject extraction share the verify-grade subject catalog and normalization with the Application page, so student and staff autofill use identical keys and reject unreadable scores.
 - Reuse Application in existing-student edit mode; save through a service-only actor-validated RPC that preserves documents and resets placement only for authorized choice changes, so edits cannot bypass staff permissions.
 - Persist signup contact phone through the profile-creation trigger and prefill it in Application; this keeps phone contact separate from email authentication and does not imply SMS verification.
+- Psychometric recommendations use the shared department-catalog whitelist and section aliases in psychExam; keep skill scores separate and break department ties in catalog order so recommendations are valid and deterministic.

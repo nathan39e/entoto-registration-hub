@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       if (!isAdmin && !isSub) return json({ error: "Not allowed" }, 403);
       const id = str(body.id, 64);
       const name = str(body.name, 24);
-      const allowed = ["photo", "grade12", "grade8", "transcript", "manualForm"];
+      const allowed = ["photo", "grade12", "grade8", "transcript", "manualForm", "degree", "coc"];
       const mime = str(body.mime, 40);
       if (!allowed.includes(name) || !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(mime) ||
           ((name === "photo" || name === "grade12") && mime === "application/pdf"))
@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
       const documents = body.documents ?? {};
       if (typeof documents !== "object" || Array.isArray(documents)) return json({ error: "Invalid documents" }, 400);
       for (const [name, value] of Object.entries(documents)) {
-        if (!["photo", "grade12", "grade8", "transcript", "transcripts", "manualForm"].includes(name)) return json({ error: "Invalid document" }, 400);
+        if (!["photo", "grade12", "grade8", "transcript", "transcripts", "manualForm", "degree", "coc"].includes(name)) return json({ error: "Invalid document" }, 400);
         const paths = Array.isArray(value) ? value : [value];
         if (!paths.length || paths.some((p) => typeof p !== "string" || !p.startsWith(`${id}/`) || p.includes(".."))) return json({ error: "Invalid document path" }, 400);
       }

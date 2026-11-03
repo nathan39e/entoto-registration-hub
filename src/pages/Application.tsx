@@ -363,7 +363,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
   );
   const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string, selected?: string) => (
     <div>
-      <Label htmlFor={id}>{label}{editMode ? " (optional replacement)" : id === "manualForm" ? " (optional)" : " *"}</Label>
+      <Label htmlFor={id}>{label}{editMode ? " (optional replacement)" : ["manualForm", "degree", "coc"].includes(id) ? " (optional)" : " *"}</Label>
       <div className="flex flex-wrap items-center gap-2">
         <Input id={id} type="file" accept={accept} className="flex-1 min-w-44"
           onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
@@ -535,8 +535,8 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
                             : "You can select more than one file — images or PDFs, each under 5MB."}
                         </p>
                       </div>
-                      {fileInput("degree", "Degree Document (optional)", "image/*,application/pdf", setDegree, "Image or PDF, under 5MB.", degree?.name)}
-                      {fileInput("coc", "COC Document (optional)", "image/*,application/pdf", setCoc, "Image or PDF, under 5MB.", coc?.name)}
+                      {fileInput("degree", "Degree Document", "image/*,application/pdf", setDegree, "Image or PDF, under 5MB.", degree?.name)}
+                      {fileInput("coc", "COC Document", "image/*,application/pdf", setCoc, "Image or PDF, under 5MB.", coc?.name)}
                       {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, "Scan or photo of the completed paper form — image or PDF, under 5MB.", manualForm?.name)}
                     </div>
                   </div>

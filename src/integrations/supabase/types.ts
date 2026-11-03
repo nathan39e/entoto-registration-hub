@@ -771,6 +771,7 @@ export type Database = {
           current_department: string
           first_choice: string
           full_name: string
+          gender: string
           phone: string
           placed_department: string
           program: string

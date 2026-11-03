@@ -767,7 +767,7 @@ export type Database = {
       verify_reminder_cron: { Args: { p_secret: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "student" | "sub_admin" | "department_head"
+      app_role: "admin" | "student" | "sub_admin" | "department_head" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -895,7 +895,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "student", "sub_admin", "department_head"],
+      app_role: ["admin", "student", "sub_admin", "department_head", "viewer"],
     },
   },
 } as const

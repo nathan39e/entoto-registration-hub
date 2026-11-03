@@ -190,6 +190,13 @@
       "when": 1792578362491,
       "tag": "0026_reminder_cron_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793714737472,
+      "tag": "0027_add_viewer_role",
+      "breakpoints": true
     }
   ]
 }

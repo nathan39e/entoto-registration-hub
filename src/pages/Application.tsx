@@ -71,6 +71,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
   const [manualForm, setManualForm] = useState<File | null>(null);
   const [degree, setDegree] = useState<File | null>(null);
   const [coc, setCoc] = useState<File | null>(null);
+  const [docType, setDocType] = useState<"grade12" | "degree" | "coc">("grade12");
   const set = (k: string) => (val: string) => setV((p) => {
     const n = { ...p, [k]: val };
     if (k === "region") { n.city = ""; n.subcity = ""; }
@@ -196,9 +197,11 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
     const { choice1, choice2, choice3 } = parsed.data;
     if (new Set([choice1, choice2, choice3]).size < 3) return toast.error("Please choose 3 different departments.");
     if ((!editMode && !photo) || (photo && (!isImg(photo) || photo.size > MAX))) return toast.error("Please upload a personal photo (image under 5MB).");
-    if ((!editMode && !resultDoc) || (resultDoc && (!isImg(resultDoc) || resultDoc.size > MAX))) return toast.error("Grade 12 result must be an image (JPG/PNG) under 5MB.");
+    if ((!editMode && docType === "grade12" && !resultDoc) || (resultDoc && (!isImg(resultDoc) || resultDoc.size > MAX))) return toast.error("Grade 12 result must be an image (JPG/PNG) under 5MB.");
     if ((!editMode && !grade8) || (grade8 && (!isDoc(grade8) || grade8.size > MAX))) return toast.error("Please upload your Grade 8 result (image or PDF under 5MB).");
     if ((!editMode && !transcripts.length) || transcripts.some((f) => !isDoc(f) || f.size > MAX)) return toast.error("Please upload your Grade 9–12 transcript(s) — image or PDF, each under 5MB.");
+    if (!editMode && docType === "degree" && !degree) return toast.error("Please upload your Degree document.");
+    if (!editMode && docType === "coc" && !coc) return toast.error("Please upload your COC document.");
     if ([degree, coc].some((f) => f && (!isDoc(f) || f.size > MAX))) return toast.error("Degree and COC documents must be an image or PDF under 5MB.");
     if (!validManualForm(manualForm)) return toast.error("Manual form must be a JPG, PNG, WebP or PDF under 5MB.");
     if (staffMode && !editMode && (v.password ?? "").length < 8) return toast.error("Password must be at least 8 characters.");
@@ -363,7 +366,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
   );
   const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string, selected?: string) => (
     <div>
-      <Label htmlFor={id}>{label}{editMode ? " (optional replacement)" : ["manualForm", "degree", "coc"].includes(id) ? " (optional)" : " *"}</Label>
+      <Label htmlFor={id}>{label}{editMode ? " (optional replacement)" : (id === "manualForm" || (["degree", "coc"].includes(id) && id !== docType)) ? " (optional)" : " *"}</Label>
       <div className="flex flex-wrap items-center gap-2">
         <Input id={id} type="file" accept={accept} className="flex-1 min-w-44"
           onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
@@ -519,7 +522,20 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {field("grade12", "Grade 12 Exit Exam Result", { type: "text", inputMode: "decimal", pattern: "[0-9]{1,3}([.,][0-9]{1,2})?", title: "Enter a mark like 150.32", placeholder: "e.g., 150.32" })}
                       {field("grade12Year", "Year Grade 12 Completed", { type: "number", min: 1990, max: currentYear, placeholder: `e.g., ${currentYear - 1}` })}
-                      {fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading total and subject marks..." : "Image under 5MB.", resultDoc?.name)}
+                      <div>
+                        <Label>Document to upload *</Label>
+                        <Select value={docType} onValueChange={(x) => setDocType(x as "grade12" | "degree" | "coc")}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="grade12">Grade 12 Result</SelectItem>
+                            <SelectItem value="degree">Degree</SelectItem>
+                            <SelectItem value="coc">COC</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {docType === "grade12" && fileInput("resultDoc", "Grade 12 Result Document (image)", "image/*", pickResultDoc, markReading ? "Reading total and subject marks..." : "Image under 5MB.", resultDoc?.name)}
+                      {docType === "degree" && fileInput("degree", "Degree Document", "image/*,application/pdf", setDegree, "Image or PDF, under 5MB.", degree?.name)}
+                      {docType === "coc" && fileInput("coc", "COC Document", "image/*,application/pdf", setCoc, "Image or PDF, under 5MB.", coc?.name)}
                       {fileInput("grade8", "Grade 8 Result", "image/*,application/pdf", setGrade8, "Image or PDF, under 5MB.", grade8?.name)}
                       <div>
                         <Label htmlFor="transcript">Transcript (Grade 9–12){editMode ? " (add documents)" : " *"}</Label>
@@ -535,8 +551,6 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
                             : "You can select more than one file — images or PDFs, each under 5MB."}
                         </p>
                       </div>
-                      {fileInput("degree", "Degree Document", "image/*,application/pdf", setDegree, "Image or PDF, under 5MB.", degree?.name)}
-                      {fileInput("coc", "COC Document", "image/*,application/pdf", setCoc, "Image or PDF, under 5MB.", coc?.name)}
                       {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, "Scan or photo of the completed paper form — image or PDF, under 5MB.", manualForm?.name)}
                     </div>
                   </div>

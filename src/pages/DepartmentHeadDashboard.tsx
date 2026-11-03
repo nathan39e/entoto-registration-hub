@@ -1,3 +1,4 @@
+import GenderStats from "@/components/GenderStats";
 import FilterCounts from "@/components/FilterCounts";
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
@@ -157,6 +158,7 @@ const DepartmentHeadDashboard = () => {
             <Card key={f}><CardHeader className="pb-2"><CardDescription className="line-clamp-2">{f}</CardDescription><CardTitle className="text-2xl">{students.filter((s) => fieldOf(choiceOf(s)) === f).length}</CardTitle></CardHeader></Card>
           ))}
         </div>
+        <GenderStats genders={students.map((s) => s.grade_12_results?.personal_info?.gender)} />
 
         <Card>
           <CardHeader>

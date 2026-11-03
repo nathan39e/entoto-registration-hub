@@ -1,3 +1,4 @@
+import GenderStats from "@/components/GenderStats";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,6 +88,7 @@ const AdminDashboard = () => {
   const [studentStatus, setStudentStatus] = useState<{ value: string; n: number }>({ value: "All", n: 0 });
   const [signedUpOnly, setSignedUpOnly] = useState(0);
   const [filledCount, setFilledCount] = useState(0);
+  const [genders, setGenders] = useState<(string | null)[]>([]);
 
   const goToStudents = () => {
     setTab("students");
@@ -150,6 +152,7 @@ const AdminDashboard = () => {
       const appliedIds = new Set((appsResponse.data ?? []).map((a) => a.user_id));
       setSignedUpOnly((profilesResponse.data ?? []).filter((p) => !staffIds.has(p.id) && !appliedIds.has(p.id)).length);
       setFilledCount((appsResponse.data ?? []).filter((a) => !staffIds.has(a.user_id)).length);
+      setGenders((appsResponse.data ?? []).filter((a) => !staffIds.has(a.user_id)).map((a) => ((a.grade_12_results as { personal_info?: { gender?: string } } | null)?.personal_info?.gender ?? null)));
       const empty = { full_name: "Unknown", email: "", student_code: "-" };
       const attach = (rows: any[] | null) => (rows ?? []).map((r) => ({ ...r, profiles: map.get(r.user_id) ?? empty }));
       setApplications(attach(appsResponse.data));
@@ -362,6 +365,7 @@ const AdminDashboard = () => {
           })}
 
         </div>
+        <GenderStats genders={genders} className="mb-8" />
 
         <Card className="mb-8">
           <CardHeader>

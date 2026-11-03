@@ -1,3 +1,4 @@
+import GenderStats from "@/components/GenderStats";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,7 @@ import { RefreshCw } from "lucide-react";
 import { DEPARTMENTS } from "@/data/departments";
 import { toast } from "sonner";
 
-type Row = { full_name: string; student_code: string; phone: string | null; program: string | null; status: string | null; first_choice: string; second_choice: string; third_choice: string; current_department: string | null; placed_department: string | null; submitted_at: string };
+type Row = { full_name: string; student_code: string; phone: string | null; program: string | null; status: string | null; first_choice: string; second_choice: string; third_choice: string; current_department: string | null; placed_department: string | null; submitted_at: string; gender: string | null };
 
 const STATUS: Record<string, string> = { approved: "Approved", waiting_list: "Waiting list", pending: "Document review", rejected: "Rejected" };
 
@@ -48,6 +49,7 @@ export default function ViewerDashboard() {
           <Button variant="outline" onClick={load} disabled={loading}><RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />Refresh</Button>
         </div>
 
+        <GenderStats genders={(dept === "All" ? rows : rows.filter((r) => deptOf(r) === dept)).map((r) => r.gender)} />
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {counts.map(({ d, n }) => (
             <button key={d} type="button" onClick={() => setDept(dept === d ? "All" : d)} className="text-left">

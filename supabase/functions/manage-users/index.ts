@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "admin_block_status") {
-      const { data: ids } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+      const { data: ids } = await admin.from("user_roles").select("user_id").in("role", ["admin", "viewer"]);
       const blocked: string[] = [];
       for (const r of ids ?? []) {
         const { data } = await admin.auth.admin.getUserById(r.user_id);
@@ -251,7 +251,7 @@ Deno.serve(async (req) => {
       if (!id || id === user.id) return json({ error: "Use Account settings to change your own account." }, 400);
       const [{ data: target }, { data: role }] = await Promise.all([
         admin.from("profiles").select("registered_by").eq("id", id).maybeSingle(),
-        admin.from("user_roles").select("user_id").eq("user_id", id).eq("role", "admin").maybeSingle(),
+        admin.from("user_roles").select("user_id").eq("user_id", id).in("role", ["admin", "viewer"]).limit(1).maybeSingle(),
       ]);
       const { data: authority } = await admin.from("admin_creation_authority").select("user_id").eq("user_id", user.id).maybeSingle();
       if (!role || !canManageAdmin(user.id, target?.registered_by ?? null, !!authority)) return json({ error: "You can only manage admins you created." }, 403);

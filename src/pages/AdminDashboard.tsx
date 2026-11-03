@@ -143,7 +143,7 @@ const AdminDashboard = () => {
         supabase.from("payments").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("id, full_name, email, student_code"),
         supabase.from("admission_settings").select("grade_12_cutoff, female_grade_12_cutoff, exam_start, exam_end").eq("id", true).maybeSingle(),
-        supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head"]),
+        supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]),
       ]);
       const map = new Map((profilesResponse.data ?? []).map((p) => [p.id, p]));
       const staffIds = new Set((staffResponse.data ?? []).map((r) => r.user_id));

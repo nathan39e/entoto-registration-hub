@@ -68,7 +68,7 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
   const load = async () => {
     const [{ data }, { data: roles }, apps] = await Promise.all([
       supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }),
-      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head"]),
+      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]),
       supabase.from("applications").select("*"),
     ]);
     if (apps.error) return toast.error("Could not load application filters");

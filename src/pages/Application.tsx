@@ -69,6 +69,8 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
   const [grade8, setGrade8] = useState<File | null>(null);
   const [transcripts, setTranscripts] = useState<File[]>([]);
   const [manualForm, setManualForm] = useState<File | null>(null);
+  const [degree, setDegree] = useState<File | null>(null);
+  const [coc, setCoc] = useState<File | null>(null);
   const set = (k: string) => (val: string) => setV((p) => {
     const n = { ...p, [k]: val };
     if (k === "region") { n.city = ""; n.subcity = ""; }
@@ -197,6 +199,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
     if ((!editMode && !resultDoc) || (resultDoc && (!isImg(resultDoc) || resultDoc.size > MAX))) return toast.error("Grade 12 result must be an image (JPG/PNG) under 5MB.");
     if ((!editMode && !grade8) || (grade8 && (!isDoc(grade8) || grade8.size > MAX))) return toast.error("Please upload your Grade 8 result (image or PDF under 5MB).");
     if ((!editMode && !transcripts.length) || transcripts.some((f) => !isDoc(f) || f.size > MAX)) return toast.error("Please upload your Grade 9–12 transcript(s) — image or PDF, each under 5MB.");
+    if ([degree, coc].some((f) => f && (!isDoc(f) || f.size > MAX))) return toast.error("Degree and COC documents must be an image or PDF under 5MB.");
     if (!validManualForm(manualForm)) return toast.error("Manual form must be a JPG, PNG, WebP or PDF under 5MB.");
     if (staffMode && !editMode && (v.password ?? "").length < 8) return toast.error("Password must be at least 8 characters.");
 
@@ -258,6 +261,8 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
         ...(path ? { grade12: path } : {}),
         ...(grade8 ? { grade8: await upload(grade8, "grade8") } : {}),
         ...(transcriptPaths.length ? { transcript: transcriptPaths[0], transcripts: transcriptPaths } : {}),
+        ...(degree ? { degree: await upload(degree, "degree") } : {}),
+        ...(coc ? { coc: await upload(coc, "coc") } : {}),
         ...(manualForm ? { manualForm: await upload(manualForm, "manualForm") } : {}),
       };
 
@@ -358,7 +363,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
   );
   const fileInput = (id: string, label: string, accept: string, onPick: (f: File | null) => void, hint: string, selected?: string) => (
     <div>
-      <Label htmlFor={id}>{label}{editMode ? " (optional replacement)" : id === "manualForm" ? " (optional)" : " *"}</Label>
+      <Label htmlFor={id}>{label}{editMode ? " (optional replacement)" : ["manualForm", "degree", "coc"].includes(id) ? " (optional)" : " *"}</Label>
       <div className="flex flex-wrap items-center gap-2">
         <Input id={id} type="file" accept={accept} className="flex-1 min-w-44"
           onChange={(e) => onPick(e.target.files?.[0] ?? (id === "manualForm" ? manualForm : null))} />
@@ -530,6 +535,8 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
                             : "You can select more than one file — images or PDFs, each under 5MB."}
                         </p>
                       </div>
+                      {fileInput("degree", "Degree Document", "image/*,application/pdf", setDegree, "Image or PDF, under 5MB.", degree?.name)}
+                      {fileInput("coc", "COC Document", "image/*,application/pdf", setCoc, "Image or PDF, under 5MB.", coc?.name)}
                       {fileInput("manualForm", "Filled Manual Form", "image/*,application/pdf", setManualForm, "Scan or photo of the completed paper form — image or PDF, under 5MB.", manualForm?.name)}
                     </div>
                   </div>

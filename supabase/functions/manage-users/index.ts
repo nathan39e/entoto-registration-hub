@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       if (!isAdmin && !isSub) return json({ error: "Not allowed" }, 403);
       const id = str(body.id, 64);
       const name = str(body.name, 24);
-      const allowed = ["photo", "grade12", "grade8", "transcript", "manualForm"];
+      const allowed = ["photo", "grade12", "grade8", "transcript", "manualForm", "degree", "coc"];
       const mime = str(body.mime, 40);
       if (!allowed.includes(name) || !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(mime) ||
           ((name === "photo" || name === "grade12") && mime === "application/pdf"))
@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
       const documents = body.documents ?? {};
       if (typeof documents !== "object" || Array.isArray(documents)) return json({ error: "Invalid documents" }, 400);
       for (const [name, value] of Object.entries(documents)) {
-        if (!["photo", "grade12", "grade8", "transcript", "transcripts", "manualForm"].includes(name)) return json({ error: "Invalid document" }, 400);
+        if (!["photo", "grade12", "grade8", "transcript", "transcripts", "manualForm", "degree", "coc"].includes(name)) return json({ error: "Invalid document" }, 400);
         const paths = Array.isArray(value) ? value : [value];
         if (!paths.length || paths.some((p) => typeof p !== "string" || !p.startsWith(`${id}/`) || p.includes(".."))) return json({ error: "Invalid document path" }, 400);
       }
@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "admin_block_status") {
-      const { data: ids } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+      const { data: ids } = await admin.from("user_roles").select("user_id").in("role", ["admin", "viewer"]);
       const blocked: string[] = [];
       for (const r of ids ?? []) {
         const { data } = await admin.auth.admin.getUserById(r.user_id);
@@ -220,12 +220,38 @@ Deno.serve(async (req) => {
       return json({ blocked });
     }
 
+    if (action === "create_viewer" || action === "set_viewer") {
+      const { data: authority } = await admin.from("admin_creation_authority").select("user_id").eq("user_id", user.id).maybeSingle();
+      if (!authority) return json({ error: "Only the main admin can manage viewers." }, 403);
+      let id = str(body.id, 64);
+      if (action === "create_viewer") {
+        const full_name = str(body.full_name, 100), email = str(body.email, 255).toLowerCase();
+        const password = typeof body.password === "string" ? body.password : "";
+        if (!full_name || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8) return json({ error: "Name, valid email and password of at least 8 characters required." }, 400);
+        const { data: created, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name } });
+        if (error) return json({ error: error.message }, 400);
+        id = created.user.id;
+        await admin.from("profiles").update({ registered_by: user.id }).eq("id", id);
+      } else {
+        if (!id || id === user.id) return json({ error: "You cannot change your own role." }, 400);
+        const { data: hasAuth } = await admin.from("admin_creation_authority").select("user_id").eq("user_id", id).maybeSingle();
+        if (hasAuth) return json({ error: "This admin cannot be changed." }, 403);
+        const { data: current } = await admin.from("user_roles").select("role").eq("user_id", id).in("role", ["admin", "viewer"]);
+        if (!current?.length) return json({ error: "Select an admin or viewer account." }, 400);
+      }
+      const toViewer = action === "create_viewer" || body.viewer === true;
+      const { error: addError } = await admin.from("user_roles").upsert({ user_id: id, role: toViewer ? "viewer" : "admin" }, { onConflict: "user_id,role" });
+      if (addError) return json({ error: "Could not change role" }, 500);
+      await admin.from("user_roles").delete().eq("user_id", id).in("role", toViewer ? ["admin", "student"] : ["viewer", "student"]);
+      return json({ ok: true });
+    }
+
     if (action === "update_admin" || action === "delete_admin" || action === "block_admin") {
       const id = str(body.id, 64);
       if (!id || id === user.id) return json({ error: "Use Account settings to change your own account." }, 400);
       const [{ data: target }, { data: role }] = await Promise.all([
         admin.from("profiles").select("registered_by").eq("id", id).maybeSingle(),
-        admin.from("user_roles").select("user_id").eq("user_id", id).eq("role", "admin").maybeSingle(),
+        admin.from("user_roles").select("user_id").eq("user_id", id).in("role", ["admin", "viewer"]).limit(1).maybeSingle(),
       ]);
       const { data: authority } = await admin.from("admin_creation_authority").select("user_id").eq("user_id", user.id).maybeSingle();
       if (!role || !canManageAdmin(user.id, target?.registered_by ?? null, !!authority)) return json({ error: "You can only manage admins you created." }, 403);

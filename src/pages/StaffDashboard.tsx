@@ -13,7 +13,7 @@ import StudentRecordActions from "@/components/StudentRecordActions";
 import StudentFilterList from "@/components/StudentFilterList";
 
 
-const DOCS: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript"], ["manualForm", "Manual Form"]];
+const DOCS: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript"], ["manualForm", "Manual Form"], ["degree", "Degree"], ["coc", "COC"]];
 
 const StaffDashboard = () => {
   const navigate = useNavigate();
@@ -56,7 +56,7 @@ const StaffDashboard = () => {
       supabase.from("profiles").select("*").ilike("student_code", term).limit(20),
       supabase.from("profiles").select("*").ilike("full_name", `%${term}%`).limit(20),
       phone.length >= 3 ? supabase.from("profiles").select("*").ilike("phone", `%${phone}%`).limit(20) : Promise.resolve({ data: [] as any[] }),
-      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head"]),
+      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]),
     ]);
     if (error) return toast.error(error.message);
     const excluded = new Set((staff ?? []).map((r) => r.user_id));

@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DEPARTMENTS } from "@/data/departments";
 import { toast } from "sonner";
 
-const DOCS: [string, string][] = [["photo", "photo"], ["grade12", "grade12_result"], ["grade8", "grade8_result"], ["transcript", "transcript"], ["manualForm", "manual_form"]];
+const DOCS: [string, string][] = [["photo", "photo"], ["grade12", "grade12_result"], ["grade8", "grade8_result"], ["transcript", "transcript"], ["manualForm", "manual_form"], ["degree", "degree"], ["coc", "coc"]];
 const safe = (s: string) => (s || "unknown").replace(/[\\/:*?"<>|]+/g, "").trim().slice(0, 80) || "unknown";
 
 const downloadBlob = (blob: Blob, name: string) => {

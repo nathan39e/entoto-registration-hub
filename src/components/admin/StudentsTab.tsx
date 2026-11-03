@@ -50,7 +50,7 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
     const { data: a } = await supabase.from("applications").select("documents, result_doc_path").eq("user_id", p.id).maybeSingle();
     const d: Record<string, string> = { ...((a?.documents as Record<string, string>) ?? {}) };
     if (!d.grade12 && a?.result_doc_path) d.grade12 = a.result_doc_path;
-    const labels: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript (9–12)"], ["manualForm", "Manual Form"]];
+    const labels: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript (9–12)"], ["manualForm", "Manual Form"], ["degree", "Degree"], ["coc", "COC"]];
     const links: [string, string][] = [];
     for (const [k, l] of labels) {
       if (!d[k]) { links.push([l, ""]); continue; }
@@ -68,7 +68,7 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
   const load = async () => {
     const [{ data }, { data: roles }, apps] = await Promise.all([
       supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }),
-      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head"]),
+      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]),
       supabase.from("applications").select("*"),
     ]);
     if (apps.error) return toast.error("Could not load application filters");
@@ -124,7 +124,7 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
         "Application Status": a?.status ?? "Not applied", Submitted: a ? new Date(a.submitted_at).toLocaleDateString() : "",
         "Registered By": s.registered_by ? names.get(s.registered_by) ?? "Staff" : "Self",
         "Photo (7-day link)": await link(d.photo), "Grade 12 Doc": await link(d.grade12 ?? a?.result_doc_path),
-        "Grade 8 Doc": await link(d.grade8), Transcript: await link(d.transcript), "Manual Form": await link(d.manualForm),
+        "Grade 8 Doc": await link(d.grade8), Transcript: await link(d.transcript), "Manual Form": await link(d.manualForm), Degree: await link(d.degree), COC: await link(d.coc),
         "Additional Transcripts": (Array.isArray(d.transcripts) ? await Promise.all((d.transcripts as string[]).slice(d.transcript ? 1 : 0).map(link)) : []).join("\n"),
         Registered: new Date(s.created_at).toLocaleDateString(),
       });

@@ -13,7 +13,7 @@ import StudentRecordActions from "@/components/StudentRecordActions";
 import StudentFilterList from "@/components/StudentFilterList";
 
 
-const DOCS: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript"], ["manualForm", "Manual Form"]];
+const DOCS: [string, string][] = [["photo", "Photo"], ["grade12", "Grade 12 Result"], ["grade8", "Grade 8 Result"], ["transcript", "Transcript"], ["manualForm", "Manual Form"], ["degree", "Degree"], ["coc", "COC"]];
 
 const StaffDashboard = () => {
   const navigate = useNavigate();

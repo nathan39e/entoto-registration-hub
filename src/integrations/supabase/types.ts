@@ -765,6 +765,22 @@ export type Database = {
         Returns: undefined
       }
       verify_reminder_cron: { Args: { p_secret: string }; Returns: boolean }
+      viewer_student_overview: {
+        Args: never
+        Returns: {
+          current_department: string
+          first_choice: string
+          full_name: string
+          phone: string
+          placed_department: string
+          program: string
+          second_choice: string
+          status: string
+          student_code: string
+          submitted_at: string
+          third_choice: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "student" | "sub_admin" | "department_head" | "viewer"

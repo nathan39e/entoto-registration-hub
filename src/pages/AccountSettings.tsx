@@ -9,13 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { greeting, useLang } from "@/lib/i18n";
+import { greeting } from "@/lib/i18n";
 
 const ROLE_LABEL: Record<string, string> = { admin: "Admin", sub_admin: "Sub Admin", department_head: "Department Head", student: "Student" };
 
 const AccountSettings = () => {
   const navigate = useNavigate();
-  const { lang, setLang } = useLang();
   const [userId, setUserId] = useState("");
   const [roles, setRoles] = useState<string[]>([]);
   const [dept, setDept] = useState<string | null>(null);
@@ -109,13 +108,6 @@ const AccountSettings = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader><CardTitle>Language</CardTitle><CardDescription>Choose the language for the whole website.</CardDescription></CardHeader>
-          <CardContent className="flex gap-2" data-no-translate>
-            <Button variant={lang === "en" ? "default" : "outline"} onClick={() => setLang("en")}>English</Button>
-            <Button variant={lang === "am" ? "default" : "outline"} onClick={() => setLang("am")}>አማርኛ</Button>
-          </CardContent>
-        </Card>
       </main>
       <Footer />
     </div>

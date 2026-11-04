@@ -297,6 +297,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
         setV(initial());
         (e.target as HTMLFormElement).reset();
         setPhoto(null); setResultDoc(null); setGrade8(null); setTranscripts([]); setManualForm(null);
+        setDegree(null); setCoc(null); setDocType("grade12");
         return;
       }
       const { data: saved, error } = await supabase.from("applications").insert({ user_id: user.id, ...appRow }).select("status").single();

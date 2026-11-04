@@ -4,7 +4,7 @@
 - Apply the configurable Grade 12 cutoff in a database trigger; only waiting-listed or rejected students are blocked from exam and payment progression.
 - Store news articles with admin-only writes and public published reads; keep news photos private with published-article access, because unpublished content must remain hidden.
 - Resolve uploaded hero photo pointers against the project's preview asset host so they display on both Lovable and external hosts, where relative asset paths otherwise fall through to the SPA HTML page.
-- Amharic translation is done at runtime by src/lib/i18n.tsx (DOM text walker + AI translate edge function, cached in localStorage), because hand-maintained dictionaries can't cover every page; mark untranslatable content with data-no-translate.
+- The site is English-only; runtime AI Amharic translation was removed to cut AI costs.
 - Department head scoring/placement lives in department_placements and is written only via the evaluate_application security-definer RPC, so heads can't edit applications directly and referrals move the student to their next choice atomically.
 - Existing-student manual-form attachments use authenticated manage-users actions for admins/sub-admins, preserving all stored files because staff cannot upload directly into another student's folder.
 - Department-choice changes use a service-only atomic RPC with actor role and individual staff_permissions checks; they reset entry evaluation to the first choice so placement remains consistent. Keep the manage-users department catalog aligned with src/data/departments.ts.

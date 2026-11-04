@@ -7,7 +7,6 @@ import { User } from "@supabase/supabase-js";
 import logo from "@/assets/logo.png";
 import { Menu, Settings } from "lucide-react";
 import { toast } from "sonner";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import { greeting } from "@/lib/i18n";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
@@ -119,7 +118,6 @@ const Header = () => {
 
           {/* Right Auth Buttons */}
           <div className="hidden lg:flex items-center gap-3">
-            <LanguageSwitcher />
             <DarkModeToggle />
             {user ? (
               <>
@@ -152,7 +150,6 @@ const Header = () => {
             <SheetContent side="right" className="w-[min(85vw,22rem)] overflow-y-auto">
               <SheetHeader><SheetTitle>Menu</SheetTitle>{user && <p className="text-sm text-muted-foreground">{greeting()}</p>}</SheetHeader>
               <div className="mt-4 flex items-center gap-2">
-                <LanguageSwitcher className="flex-1" />
                 <DarkModeToggle />
               </div>
               <nav className="mt-8 flex flex-col gap-1">

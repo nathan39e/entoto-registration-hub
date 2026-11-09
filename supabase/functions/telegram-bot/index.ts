@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { ownContact, validFullName } from "./rules.ts";
+import { ACCOUNT_REQUEST_TTL_MS, recoverOwnAccount } from "./recovery.ts";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
 
@@ -23,7 +24,7 @@ const APPLY_WARNING = "እባክዎ ሳይን አፕ (Sign Up) ካደረጉ በ�
 
 const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
-  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nMenu: /status /editname /departments /contact /website /help";
+  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nUse /account to recover your website email and request a secure password-reset email.\nMenu: /status /account /editname /departments /contact /website /help";
 
 const SITE = "https://tafarimakonnenn.onrender.com";
 
@@ -34,6 +35,7 @@ const STATUS_PROMPT = "🔎 Send your <b>Student ID</b>, or tap <b>📱 Share My
 const HELP =
   "ℹ️ <b>እገዛ / Help</b>\n\n" +
   "/status — የማመልከቻ ሁኔታ / Check application status\n" +
+  "/account — Website email and secure password recovery (share your own contact again each time)\n" +
   "/editname — ሙሉ ስም ማስተካከል / Edit only your full name\n" +
   "/departments — ዲፓርትመንቶች / Departments & programs\n" +
   "/contact — አድራሻ / Contact the college\n" +
@@ -88,22 +90,27 @@ function statusText(status: string, dept: string | null, missingDocs: boolean) {
   }
 }
 
-async function send(chatId: number, text: string, replyMarkup?: Record<string, unknown>) {
+async function telegram(method: string, body: Record<string, unknown>) {
   const gatewayKey = Deno.env.get("LOVABLE_API_KEY");
   const telegramKey = Deno.env.get("TELEGRAM_API_KEY");
   if (!gatewayKey || !telegramKey) throw new Error("Telegram is not configured");
-  const res = await fetch(`${GATEWAY_URL}/sendMessage`, {
+  const res = await fetch(`${GATEWAY_URL}/${method}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${gatewayKey}`,
       "X-Connection-Api-Key": telegramKey,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", ...(replyMarkup ? { reply_markup: replyMarkup } : {}) }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Telegram request failed [${res.status}]: ${await res.text()}`);
   const result = await res.json();
   if (!result.ok) throw new Error(`Telegram request failed: ${result.description}`);
+  return result.result;
+}
+
+async function send(chatId: number, text: string, replyMarkup?: Record<string, unknown>) {
+  return telegram("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
 }
 
 Deno.serve(async (req) => {
@@ -120,6 +127,27 @@ Deno.serve(async (req) => {
 
   try {
   const update = await req.json().catch(() => null);
+  const db = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  if (update?.cleanup_private_replies === true) {
+    const { data: due, error } = await db.from("telegram_private_replies").select("chat_id,message_id").lte("delete_at", new Date().toISOString()).limit(100);
+    if (error) throw error;
+    for (const reply of due ?? []) {
+      try {
+        await telegram("deleteMessage", { chat_id: reply.chat_id, message_id: reply.message_id });
+      } catch (error) {
+        // A manually deleted reply is already safe; retry other provider failures.
+        if (!(error instanceof Error) || !error.message.includes("message to delete not found")) {
+          console.error("Private reply deletion failed");
+          continue;
+        }
+      }
+      const { error: deleteError } = await db.from("telegram_private_replies").delete().eq("chat_id", reply.chat_id).eq("message_id", reply.message_id);
+      if (deleteError) throw deleteError;
+    }
+    const { error: stopError } = await db.rpc("telegram_stop_private_reply_cleanup");
+    if (stopError) throw stopError;
+    return json({ ok: true });
+  }
   if (!Number.isSafeInteger(update?.update_id)) return json({ error: "Invalid update" }, 400);
   const msg = update?.message;
   const chatId = msg?.chat?.id;
@@ -128,7 +156,6 @@ Deno.serve(async (req) => {
   if (!Number.isSafeInteger(chatId) || !Number.isSafeInteger(sender)) return json({ ok: true });
   if (msg.chat.type !== "private" || chatId !== sender) return json({ ok: true });
   if (text.length > 500) return json({ ok: true });
-  const db = createClient(url, serviceKey);
   const rpc = async (name: string, args: Record<string, unknown>) => {
     const { data, error } = await db.rpc(name, args);
     if (error) throw new Error(`${name}: ${error.message}`);
@@ -136,6 +163,61 @@ Deno.serve(async (req) => {
   };
 
   const cmd = text.startsWith("/") ? text.split(/\s+/)[0].split("@")[0].toLowerCase() : "";
+  if (cmd === "/account") {
+    const { error } = await db.from("telegram_account_requests").upsert({ chat_id: chatId, sender_id: sender, expires_at: new Date(Date.now() + ACCOUNT_REQUEST_TTL_MS).toISOString() });
+    if (error) throw error;
+    await send(chatId, "🔒 Share your <b>own Telegram contact</b> to see your website email and receive a secure password-reset link by email. Typed phone numbers, Student IDs and emergency contacts cannot recover an account. Your email reply is automatically removed within five minutes under normal service availability; share your contact again to see it again. Passwords are never displayed.\nየድረ-ገጽ ኢሜይልዎን ለማየት የራስዎን ስልክ ቁጥር ያጋሩ።", SHARE_KB);
+    return json({ ok: true });
+  }
+  const { data: accountRequest, error: requestError } = await db.from("telegram_account_requests").select("expires_at").eq("chat_id", chatId).eq("sender_id", sender).maybeSingle();
+  if (requestError) throw requestError;
+  if (accountRequest && !cmd) {
+    if (Date.parse(accountRequest.expires_at) <= Date.now()) {
+      await db.from("telegram_account_requests").delete().eq("chat_id", chatId);
+      await send(chatId, "Account recovery expired. Send /account and share your own contact again.", { remove_keyboard: true });
+      return json({ ok: true });
+    }
+    if (!ownContact(sender, msg.contact)) {
+      await send(chatId, "Use the button to share your own contact. Typing a phone number or forwarding another person's contact cannot reveal an email.", SHARE_KB);
+      return json({ ok: true });
+    }
+    // Consume the request before external calls; no reusable verified session is kept.
+    const { data: consumed, error: consumeError } = await db.from("telegram_account_requests").delete().eq("chat_id", chatId).eq("sender_id", sender).gt("expires_at", new Date().toISOString()).select("chat_id");
+    if (consumeError) throw consumeError;
+    if (!consumed?.length) return json({ ok: true });
+    const outcome = await recoverOwnAccount(chatId, sender, msg.contact, {
+      findPersonalPhone: async (phone) => await rpc("telegram_account_by_phone", { _phone: phone }),
+      getAccount: async (id) => {
+        const { data, error } = await db.auth.admin.getUserById(id);
+        if (error) return null;
+        return data.user;
+      },
+      sendResetEmail: async (email, redirectTo) => {
+        const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) console.error("Account recovery email could not be sent");
+        return !error;
+      },
+      showPrivateAccount: async (email, resetSent) => {
+        // Queue a harmless placeholder before revealing email: a queue failure must not expose data.
+        const placeholder = await telegram("sendMessage", { chat_id: chatId, text: "Preparing your private account reply…", protect_content: true });
+        const messageId = placeholder?.message_id;
+        if (!Number.isSafeInteger(messageId)) throw new Error("Missing private reply ID");
+        await rpc("telegram_queue_private_reply", { _chat: chatId, _message: messageId, _url: `${url}/functions/v1/telegram-bot`, _secret: await deriveSecret(key) });
+        await telegram("editMessageText", {
+          chat_id: chatId, message_id: messageId, parse_mode: "HTML",
+          text: `🔒 <b>Your website account</b>\nEmail: <tg-spoiler>${esc(email)}</tg-spoiler>\n\n${resetSent ? "A secure password-reset link was sent to this email. Open your inbox (check spam too) to choose a new password." : "The reset email could not be sent. Use Forgot password on the website or contact the college."}\nYour existing password cannot be retrieved or shown. This reply is scheduled for deletion within five minutes; service outages may delay deletion. Use /account and share your own contact again to view your email again.`,
+          reply_markup: { inline_keyboard: [[{ text: "Open college website", url: `${SITE}/auth` }]] },
+        });
+        await send(chatId, "Account recovery finished. /account requires sharing your own contact again.", { remove_keyboard: true });
+      },
+    });
+    if (outcome !== "shown") await send(chatId, "Unable to verify a unique student account with your personal phone. Contact the college to check the phone on your account. Emergency contacts and Student IDs cannot recover website credentials.", { remove_keyboard: true });
+    return json({ ok: true });
+  }
+  if (cmd && cmd !== "/account") {
+    const { error } = await db.from("telegram_account_requests").delete().eq("chat_id", chatId).eq("sender_id", sender);
+    if (error) throw error;
+  }
   if (cmd === "/cancel") {
     const { error } = await db.from("telegram_name_sessions").delete().eq("chat_id", chatId).eq("sender_id", sender);
     if (error) throw error;

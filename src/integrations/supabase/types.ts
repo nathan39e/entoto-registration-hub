@@ -629,6 +629,38 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_name_sessions: {
+        Row: {
+          chat_id: number
+          expires_at: string
+          sender_id: number
+          student_id: string
+          verified: boolean
+        }
+        Insert: {
+          chat_id: number
+          expires_at: string
+          sender_id: number
+          student_id: string
+          verified?: boolean
+        }
+        Update: {
+          chat_id?: number
+          expires_at?: string
+          sender_id?: number
+          student_id?: string
+          verified?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_name_sessions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -751,6 +783,27 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      telegram_begin_name_edit: {
+        Args: { _chat: number; _code: string; _sender: number }
+        Returns: boolean
+      }
+      telegram_find_students: {
+        Args: { _input: string; _phone: boolean }
+        Returns: {
+          full_name: string
+          id: string
+          student_code: string
+        }[]
+      }
+      telegram_finish_name_edit: {
+        Args: { _chat: number; _name: string; _sender: number }
+        Returns: boolean
+      }
+      telegram_phone_key: { Args: { _phone: string }; Returns: string }
+      telegram_verify_name_contact: {
+        Args: { _chat: number; _phone: string; _sender: number }
+        Returns: boolean
       }
       update_student_application: {
         Args: {

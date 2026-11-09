@@ -211,6 +211,13 @@
       "when": 1793716052829,
       "tag": "0029_viewer_overview_gender",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794212007912,
+      "tag": "0030_telegram_student_lookup_name_edit",
+      "breakpoints": true
     }
   ]
 }

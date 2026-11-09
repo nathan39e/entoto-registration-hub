@@ -19,3 +19,4 @@
 - Persist signup contact phone through the profile-creation trigger and prefill it in Application; this keeps phone contact separate from email authentication and does not imply SMS verification.
 - Psychometric recommendations use the shared department-catalog whitelist and section aliases in psychExam; keep skill scores separate and break department ties in catalog order so recommendations are valid and deterministic.
 - The viewer role reads student data only through the viewer_student_overview security-definer RPC (no table grants, no export controls); only admins holding creation authority create viewers or switch admins to/from viewer via manage-users.
+- Telegram lookups use a service-only normalized phone RPC; name-only edits require a private-chat own-contact match to the personal phone and an expiring session, with atomic profile/application name updates preserving all other fields.

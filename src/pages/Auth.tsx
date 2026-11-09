@@ -112,15 +112,43 @@ const Auth = () => {
       return;
     }
 
+    const { data: sent, error: sendErr } = await supabase.functions.invoke("signup-otp", { body: { action: "send", phone } });
+    if (sendErr || sent?.error) {
+      toast.error(sent?.error ?? (await sendErr?.context?.json?.().catch(() => null))?.error ?? "Could not send the SMS code.");
+    } else {
+      setPending({ fullname, email, password, phone });
+      setOtp("");
+      setCooldown(60);
+      toast.success(`We sent a 6-digit code to ${phone}.`);
+    }
+    setLoading(false);
+  };
+
+  const resendOtp = async () => {
+    if (!pending || cooldown > 0) return;
+    setLoading(true);
+    const { data, error } = await supabase.functions.invoke("signup-otp", { body: { action: "send", phone: pending.phone } });
+    if (error || data?.error) toast.error(data?.error ?? (await error?.context?.json?.().catch(() => null))?.error ?? "Could not resend.");
+    else { toast.success("New code sent."); setCooldown(60); }
+    setLoading(false);
+  };
+
+  const verifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pending) return;
+    setLoading(true);
     sessionStorage.setItem("postSignup", "1");
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullname, phone },
-        emailRedirectTo: `${window.location.origin}/application`,
-      },
+    const { data: res, error: fnErr } = await supabase.functions.invoke("signup-otp", {
+      body: { action: "verify_signup", phone: pending.phone, code: otp, email: pending.email, password: pending.password,
+        full_name: pending.fullname, redirect: `${window.location.origin}/application` },
     });
+    const errMsg = res?.error ?? (fnErr ? (await fnErr?.context?.json?.().catch(() => null))?.error ?? "Verification failed." : null);
+    const error = errMsg ? { message: errMsg } : null;
+    let data: { session: unknown } = { session: null };
+    if (!error && res?.session) {
+      await supabase.auth.setSession(res.session);
+      data = { session: res.session };
+    }
 
     if (error) {
       sessionStorage.removeItem("postSignup");

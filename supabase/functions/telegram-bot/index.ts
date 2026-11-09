@@ -23,9 +23,13 @@ const APPLY_WARNING = "እባክዎ ሳይን አፕ (Sign Up) ካደረጉ በ�
 
 const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
-  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b>, <b>phone number</b> or <b>emergency contact phone number</b> to check your application status.\n\nMenu: /status /editname /departments /contact /website /help";
+  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nMenu: /status /editname /departments /contact /website /help";
 
 const SITE = "https://tafarimakonnenn.onrender.com";
+
+const SHARE_KB = { keyboard: [[{ text: "📱 Share My Phone Number", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true };
+
+const STATUS_PROMPT = "🔎 Send your <b>Student ID</b>, or tap <b>📱 Share My Phone Number</b> below. For privacy, only your own Telegram number can be used — typed phone numbers are not accepted.\nየተማሪ መለያ ቁጥርዎን ይላኩ ወይም ከታች ያለውን ቁልፍ ተጭነው የራስዎን ስልክ ቁጥር ያጋሩ።";
 
 const HELP =
   "ℹ️ <b>እገዛ / Help</b>\n\n" +
@@ -35,7 +39,7 @@ const HELP =
   "/contact — አድራሻ / Contact the college\n" +
   "/website — ድረ-ገጽ / Portal links\n" +
   "/help — ይህ መልዕክት / This message\n\n" +
-  "💡 Send your Student ID, own phone or emergency contact phone directly. If your own phone finds no record, try your emergency contact number.\nTo change your name: /editname YOUR-STUDENT-ID, share your own Telegram contact, then send your full name. Emergency contacts cannot authorize name changes. /cancel cancels an edit.";
+  "💡 Send your Student ID, or tap 📱 Share My Phone Number to look up your record with your own Telegram number. Typed phone numbers are not accepted for privacy.\nTo change your name: /editname YOUR-STUDENT-ID, share your own Telegram contact, then send your full name. Emergency contacts cannot authorize name changes. /cancel cancels an edit.";
 
 const DEPT_LIST: [string, string[]][] = [
   ["Aesthetics", ["Painting", "Sculpture", "Graphics Art", "Photography & Videography", "Music Instrument", "Cultural Music Instrument", "Vocal Performance", "Theatrical Art", "Football Coaching", "Athletics Coaching"]],
@@ -148,7 +152,20 @@ Deno.serve(async (req) => {
     await send(chatId, started ? "Share your <b>own Telegram phone contact</b> using the button below. It must match your registered personal phone, not your emergency contact. Then send your corrected full name. This request expires in 10 minutes.\nሙሉ ስምዎን ለማስተካከል የራስዎን ስልክ ቁጥር ያጋሩ።" : "Unable to start an edit. Check your Student ID or contact the college.", started ? { keyboard: [[{ text: "Share my phone number", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true } : undefined);
     return json({ ok: true });
   }
+  let contactPhone: string | null = null;
   if (msg.contact) {
+    const phone = ownContact(sender, msg.contact);
+    const { data: editSession, error: sErr } = await db.from("telegram_name_sessions").select("verified").eq("chat_id", chatId).eq("sender_id", sender).gt("expires_at", new Date().toISOString()).maybeSingle();
+    if (sErr) throw sErr;
+    if (!editSession) {
+      if (!phone) {
+        await send(chatId, "⚠️ Please share <b>your own</b> Telegram contact using the button. Other people's contacts are not accepted.\nእባክዎ የራስዎን ስልክ ቁጥር ብቻ ያጋሩ።", SHARE_KB);
+        return json({ ok: true });
+      }
+      contactPhone = phone;
+    }
+  }
+  if (msg.contact && !contactPhone) {
     const phone = ownContact(sender, msg.contact);
     const verified = phone ? await rpc("telegram_verify_name_contact", { _chat: chatId, _sender: sender, _phone: phone }) : false;
     await send(chatId, verified ? "✅ Phone verified. Send your corrected <b>full name</b> now (first, middle and last name). Only your name will change." : "Cannot verify ownership. Share your own Telegram contact matching your registered personal phone. If it differs, contact the college; an emergency contact cannot authorize edits.", verified ? { remove_keyboard: true } : undefined);
@@ -168,15 +185,18 @@ Deno.serve(async (req) => {
     }
   }
   let input = text;
-  if (!text || cmd === "/start") { await send(chatId, WELCOME); return Response.json({ ok: true }); }
+  if (contactPhone) input = contactPhone;
+  else if (!text || cmd === "/start") { await send(chatId, WELCOME, SHARE_KB); return Response.json({ ok: true }); }
   if (cmd === "/help") { await send(chatId, HELP); return Response.json({ ok: true }); }
   if (cmd === "/departments") { await send(chatId, DEPARTMENTS); return Response.json({ ok: true }); }
   if (cmd === "/contact") { await send(chatId, CONTACT); return Response.json({ ok: true }); }
   if (cmd === "/website") { await send(chatId, WEBSITE); return Response.json({ ok: true }); }
-  if (cmd === "/status") {
+  if (contactPhone) {
+    // verified own-contact lookup
+  } else if (cmd === "/status") {
     input = text.split(/\s+/).slice(1).join("");
     if (!input) {
-      await send(chatId, "🔎 የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nPlease send your <b>Student ID</b>, <b>phone number</b> or <b>emergency contact number</b> (e.g. <code>0912345678</code>). If your own phone cannot find your information, try your emergency contact phone.\nበራስዎ ስልክ ቁጥር መረጃዎን ካላገኙ፣ የአደጋ ጊዜ ተጠሪዎን ስልክ ቁጥር ያስገቡ።");
+      await send(chatId, STATUS_PROMPT, SHARE_KB);
       return Response.json({ ok: true });
     }
   } else if (cmd) {
@@ -192,6 +212,11 @@ Deno.serve(async (req) => {
     return Response.json({ ok: true });
   }
 
+  if (isPhone && !contactPhone) {
+    await send(chatId, "🔒 For privacy, typed phone numbers are not accepted. Tap <b>📱 Share My Phone Number</b> below, or send your <b>Student ID</b>.\nለግላዊነት ሲባል የተጻፈ ስልክ ቁጥር አይቀበልም። ከታች ያለውን ቁልፍ ይጫኑ ወይም የተማሪ መለያ ቁጥርዎን ይላኩ።", SHARE_KB);
+    return Response.json({ ok: true });
+  }
+
   let profile: { id: string; full_name: string; student_code: string } | null = null;
   const matches = await rpc("telegram_find_students", { _input: code, _phone: isPhone });
     if (matches.length > 1) {
@@ -201,7 +226,7 @@ Deno.serve(async (req) => {
   profile = matches[0] ?? null;
 
   if (!profile) {
-    await send(chatId, `🔍 <b>${esc(code)}</b> አልተገኘም / not found.\nPlease check your Student ID. If your own phone number cannot find your information, try entering your <b>emergency contact phone number</b>.\nበራስዎ ስልክ ቁጥር መረጃዎን ካላገኙ፣ የአደጋ ጊዜ ተጠሪዎን ስልክ ቁጥር ያስገቡ።`);
+    await send(chatId, `🔍 <b>${esc(contactPhone ? "Your phone" : code)}</b> አልተገኘም / not found.\nPlease check your Student ID. If your shared phone finds no record, send your <b>Student ID</b> instead.\nመረጃዎ ካልተገኘ የተማሪ መለያ ቁጥርዎን ይላኩ።`);
     return Response.json({ ok: true });
   }
 

@@ -659,6 +659,38 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_admin_sessions: {
+        Row: {
+          chat_id: number
+          created_at: string
+          expires_at: string
+          staff_id: string
+          telegram_user_id: number
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          expires_at: string
+          staff_id: string
+          telegram_user_id: number
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          expires_at?: string
+          staff_id?: string
+          telegram_user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_admin_sessions_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_name_sessions: {
         Row: {
           chat_id: number

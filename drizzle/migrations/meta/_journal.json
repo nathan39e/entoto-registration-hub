@@ -225,6 +225,13 @@
       "when": 1794214907608,
       "tag": "0031_signup_phone_otps",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794215733520,
+      "tag": "0032_telegram_admin_sessions",
+      "breakpoints": true
     }
   ]
 }

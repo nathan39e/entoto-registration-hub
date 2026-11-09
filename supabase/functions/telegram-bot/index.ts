@@ -23,7 +23,7 @@ const APPLY_WARNING = "እባክዎ ሳይን አፕ (Sign Up) ካደረጉ በ�
 
 const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
-  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b>, <b>phone number</b> or <b>emergency contact phone number</b> to check your application status.\n\nMenu: /status /editname /departments /contact /website /help";
+  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nMenu: /status /editname /departments /contact /website /help";
 
 const SITE = "https://tafarimakonnenn.onrender.com";
 
@@ -39,7 +39,7 @@ const HELP =
   "/contact — አድራሻ / Contact the college\n" +
   "/website — ድረ-ገጽ / Portal links\n" +
   "/help — ይህ መልዕክት / This message\n\n" +
-  "💡 Send your Student ID, own phone or emergency contact phone directly. If your own phone finds no record, try your emergency contact number.\nTo change your name: /editname YOUR-STUDENT-ID, share your own Telegram contact, then send your full name. Emergency contacts cannot authorize name changes. /cancel cancels an edit.";
+  "💡 Send your Student ID, or tap 📱 Share My Phone Number to look up your record with your own Telegram number. Typed phone numbers are not accepted for privacy.\nTo change your name: /editname YOUR-STUDENT-ID, share your own Telegram contact, then send your full name. Emergency contacts cannot authorize name changes. /cancel cancels an edit.";
 
 const DEPT_LIST: [string, string[]][] = [
   ["Aesthetics", ["Painting", "Sculpture", "Graphics Art", "Photography & Videography", "Music Instrument", "Cultural Music Instrument", "Vocal Performance", "Theatrical Art", "Football Coaching", "Athletics Coaching"]],
@@ -226,7 +226,7 @@ Deno.serve(async (req) => {
   profile = matches[0] ?? null;
 
   if (!profile) {
-    await send(chatId, `🔍 <b>${esc(code)}</b> አልተገኘም / not found.\nPlease check your Student ID. If your own phone number cannot find your information, try entering your <b>emergency contact phone number</b>.\nበራስዎ ስልክ ቁጥር መረጃዎን ካላገኙ፣ የአደጋ ጊዜ ተጠሪዎን ስልክ ቁጥር ያስገቡ።`);
+    await send(chatId, `🔍 <b>${esc(contactPhone ? "Your phone" : code)}</b> አልተገኘም / not found.\nPlease check your Student ID. If your shared phone finds no record, send your <b>Student ID</b> instead.\nመረጃዎ ካልተገኘ የተማሪ መለያ ቁጥርዎን ይላኩ።`);
     return Response.json({ ok: true });
   }
 

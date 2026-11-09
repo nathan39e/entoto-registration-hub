@@ -18,6 +18,14 @@ const Auth = () => {
   const [isFlipping, setIsFlipping] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [pending, setPending] = useState<{ fullname: string; email: string; password: string; phone: string } | null>(null);
+  const [otp, setOtp] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("mode") === "signup") setIsLogin(false);
@@ -112,15 +120,43 @@ const Auth = () => {
       return;
     }
 
+    const { data: sent, error: sendErr } = await supabase.functions.invoke("signup-otp", { body: { action: "send", phone } });
+    if (sendErr || sent?.error) {
+      toast.error(sent?.error ?? (await sendErr?.context?.json?.().catch(() => null))?.error ?? "Could not send the SMS code.");
+    } else {
+      setPending({ fullname, email, password, phone });
+      setOtp("");
+      setCooldown(60);
+      toast.success(`We sent a 6-digit code to ${phone}.`);
+    }
+    setLoading(false);
+  };
+
+  const resendOtp = async () => {
+    if (!pending || cooldown > 0) return;
+    setLoading(true);
+    const { data, error } = await supabase.functions.invoke("signup-otp", { body: { action: "send", phone: pending.phone } });
+    if (error || data?.error) toast.error(data?.error ?? (await error?.context?.json?.().catch(() => null))?.error ?? "Could not resend.");
+    else { toast.success("New code sent."); setCooldown(60); }
+    setLoading(false);
+  };
+
+  const verifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pending) return;
+    setLoading(true);
     sessionStorage.setItem("postSignup", "1");
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullname, phone },
-        emailRedirectTo: `${window.location.origin}/application`,
-      },
+    const { data: res, error: fnErr } = await supabase.functions.invoke("signup-otp", {
+      body: { action: "verify_signup", phone: pending.phone, code: otp, email: pending.email, password: pending.password,
+        full_name: pending.fullname, redirect: `${window.location.origin}/application` },
     });
+    const errMsg = res?.error ?? (fnErr ? (await fnErr?.context?.json?.().catch(() => null))?.error ?? "Verification failed." : null);
+    const error = errMsg ? { message: errMsg } : null;
+    let data: { session: unknown } = { session: null };
+    if (!error && res?.session) {
+      await supabase.auth.setSession(res.session);
+      data = { session: res.session };
+    }
 
     if (error) {
       sessionStorage.removeItem("postSignup");
@@ -131,7 +167,8 @@ const Auth = () => {
       toast.success("Account created! Please fill in the registration form.");
       navigate("/application");
     } else {
-      toast.success("Account created! Check your email to confirm — the link opens the registration form.");
+      toast.success("Phone verified! Check your email to confirm — the link opens the registration form.");
+      setPending(null);
       handleFlip();
     }
 
@@ -210,7 +247,29 @@ const Auth = () => {
               </div>
             ) : (
               <div>
-                <h2 className="text-2xl font-bold text-center mb-6">Create Account</h2>
+                <h2 className="text-2xl font-bold text-center mb-6">{pending ? "Verify Your Phone" : "Create Account"}</h2>
+                {pending ? (
+                  <form onSubmit={verifyOtp} className="space-y-4">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Enter the 6-digit code we sent by SMS to <span className="font-medium text-foreground">{pending.phone}</span>.
+                    </p>
+                    <Input
+                      autoFocus inputMode="numeric" autoComplete="one-time-code" maxLength={6} pattern="\d{6}" required
+                      value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                      className="text-center text-2xl tracking-[0.5em]" placeholder="••••••" aria-label="Verification code"
+                    />
+                    <Button className="w-full" size="lg" disabled={loading || otp.length !== 6}>
+                      {loading ? "Verifying..." : "Verify & Create Account"}
+                    </Button>
+                    <div className="flex justify-between text-sm">
+                      <button type="button" className="text-primary hover:underline" onClick={() => setPending(null)}>Change number</button>
+                      <button type="button" className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+                        disabled={cooldown > 0 || loading} onClick={resendOtp}>
+                        {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div>
                     <Label htmlFor="fullname">Full Name</Label>
@@ -233,9 +292,10 @@ const Auth = () => {
                     <Input id="confirm-password" name="confirm-password" type="password" placeholder="••••••••" required minLength={6} />
                   </div>
                   <Button className="w-full" size="lg" disabled={loading}>
-                    {loading ? "Creating account..." : "Sign Up"}
+                    {loading ? "Sending code..." : "Sign Up"}
                   </Button>
                 </form>
+                )}
                 <p className="text-center mt-4 text-sm text-muted-foreground">
                   Already have an account?{" "}
                   <button onClick={handleFlip} className="text-primary font-medium hover:underline">

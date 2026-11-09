@@ -232,6 +232,13 @@
       "when": 1794215733520,
       "tag": "0032_telegram_admin_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794218297174,
+      "tag": "0033_telegram_account_recovery",
+      "breakpoints": true
     }
   ]
 }

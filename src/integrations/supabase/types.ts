@@ -659,6 +659,24 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_account_requests: {
+        Row: {
+          chat_id: number
+          expires_at: string
+          sender_id: number
+        }
+        Insert: {
+          chat_id: number
+          expires_at: string
+          sender_id: number
+        }
+        Update: {
+          chat_id?: number
+          expires_at?: string
+          sender_id?: number
+        }
+        Relationships: []
+      }
       telegram_admin_sessions: {
         Row: {
           chat_id: number
@@ -722,6 +740,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      telegram_private_replies: {
+        Row: {
+          chat_id: number
+          delete_at: string
+          message_id: number
+        }
+        Insert: {
+          chat_id: number
+          delete_at?: string
+          message_id: number
+        }
+        Update: {
+          chat_id?: number
+          delete_at?: string
+          message_id?: number
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -846,6 +882,12 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      telegram_account_by_phone: {
+        Args: { _phone: string }
+        Returns: {
+          id: string
+        }[]
+      }
       telegram_begin_name_edit: {
         Args: { _chat: number; _code: string; _sender: number }
         Returns: boolean
@@ -863,6 +905,11 @@ export type Database = {
         Returns: boolean
       }
       telegram_phone_key: { Args: { _phone: string }; Returns: string }
+      telegram_queue_private_reply: {
+        Args: { _chat: number; _message: number; _secret: string; _url: string }
+        Returns: undefined
+      }
+      telegram_stop_private_reply_cleanup: { Args: never; Returns: undefined }
       telegram_verify_name_contact: {
         Args: { _chat: number; _phone: string; _sender: number }
         Returns: boolean

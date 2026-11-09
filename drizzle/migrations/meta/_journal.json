@@ -239,6 +239,13 @@
       "when": 1794218297174,
       "tag": "0033_telegram_account_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794218444971,
+      "tag": "0034_restrict_telegram_recovery_table_grants",
+      "breakpoints": true
     }
   ]
 }

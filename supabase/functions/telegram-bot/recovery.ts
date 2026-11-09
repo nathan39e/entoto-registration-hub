@@ -2,7 +2,7 @@ import { ownContact } from "./rules.ts";
 
 export const PRIVATE_REPLY_DELAY_MS = 4 * 60 * 1000;
 export const ACCOUNT_REQUEST_TTL_MS = 5 * 60 * 1000;
-export const RECOVERY_REDIRECT = "https://entoto-pathfinder.lovable.app/reset-password";
+export const RECOVERY_REDIRECT = "https://tafarimakonnenn.onrender.com/reset-password";
 
 type Contact = { user_id?: number; phone_number?: string };
 export interface RecoveryServices {

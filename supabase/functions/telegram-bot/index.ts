@@ -27,6 +27,10 @@ const WELCOME =
 
 const SITE = "https://tafarimakonnenn.onrender.com";
 
+const SHARE_KB = { keyboard: [[{ text: "📱 Share My Phone Number", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true };
+
+const STATUS_PROMPT = "🔎 Send your <b>Student ID</b>, or tap <b>📱 Share My Phone Number</b> below. For privacy, only your own Telegram number can be used — typed phone numbers are not accepted.\nየተማሪ መለያ ቁጥርዎን ይላኩ ወይም ከታች ያለውን ቁልፍ ተጭነው የራስዎን ስልክ ቁጥር ያጋሩ።";
+
 const HELP =
   "ℹ️ <b>እገዛ / Help</b>\n\n" +
   "/status — የማመልከቻ ሁኔታ / Check application status\n" +
@@ -148,7 +152,20 @@ Deno.serve(async (req) => {
     await send(chatId, started ? "Share your <b>own Telegram phone contact</b> using the button below. It must match your registered personal phone, not your emergency contact. Then send your corrected full name. This request expires in 10 minutes.\nሙሉ ስምዎን ለማስተካከል የራስዎን ስልክ ቁጥር ያጋሩ።" : "Unable to start an edit. Check your Student ID or contact the college.", started ? { keyboard: [[{ text: "Share my phone number", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true } : undefined);
     return json({ ok: true });
   }
+  let contactPhone: string | null = null;
   if (msg.contact) {
+    const phone = ownContact(sender, msg.contact);
+    const { data: editSession, error: sErr } = await db.from("telegram_name_sessions").select("verified").eq("chat_id", chatId).eq("sender_id", sender).gt("expires_at", new Date().toISOString()).maybeSingle();
+    if (sErr) throw sErr;
+    if (!editSession) {
+      if (!phone) {
+        await send(chatId, "⚠️ Please share <b>your own</b> Telegram contact using the button. Other people's contacts are not accepted.\nእባክዎ የራስዎን ስልክ ቁጥር ብቻ ያጋሩ።", SHARE_KB);
+        return json({ ok: true });
+      }
+      contactPhone = phone;
+    }
+  }
+  if (msg.contact && !contactPhone) {
     const phone = ownContact(sender, msg.contact);
     const verified = phone ? await rpc("telegram_verify_name_contact", { _chat: chatId, _sender: sender, _phone: phone }) : false;
     await send(chatId, verified ? "✅ Phone verified. Send your corrected <b>full name</b> now (first, middle and last name). Only your name will change." : "Cannot verify ownership. Share your own Telegram contact matching your registered personal phone. If it differs, contact the college; an emergency contact cannot authorize edits.", verified ? { remove_keyboard: true } : undefined);
@@ -168,15 +185,18 @@ Deno.serve(async (req) => {
     }
   }
   let input = text;
-  if (!text || cmd === "/start") { await send(chatId, WELCOME); return Response.json({ ok: true }); }
+  if (contactPhone) input = contactPhone;
+  else if (!text || cmd === "/start") { await send(chatId, WELCOME, SHARE_KB); return Response.json({ ok: true }); }
   if (cmd === "/help") { await send(chatId, HELP); return Response.json({ ok: true }); }
   if (cmd === "/departments") { await send(chatId, DEPARTMENTS); return Response.json({ ok: true }); }
   if (cmd === "/contact") { await send(chatId, CONTACT); return Response.json({ ok: true }); }
   if (cmd === "/website") { await send(chatId, WEBSITE); return Response.json({ ok: true }); }
-  if (cmd === "/status") {
+  if (contactPhone) {
+    // verified own-contact lookup
+  } else if (cmd === "/status") {
     input = text.split(/\s+/).slice(1).join("");
     if (!input) {
-      await send(chatId, "🔎 የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nPlease send your <b>Student ID</b>, <b>phone number</b> or <b>emergency contact number</b> (e.g. <code>0912345678</code>). If your own phone cannot find your information, try your emergency contact phone.\nበራስዎ ስልክ ቁጥር መረጃዎን ካላገኙ፣ የአደጋ ጊዜ ተጠሪዎን ስልክ ቁጥር ያስገቡ።");
+      await send(chatId, STATUS_PROMPT, SHARE_KB);
       return Response.json({ ok: true });
     }
   } else if (cmd) {
@@ -189,6 +209,11 @@ Deno.serve(async (req) => {
   const isPhone = /^\+?[0-9\-]{9,15}$/.test(code) && digits.length >= 9 && digits.length <= 13;
   if (!isPhone && !/^[A-Z0-9\-\/]{3,40}$/.test(code)) {
     await send(chatId, "⚠️ ትክክለኛ የተማሪ መለያ ቁጥር ወይም ስልክ ቁጥር ያስገቡ።\nPlease send a valid Student ID or phone number.");
+    return Response.json({ ok: true });
+  }
+
+  if (isPhone && !contactPhone) {
+    await send(chatId, "🔒 For privacy, typed phone numbers are not accepted. Tap <b>📱 Share My Phone Number</b> below, or send your <b>Student ID</b>.\nለግላዊነት ሲባል የተጻፈ ስልክ ቁጥር አይቀበልም። ከታች ያለውን ቁልፍ ይጫኑ ወይም የተማሪ መለያ ቁጥርዎን ይላኩ።", SHARE_KB);
     return Response.json({ ok: true });
   }
 

@@ -1,0 +1,2 @@
+REVOKE ALL ON public.telegram_account_requests, public.telegram_private_replies FROM anon, authenticated;
+GRANT ALL ON public.telegram_account_requests, public.telegram_private_replies TO service_role;

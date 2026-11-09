@@ -28,4 +28,5 @@
 - [x] Show all students in Registered Students and split Filled form / Sign-up only from the Total Applications card.
 - [x] Restrict psychometric recommendations to real departments, map exam section aliases, and verify regression tests (29 passed).
 - [x] Add Telegram emergency-contact lookup, program display and verified name-only editing; deployed, unit tests and real-record rollback checks passed; live student Telegram conversation remains unverified.
-- [ ] Add own-contact-only student email lookup, secure password recovery and five-minute account-message deletion; test and deploy.
+- [x] Add own-contact-only student email lookup, secure password recovery and five-minute account-message deletion; 8 unit tests and simulated full bot flow passed; deployed.
+- [ ] Allow the Render password-recovery return address in auth settings; blocked on owner adding https://tafarimakonnenn.onrender.com/**. Real Telegram/email delivery remains unverified.

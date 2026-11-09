@@ -54,6 +54,20 @@ async function signIn(chat: number, from: number, phone: string) {
   return matches[0];
 }
 
+async function signInEmail(chat: number, from: number, email: string, password: string) {
+  const anon = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { auth: { persistSession: false } });
+  const { data, error } = await anon.auth.signInWithPassword({ email, password });
+  if (error || !data.user) return null;
+  await anon.auth.signOut().catch(() => {});
+  if (!(await isActiveStaff(data.user.id))) return null;
+  const { data: prof } = await db.from("profiles").select("id, full_name").eq("id", data.user.id).maybeSingle();
+  await db.from("telegram_admin_sessions").upsert({
+    chat_id: chat, telegram_user_id: from, staff_id: data.user.id,
+    expires_at: new Date(Date.now() + SESSION_HOURS * 3600_000).toISOString(),
+  });
+  return prof ?? { id: data.user.id, full_name: email };
+}
+
 async function session(chat: number, from: number) {
   const { data } = await db.from("telegram_admin_sessions").select("*").eq("chat_id", chat).maybeSingle();
   if (!data || data.telegram_user_id !== from || new Date(data.expires_at) < new Date()) return null;
@@ -181,6 +195,7 @@ Deno.serve(async (req) => {
       { command: "today", description: "New registrations today" },
       { command: "pending", description: "Payments & documents waiting" },
       { command: "find", description: "Search student by ID, name or phone" },
+      { command: "login", description: "Sign in: /login email password" },
       { command: "help", description: "Show commands" },
       { command: "logout", description: "Sign out" },
     ] });
@@ -202,8 +217,17 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true });
     }
     const text = String(msg.text ?? "").trim();
+    if (/^\/login(@\w+)?(\s|$)/i.test(text)) {
+      // Remove the password from the chat straight away.
+      await tg("deleteMessage", { chat_id: chat, message_id: msg.message_id }).catch(() => {});
+      const parts = text.split(/\s+/).slice(1);
+      if (parts.length < 2) { await send(chat, "Send: <code>/login your@email.com yourpassword</code>\nYour message is deleted right after it is read.", LOGIN_KB); return Response.json({ ok: true }); }
+      const who = await signInEmail(chat, from, parts[0].toLowerCase(), parts.slice(1).join(" "));
+      await send(chat, who ? `✅ Welcome, <b>${esc(who.full_name ?? "")}</b>. You are signed in for ${SESSION_HOURS} hours.\n\n${HELP}` : "⛔ Wrong email or password, or this account is not an active admin or sub-admin.", who ? MENU_KB : LOGIN_KB);
+      return Response.json({ ok: true });
+    }
     const s = await session(chat, from);
-    if (!s) { await send(chat, "🔐 <b>Staff sign-in required.</b>\nTap the button below to share your Telegram phone number. It must match the phone on your admin or sub-admin account.", LOGIN_KB); return Response.json({ ok: true }); }
+    if (!s) { await send(chat, "🔐 <b>Staff sign-in required.</b>\nTap the button below to share your Telegram phone number, or send <code>/login your@email.com yourpassword</code> to sign in with your website account.", LOGIN_KB); return Response.json({ ok: true }); }
     const [cmd, ...rest] = text.split(/\s+/);
     const c = cmd.toLowerCase().replace(/@\w+$/, "");
     if (c === "/logout") { await db.from("telegram_admin_sessions").delete().eq("chat_id", chat); await send(chat, "Signed out.", { remove_keyboard: true }); }

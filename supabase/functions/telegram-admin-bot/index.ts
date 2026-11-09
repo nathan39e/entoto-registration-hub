@@ -170,8 +170,24 @@ async function find(q: string) {
 }
 
 Deno.serve(async (req) => {
-  if (req.method !== "POST") return new Response("ok");
   if (!TOKEN) return new Response("not configured", { status: 500 });
+  if (req.method === "GET" && new URL(req.url).searchParams.get("setup") === "1") {
+    // Idempotent: points the bot at this function and sets its menu.
+    const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/telegram-admin-bot`;
+    const r = await fetch(`https://api.telegram.org/bot${TOKEN}/setWebhook`, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, secret_token: await deriveSecret(TOKEN), allowed_updates: ["message"] }) });
+    await tg("setMyCommands", { commands: [
+      { command: "stats", description: "Totals by department, gender, status" },
+      { command: "today", description: "New registrations today" },
+      { command: "pending", description: "Payments & documents waiting" },
+      { command: "find", description: "Search student by ID, name or phone" },
+      { command: "help", description: "Show commands" },
+      { command: "logout", description: "Sign out" },
+    ] });
+    const me = await (await fetch(`https://api.telegram.org/bot${TOKEN}/getMe`)).json();
+    return Response.json({ webhook: (await r.json()).ok, bot: me?.result?.username });
+  }
+  if (req.method !== "POST") return new Response("ok");
   if (req.headers.get("X-Telegram-Bot-Api-Secret-Token") !== await deriveSecret(TOKEN)) return new Response("Unauthorized", { status: 401 });
   const upd = await req.json().catch(() => ({}));
   const msg = upd.message;

@@ -167,7 +167,7 @@ const pickResultDoc = async (f: File | null) => {
       let source: "ai" | "browser" = "ai";
       try {
         const res = await supabase.functions.invoke("verify-grade", { body: { image: await toDataUrl(f) } });
-        if (res.error || res.data?.error) throw new Error("ai failed");
+        if (res.error || res.data?.error || !res.data?.isDocument) throw new Error("AI reader unavailable or could not read the document");
         scan = res.data;
       } catch {
         source = "browser";

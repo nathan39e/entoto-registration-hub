@@ -159,18 +159,18 @@ const pickResultDoc = async (f: File | null) => {
     setResultDoc(f);
     setDocScan(null);
     setMarkReading(false);
-    if (!f  !isImg(f)  f.size > MAX) return;
+    if (!f || !isImg(f) || f.size > MAX) return;
     setMarkReading(true);
     try {
       const { data: scan, error } = await supabase.functions.invoke("verify-grade", { body: { image: await toDataUrl(f) } });
       if (version !== resultScanVersion.current) return;
-      if (error  scan?.error) throw new Error(scan?.error  error?.message  "Could not read the document");
+      if (error || scan?.error) throw new Error(scan?.error || error?.message || "Could not read the document");
       setDocScan({ file: f, extracted: scan.extracted ?? null, isDocument: !!scan.isDocument });
       const result = normalizeGradeResult({ is_result_document: scan.isDocument, score: scan.extracted, subject_marks: scan.subjects });
       const subjectCount = Object.keys(result.subjects).length;
-      if (result.isDocument && (result.extracted !== null  subjectCount > 0)) {
+      if (result.isDocument && (result.extracted !== null || subjectCount > 0)) {
         setV((p) => ({ ...p, ...Object.fromEntries(Object.entries(result.subjects).map(([key, score]) => [key, String(score)])), ...(result.extracted !== null ? { grade12: String(result.extracted) } : {}) }));
-        toast.success(Read ${subjectCount} subject marks${result.extracted !== null ?  and total ${result.extracted} : ""}. Check the marks before continuing.);
+        toast.success(`Read ${subjectCount} subject marks${result.extracted !== null ? ` and total ${result.extracted}` : ""}. Check the marks before continuing.`);
       } else if (!scan.isDocument) {
         toast.info("That file doesn't look like a Grade 12 result document — enter the mark manually.");
       } else {
@@ -222,11 +222,11 @@ let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { 
         const { data: scanned, error: verErr } = await supabase.functions.invoke("verify-grade", {
           body: { image, enteredScore: parsed.data.grade12 },
         });
-        if (verErr  scanned?.error) throw new Error(scanned?.error  "Verification failed. Try again.");
+        if (verErr || scanned?.error) throw new Error(scanned?.error || "Verification failed. Try again.");
         ver = scanned;
       }
       if (!ver.isDocument) throw new Error("The uploaded file doesn't look like a Grade 12 result document.");
-      if (!ver.match) throw new Error(Entered result (${parsed.data.grade12}) does not match the document (${ver.extracted ?? "unreadable"}).);
+      if (!ver.match) throw new Error(`Entered result (${parsed.data.grade12}) does not match the document (${ver.extracted ?? "unreadable"}).`);
 
       }
 

@@ -1,3 +1,4 @@
+import { GatewayError, generateChatCompletion } from "npm:@lovable.dev/ai-gateway@0.1.11";
 import { normalizeGradeResult, SUBJECTS } from "./grade-results.ts";
 
 const cors = {

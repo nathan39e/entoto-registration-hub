@@ -1,3 +1,5 @@
+import { GatewayError, generateChatCompletion } from "npm:@lovable.dev/ai-gateway@0.1.11";
+
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",

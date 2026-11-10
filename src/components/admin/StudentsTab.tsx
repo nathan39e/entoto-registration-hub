@@ -126,7 +126,10 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
         Registered: new Date(s.created_at).toLocaleDateString(),
       });
     }
-    const ws = XLSX.utils.json_to_sheet(rows);
+    // Neutralize spreadsheet formulas: text starting with = + - @ (or tab/CR) is prefixed with '
+    const safe = (v: unknown) => (typeof v === "string" && /^[=+\-@\t\r]/.test(v) ? `'${v}` : v);
+    const safeRows = rows.map((r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, safe(v)])));
+    const ws = XLSX.utils.json_to_sheet(safeRows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Students");
     XLSX.writeFile(wb, `students-${from || "start"}-to-${to || new Date().toISOString().slice(0, 10)}.xlsx`);

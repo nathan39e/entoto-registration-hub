@@ -45,7 +45,7 @@ const StudentDashboard = () => {
         supabase.from("psychometric_results").select("*").eq("user_id", uid).order("completed_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       if (p.error) toast.error("Failed to load student information");
-      if (p.data?.exam_required && !r.data && a.data && !["waiting_list", "rejected"].includes(a.data.status ?? "pending")) {
+      if (p.data?.exam_required && !r.data && a.data && !["waiting_list", "rejected", "pending"].includes(a.data.status ?? "pending")) {
         toast.info("Please take your psychometric exam when you are ready.");
       }
       if (a.data) supabase.from("department_exams").select("id, title, form_url, department").eq("is_active", true).then(({ data }) => setDeptExams(data ?? []));
@@ -59,7 +59,7 @@ const StudentDashboard = () => {
   const scores = result?.scores && typeof result.scores === "object" ? result.scores as Record<string, number> : null;
   const bestFit = scores ? recommendPsychDepartments(scores)[0] ?? null : null;
   const approved = app?.status === "approved" && payment?.status === "completed";
-  const canContinue = !!app && !["waiting_list", "rejected"].includes(app.status);
+  const canContinue = !!app && !["waiting_list", "rejected", "pending"].includes(app.status);
   const payStatus = payment?.status === "completed" ? "completed" : payment?.status === "rejected" ? "rejected" : payment ? "awaiting verification" : null;
 
   return (
@@ -124,7 +124,7 @@ const StudentDashboard = () => {
               <Card className="border-primary/40">
                 <CardHeader>
                   <CardTitle>Documents Under Review</CardTitle>
-                  <CardDescription>You may continue while an admin manually checks that your uploaded documents are genuine.</CardDescription>
+                  <CardDescription>An admin is checking your Grade 12 result slip. Exams and payment open once your application is approved.</CardDescription>
                 </CardHeader>
               </Card>
             )}

@@ -56,7 +56,7 @@ const PsychometricExam = () => {
       const now = Date.now();
       if (w?.exam_start && now < new Date(w.exam_start).getTime()) setWindowMsg(`The exam opens on ${new Date(w.exam_start).toLocaleString()}.`);
       else if (w?.exam_end && now > new Date(w.exam_end).getTime()) setWindowMsg(`The exam closed on ${new Date(w.exam_end).toLocaleString()}.`);
-      if (!app || ["waiting_list", "rejected"].includes(app.status ?? "pending")) {
+      if (!app || ["waiting_list", "rejected", "pending"].includes(app.status ?? "pending")) {
         setBlocked(true);
         setChoices([]);
         return;

@@ -253,6 +253,13 @@
       "when": 1794308004489,
       "tag": "0035_server_scored_psychometric_exam",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794308226384,
+      "tag": "0036_require_staff_score_review",
+      "breakpoints": true
     }
   ]
 }

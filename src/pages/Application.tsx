@@ -154,12 +154,32 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
     } finally { setReading(false); }
   };
 
-  // Replace lines 157–182 with:
-const pickResultDoc = (f: File | null) => {
-  setResultDoc(f);
-  setDocScan(null);
-  setMarkReading(false);
-};
+const pickResultDoc = async (f: File | null) => {
+    const version = ++resultScanVersion.current;
+    setResultDoc(f);
+    setDocScan(null);
+    setMarkReading(false);
+    if (!f  !isImg(f)  f.size > MAX) return;
+    setMarkReading(true);
+    try {
+      const { data: scan, error } = await supabase.functions.invoke("verify-grade", { body: { image: await toDataUrl(f) } });
+      if (version !== resultScanVersion.current) return;
+      if (error  scan?.error) throw new Error(scan?.error  error?.message  "Could not read the document");
+      setDocScan({ file: f, extracted: scan.extracted ?? null, isDocument: !!scan.isDocument });
+      const result = normalizeGradeResult({ is_result_document: scan.isDocument, score: scan.extracted, subject_marks: scan.subjects });
+      const subjectCount = Object.keys(result.subjects).length;
+      if (result.isDocument && (result.extracted !== null  subjectCount > 0)) {
+        setV((p) => ({ ...p, ...Object.fromEntries(Object.entries(result.subjects).map(([key, score]) => [key, String(score)])), ...(result.extracted !== null ? { grade12: String(result.extracted) } : {}) }));
+        toast.success(Read ${subjectCount} subject marks${result.extracted !== null ?  and total ${result.extracted} : ""}. Check the marks before continuing.);
+      } else if (!scan.isDocument) {
+        toast.info("That file doesn't look like a Grade 12 result document — enter the mark manually.");
+      } else {
+        toast.info("Couldn't read the mark from the photo — enter it manually.");
+      }
+    } catch {
+      if (version === resultScanVersion.current) toast.info("Couldn't read the marks from the photo — enter them manually.");
+    } finally { if (version === resultScanVersion.current) setMarkReading(false); }
+  };
 
 
   const inEthiopia = v.country?.trim().toLowerCase() === "ethiopia";
@@ -192,8 +212,23 @@ const pickResultDoc = (f: File | null) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
 
-      // Replace lines 214–230 with:
-let ver = { match: true, isDocument: true };
+let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { match: true, isDocument: true };
+      if (resultDoc) {
+      if (docScan && docScan.file === resultDoc && docScan.isDocument && docScan.extracted != null) {
+        ver = { match: Math.abs(docScan.extracted - parsed.data.grade12) < 0.01, extracted: docScan.extracted, isDocument: true };
+      } else {
+        toast.info("Verifying your result document...");
+        const image = await toDataUrl(resultDoc);
+        const { data: scanned, error: verErr } = await supabase.functions.invoke("verify-grade", {
+          body: { image, enteredScore: parsed.data.grade12 },
+        });
+        if (verErr  scanned?.error) throw new Error(scanned?.error  "Verification failed. Try again.");
+        ver = scanned;
+      }
+      if (!ver.isDocument) throw new Error("The uploaded file doesn't look like a Grade 12 result document.");
+      if (!ver.match) throw new Error(Entered result (${parsed.data.grade12}) does not match the document (${ver.extracted ?? "unreadable"}).);
+
+      }
 
       let ownerId = editMode && studentId ? studentId : user.id;
       if (staffMode && !editMode) {

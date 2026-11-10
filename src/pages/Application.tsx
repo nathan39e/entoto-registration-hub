@@ -63,7 +63,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
   const initial = (): Record<string, string> => ({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa", ...(staffMode ? { password: DEFAULT_PASSWORD } : {}) });
   const [v, setV] = useState<Record<string, string>>(initial);
   const [resultDoc, setResultDoc] = useState<File | null>(null);
-  const [docScan, setDocScan] = useState<{ file: File; extracted: number | null; isDocument: boolean } | null>(null);
+  const [docScan, setDocScan] = useState<{ file: File; extracted: number | null; isDocument: boolean; source: "ai" | "browser" } | null>(null);
   const [markReading, setMarkReading] = useState(false);
   const resultScanVersion = useRef(0);
   const [photo, setPhoto] = useState<File | null>(null);

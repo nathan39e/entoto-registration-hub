@@ -1,3 +1,4 @@
+import { privateDocUrl } from "@/lib/privateDoc";
 import GenderStats from "@/components/GenderStats";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
@@ -260,9 +261,8 @@ const AdminDashboard = () => {
 
   const viewDoc = async (path?: string | null) => {
     if (!path) return toast({ title: "No document", description: "This application has no uploaded result photo." });
-    const { data, error } = await supabase.storage.from("result-docs").createSignedUrl(path, 60);
-    if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
-    setDocUrl(data.signedUrl);
+    try { setDocUrl(await privateDocUrl(path)); }
+    catch (e) { return toast({ title: "Error", description: (e as Error).message, variant: "destructive" }); }
   };
 
   const getStatusColor = (status: string) => {

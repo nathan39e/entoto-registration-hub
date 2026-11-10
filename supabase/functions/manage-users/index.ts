@@ -281,6 +281,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "create_sub_admin") {
+      if (!isAdmin) return json({ error: "Admins only" }, 403);
       const full_name = str(body.full_name, 100), email = str(body.email, 255).toLowerCase();
       const password = typeof body.password === "string" ? body.password : "";
       if (!full_name || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8)
@@ -294,6 +295,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "assign_department_head") {
+      if (!isAdmin) return json({ error: "Admins only" }, 403);
       const department = str(body.department, 100);
       if (!department) return json({ error: "Select a department." }, 400);
       if (body.remove) {
@@ -331,6 +333,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "update_student") {
+      if (!isAdmin) return json({ error: "Admins only" }, 403);
       const id = str(body.id, 64);
       const { data: staff, error: roleLookupError } = await admin.from("user_roles").select("role").eq("user_id", id).in("role", ["admin", "sub_admin", "department_head"]);
       if (roleLookupError || staff?.length) return json({ error: "Select a student account, not a staff account." }, 403);

@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
         if (previousStaff?.length) return json({ error: "This email belongs to a staff account." }, 400);
         const { data: prevApp } = prev ? await admin.from("applications").select("id").eq("user_id", prev.id).maybeSingle() : { data: null };
         if (!prev || prevApp || (prev.registered_by && prev.registered_by !== user.id && !isAdmin))
-          return json({ error: /already/i.test(error.message) ? "A student with this email already exists." : error.message }, 400);
+          return json({ error: /already/i.test(error.message) ? "A student with this email already exists." : /weak|pwned|leak|guess/i.test(error.message) ? "This password is too common. Use the generated password or choose a stronger one (letters, numbers and a symbol)." : error.message }, 400);
         id = prev.id;
         await admin.auth.admin.updateUserById(id, { password, user_metadata: { full_name } });
         await admin.from("profiles").update({ full_name }).eq("id", id);

@@ -1,3 +1,4 @@
+import { privateDocUrl } from "@/lib/privateDoc";
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -54,13 +55,11 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
     const links: [string, string][] = [];
     for (const [k, l] of labels) {
       if (!d[k]) { links.push([l, ""]); continue; }
-      const { data } = await supabase.storage.from("result-docs").createSignedUrl(d[k], 60);
-      links.push([l, data?.signedUrl ?? ""]);
+      links.push([l, await privateDocUrl(d[k]).catch(() => "")]);
     }
     const extra = (Array.isArray(d.transcripts) ? (d.transcripts as string[]) : []).slice(d.transcript ? 1 : 0);
     for (const [i, p] of extra.entries()) {
-      const { data } = await supabase.storage.from("result-docs").createSignedUrl(p, 60);
-      links.push([`Transcript ${i + 2}`, data?.signedUrl ?? ""]);
+      links.push([`Transcript ${i + 2}`, await privateDocUrl(p).catch(() => "")]);
     }
     setDocs({ name: p.full_name, links });
   };

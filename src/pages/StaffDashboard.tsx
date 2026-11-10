@@ -1,3 +1,4 @@
+import { privateDocUrl } from "@/lib/privateDoc";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,9 +68,9 @@ const StaffDashboard = () => {
 
   const open = async (path?: string) => {
     if (!path) return toast.error("Not uploaded");
-    const { data, error } = await supabase.storage.from("result-docs").createSignedUrl(path, 60);
-    if (error) return toast.error(error.message);
-    window.open(data.signedUrl, "_blank");
+    const tab = window.open("", "_blank");
+    try { const url = await privateDocUrl(path); if (tab) tab.location.href = url; else window.open(url, "_blank"); }
+    catch (e) { tab?.close(); toast.error((e as Error).message); }
   };
 
   if (!ok) return <div className="min-h-screen flex flex-col"><Header /><main className="flex-1 flex items-center justify-center text-muted-foreground">Loading...</main><Footer /></div>;

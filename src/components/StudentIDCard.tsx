@@ -1,3 +1,4 @@
+import { privateDocUrl } from "@/lib/privateDoc";
 import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,9 @@ const StudentIDCard = ({ data }: { data: IDCardData }) => {
 
   useEffect(() => {
     if (!data.photoPath) return;
-    supabase.storage.from("result-docs").createSignedUrl(data.photoPath, 3600).then(({ data: s }) => setPhoto(s?.signedUrl ?? null));
+    let url: string | null = null;
+    privateDocUrl(data.photoPath).then((u) => { url = u; setPhoto(u); }).catch(() => setPhoto(null));
+    return () => { if (url) URL.revokeObjectURL(url); };
   }, [data.photoPath]);
 
   const print = () => {

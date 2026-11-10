@@ -312,6 +312,12 @@ Deno.serve(async (req) => {
     return Response.json({ ok: true });
   }
 
+  if (!contactPhone) {
+    // Student ID alone does not prove ownership: never reveal private details.
+    await send(chatId, `🔒 A record was found for this Student ID. For privacy, details are only shown after you verify you own it.\nTap <b>📱 Share My Phone Number</b> below (it must match your registered personal phone), or log in on the website: ${SITE}/auth\nለግላዊነት ሲባል ዝርዝር መረጃ የሚታየው የራስዎን ስልክ ቁጥር ካጋሩ በኋላ ብቻ ነው።`, SHARE_KB);
+    return Response.json({ ok: true });
+  }
+
   const { data: app, error: appError } = await db.from("applications")
     .select("id, status, first_choice, second_choice, third_choice, documents, result_doc_path, program, grade_12_results")
     .eq("user_id", profile.id).maybeSingle();

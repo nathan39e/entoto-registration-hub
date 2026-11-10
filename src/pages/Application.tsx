@@ -289,7 +289,7 @@ let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { 
       const { choice1: c1, choice2: c2, choice3: c3, field1, field2, field3, grade12, ...personal } = parsed.data;
       const form_details = Object.fromEntries(EXTRA_KEYS.filter((k) => editMode || (v[k] ?? "").trim()).map((k) => [k, (v[k] ?? "").trim().slice(0, 300)]));
       const appRow = {
-        grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: { ...personal, ...form_details }, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
+        grade_12_results: { score: grade12, verified: ver.isDocument && ver.match, verified_score: ver.extracted, personal_info: { ...personal, ...form_details }, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
         first_choice: `${c1} — ${field1}`, second_choice: `${c2} — ${field2}`, third_choice: `${c3} — ${field3}`,
         result_doc_path: path,
         documents,

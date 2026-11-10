@@ -24,7 +24,7 @@ const APPLY_WARNING = "እባክዎ ሳይን አፕ (Sign Up) ካደረጉ በ�
 
 const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
-  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nUse /account to recover your website email and request a secure password-reset email.\nMenu: /status /account /editname /departments /contact /website /help";
+  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nUse /account to see your website email and get a new password.\nMenu: /status /account /editname /departments /contact /website /help";
 
 const SITE = "https://tafarimakonnenn.onrender.com";
 
@@ -35,7 +35,7 @@ const STATUS_PROMPT = "🔎 Send your <b>Student ID</b>, or tap <b>📱 Share My
 const HELP =
   "ℹ️ <b>እገዛ / Help</b>\n\n" +
   "/status — የማመልከቻ ሁኔታ / Check application status\n" +
-  "/account — Website email and secure password recovery (share your own contact again each time)\n" +
+  "/account — Website email and a new password (shown for 10 minutes)\n" +
   "/editname — ሙሉ ስም ማስተካከል / Edit only your full name\n" +
   "/departments — ዲፓርትመንቶች / Departments & programs\n" +
   "/contact — አድራሻ / Contact the college\n" +
@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
   if (cmd === "/account") {
     const { error } = await db.from("telegram_account_requests").upsert({ chat_id: chatId, sender_id: sender, expires_at: new Date(Date.now() + ACCOUNT_REQUEST_TTL_MS).toISOString() });
     if (error) throw error;
-    await send(chatId, "🔒 Share your <b>own Telegram contact</b> to see your website email and receive a secure password-reset link by email. Typed phone numbers, Student IDs and emergency contacts cannot recover an account. Your email reply is automatically removed within five minutes under normal service availability; share your contact again to see it again. Passwords are never displayed.\nየድረ-ገጽ ኢሜይልዎን ለማየት የራስዎን ስልክ ቁጥር ያጋሩ።", SHARE_KB);
+    await send(chatId, "🔒 Share your <b>own Telegram contact</b> to see your website email and a new random password. Typed phone numbers, Student IDs and emergency contacts cannot recover an account. The reply is deleted after 10 minutes; use /account again to get a new password.\nየድረ-ገጽ ኢሜይልዎን ለማየት የራስዎን ስልክ ቁጥር ያጋሩ።", SHARE_KB);
     return json({ ok: true });
   }
   const { data: accountRequest, error: requestError } = await db.from("telegram_account_requests").select("expires_at").eq("chat_id", chatId).eq("sender_id", sender).maybeSingle();
@@ -192,12 +192,12 @@ Deno.serve(async (req) => {
         if (error) return null;
         return data.user;
       },
-      sendResetEmail: async (email, redirectTo) => {
-        const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
-        if (error) console.error("Account recovery email could not be sent");
+      setPassword: async (id, password) => {
+        const { error } = await db.auth.admin.updateUserById(id, { password });
+        if (error) console.error("Account password could not be set");
         return !error;
       },
-      showPrivateAccount: async (email, resetSent) => {
+      showPrivateAccount: async (email, password) => {
         // Queue a harmless placeholder before revealing email: a queue failure must not expose data.
         const placeholder = await telegram("sendMessage", { chat_id: chatId, text: "Preparing your private account reply…", protect_content: true });
         const messageId = placeholder?.message_id;
@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
         await rpc("telegram_queue_private_reply", { _chat: chatId, _message: messageId, _url: `${url}/functions/v1/telegram-bot`, _secret: await deriveSecret(key) });
         await telegram("editMessageText", {
           chat_id: chatId, message_id: messageId, parse_mode: "HTML",
-          text: `🔒 <b>Your website account</b>\nEmail: <tg-spoiler>${esc(email)}</tg-spoiler>\n\n${resetSent ? "A secure password-reset link was sent to this email. Open your inbox (check spam too) to choose a new password." : "The reset email could not be sent. Use Forgot password on the website or contact the college."}\nYour existing password cannot be retrieved or shown. This reply is scheduled for deletion within five minutes; service outages may delay deletion. Use /account and share your own contact again to view your email again.`,
+          text: `🔒 <b>Your website account</b>\nEmail: <tg-spoiler>${esc(email)}</tg-spoiler>\n${password ? `New password: <tg-spoiler><code>${esc(password)}</code></tg-spoiler>\n\nTap to reveal. Your old password no longer works. Log in with this new password; you can change it later on the website.` : "\nThe new password could not be set. Contact the college."}\n\n⏱ This message is deleted after 10 minutes. To see it again, send /account and share your own contact again (a new password is created each time).\nይህ መልዕክት ከ10 ደቂቃ በኋላ ይጠፋል።`,
           reply_markup: { inline_keyboard: [[{ text: "Open college website", url: `${SITE}/auth` }]] },
         });
         await send(chatId, "Account recovery finished. /account requires sharing your own contact again.", { remove_keyboard: true });

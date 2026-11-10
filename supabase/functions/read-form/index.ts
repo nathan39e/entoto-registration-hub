@@ -60,6 +60,11 @@ Rules:
     for (const f of FIELDS) if (args[f] != null && String(args[f]).trim()) fields[f] = String(args[f]).trim().slice(0, 300);
     return json({ fields });
   } catch (e) {
-    return json({ error: String(e) }, 500);
+    if (e instanceof GatewayError) {
+      console.error("Form extraction failed", e.toJSON());
+      if (e.code === "payment_required") return json({ error: "AI credits exhausted." }, 402);
+      if (e.code === "rate_limit") return json({ error: "Too many requests, try again shortly." }, 429);
+    }
+    return json({ error: "Could not read the form. Please fill in the fields manually." }, 500);
   }
 });

@@ -37,6 +37,11 @@ Deno.serve(async (req) => {
     const match = result.isDocument && result.extracted != null && Math.abs(result.extracted - Number(enteredScore)) < 0.01;
     return new Response(JSON.stringify({ match, ...result }), { headers: { ...cors, "Content-Type": "application/json" } });
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+    if (e instanceof GatewayError) {
+      console.error("Grade extraction failed", e.toJSON());
+      if (e.code === "payment_required") return new Response(JSON.stringify({ error: "AI credits exhausted." }), { status: 402, headers: { ...cors, "Content-Type": "application/json" } });
+      if (e.code === "rate_limit") return new Response(JSON.stringify({ error: "Too many requests, try again shortly." }), { status: 429, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+    return new Response(JSON.stringify({ error: "Could not read the Grade 12 result. You can still enter the marks manually." }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   }
 });

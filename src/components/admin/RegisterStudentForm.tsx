@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { DEPARTMENTS } from "@/data/departments";
-import { DEFAULT_PASSWORD, autoEmail } from "@/pages/Application";
+import { randomPassword, autoEmail } from "@/pages/Application";
 
 export const PROGRAMS = ["Regular", "Extension", "Weekend"];
 
 const RegisterStudentForm = ({ onDone }: { onDone?: () => void }) => {
-  const [v, setV] = useState<Record<string, string>>({ program: "Regular", password: DEFAULT_PASSWORD });
+  const [v, setV] = useState<Record<string, string>>({ program: "Regular", password: randomPassword() });
   const [busy, setBusy] = useState(false);
   const [code, setCode] = useState<string | null>(null);
   const set = (k: string) => (val: string) => setV((p) => ({ ...p, [k]: val, ...(k === "full_name" ? { email: autoEmail(val.trim().split(/\s+/)[0] ?? "") } : {}) }));
@@ -26,7 +26,7 @@ const RegisterStudentForm = ({ onDone }: { onDone?: () => void }) => {
     if (error || data?.error) return toast.error(data?.error || error?.message || "Failed");
     setCode(data.student_code);
     toast.success("Student registered");
-    setV({ program: "Regular", password: DEFAULT_PASSWORD });
+    setV({ program: "Regular", password: randomPassword() });
     onDone?.();
   };
 

@@ -67,7 +67,7 @@ const StaffDashboard = () => {
 
   const open = async (path?: string) => {
     if (!path) return toast.error("Not uploaded");
-    const { data, error } = await supabase.storage.from("result-docs").createSignedUrl(path, 600);
+    const { data, error } = await supabase.storage.from("result-docs").createSignedUrl(path, 60);
     if (error) return toast.error(error.message);
     window.open(data.signedUrl, "_blank");
   };

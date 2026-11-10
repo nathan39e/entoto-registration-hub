@@ -54,12 +54,12 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
     const links: [string, string][] = [];
     for (const [k, l] of labels) {
       if (!d[k]) { links.push([l, ""]); continue; }
-      const { data } = await supabase.storage.from("result-docs").createSignedUrl(d[k], 600);
+      const { data } = await supabase.storage.from("result-docs").createSignedUrl(d[k], 60);
       links.push([l, data?.signedUrl ?? ""]);
     }
     const extra = (Array.isArray(d.transcripts) ? (d.transcripts as string[]) : []).slice(d.transcript ? 1 : 0);
     for (const [i, p] of extra.entries()) {
-      const { data } = await supabase.storage.from("result-docs").createSignedUrl(p, 600);
+      const { data } = await supabase.storage.from("result-docs").createSignedUrl(p, 60);
       links.push([`Transcript ${i + 2}`, data?.signedUrl ?? ""]);
     }
     setDocs({ name: p.full_name, links });
@@ -99,11 +99,8 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
     const { data: apps } = await supabase.from("applications").select("*");
     const byUser = new Map((apps ?? []).map((a: any) => [a.user_id, a]));
     const names = new Map(students.map((s) => [s.id, s.full_name]));
-    const link = async (p?: string) => {
-      if (!p) return "";
-      const { data } = await supabase.storage.from("result-docs").createSignedUrl(p, 60 * 60 * 24 * 7);
-      return data?.signedUrl ?? "";
-    };
+    // No bearer links in exported files; staff open documents in the portal.
+    const link = async (p?: string) => (p ? "Uploaded" : "");
     const rows = [];
     const list = students.filter((s) => matchesStudentExport(s, byUser.get(s.id), { from, to, department, program, status, search: q, occupation }));
     if (!list.length) return toast.error("No students registered in that date range.");
@@ -123,7 +120,7 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
         "First Choice": a?.first_choice ?? "", "Second Choice": a?.second_choice ?? "", "Third Choice": a?.third_choice ?? "",
         "Application Status": a?.status ?? "Not applied", Submitted: a ? new Date(a.submitted_at).toLocaleDateString() : "",
         "Registered By": s.registered_by ? names.get(s.registered_by) ?? "Staff" : "Self",
-        "Photo (7-day link)": await link(d.photo), "Grade 12 Doc": await link(d.grade12 ?? a?.result_doc_path),
+        Photo: await link(d.photo), "Grade 12 Doc": await link(d.grade12 ?? a?.result_doc_path),
         "Grade 8 Doc": await link(d.grade8), Transcript: await link(d.transcript), "Manual Form": await link(d.manualForm), Degree: await link(d.degree), COC: await link(d.coc),
         "Additional Transcripts": (Array.isArray(d.transcripts) ? await Promise.all((d.transcripts as string[]).slice(d.transcript ? 1 : 0).map(link)) : []).join("\n"),
         Registered: new Date(s.created_at).toLocaleDateString(),

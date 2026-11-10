@@ -44,11 +44,11 @@ Rules:
 - dept1..3 = department choices in order; occupation1..3 = the occupation/sub field written next to each.
 - Handwritten digits: distinguish 1/7, 4/9, 5/6, 0/6 using the surrounding context.
 - Use null for empty, crossed out, or truly unreadable fields. Do not invent values.`;
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${Deno.env.get("GEMINI_API_KEY")}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-3.1-pro-preview",
+        model: "gemini-2.5-flash",
         messages: [
           { role: "system", content: system },
           { role: "user", content: [{ type: "text", text: "Read every handwritten value on this form and report it with the report_form tool." }, { type: "image_url", image_url: { url: image } }] },

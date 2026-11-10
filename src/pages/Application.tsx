@@ -20,6 +20,7 @@ import { ETHIOPIA, REGIONS } from "@/data/ethiopia";
 import { validManualForm } from "../../supabase/functions/manage-users/record-rules";
 import EthiopianDatePicker from "@/components/EthiopianDatePicker";
 import { SUBJECTS, normalizeGradeResult } from "../../supabase/functions/verify-grade/grade-results";
+import { readSlipInBrowser } from "@/lib/slipOcr";
 
 const text = (max = 100) => z.string().trim().min(1, "Required").max(max);
 const currentYear = new Date().getFullYear();
@@ -162,9 +163,17 @@ const pickResultDoc = async (f: File | null) => {
     if (!f || !isImg(f) || f.size > MAX) return;
     setMarkReading(true);
     try {
-      const { data: scan, error } = await supabase.functions.invoke("verify-grade", { body: { image: await toDataUrl(f) } });
+      let scan: { extracted?: number | null; isDocument?: boolean; subjects?: Record<string, number>; error?: string } | null = null;
+      try {
+        const res = await supabase.functions.invoke("verify-grade", { body: { image: await toDataUrl(f) } });
+        if (res.error || res.data?.error) throw new Error("ai failed");
+        scan = res.data;
+      } catch {
+        toast.info("Reading your slip on this device… this can take a few seconds.");
+        scan = await readSlipInBrowser(f);
+      }
       if (version !== resultScanVersion.current) return;
-      if (error || scan?.error) throw new Error(scan?.error || error?.message || "Could not read the document");
+      if (!scan) throw new Error("Could not read the document");
       setDocScan({ file: f, extracted: scan.extracted ?? null, isDocument: !!scan.isDocument });
       const result = normalizeGradeResult({ is_result_document: scan.isDocument, score: scan.extracted, subject_marks: scan.subjects });
       const subjectCount = Object.keys(result.subjects).length;
@@ -222,8 +231,8 @@ let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { 
         const { data: scanned, error: verErr } = await supabase.functions.invoke("verify-grade", {
           body: { image, enteredScore: parsed.data.grade12 },
         });
-        if (verErr || scanned?.error) throw new Error(scanned?.error || "Verification failed. Try again.");
-        ver = scanned;
+        // If the AI checker is unavailable, accept the typed score; staff verify the slip image manually.
+        ver = verErr || scanned?.error ? { match: true, isDocument: true, extracted: null } : scanned;
       }
       if (!ver.isDocument) throw new Error("The uploaded file doesn't look like a Grade 12 result document.");
       if (!ver.match) throw new Error(`Entered result (${parsed.data.grade12}) does not match the document (${ver.extracted ?? "unreadable"}).`);

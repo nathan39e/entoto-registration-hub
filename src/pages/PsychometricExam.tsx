@@ -137,9 +137,8 @@ const PsychometricExam = () => {
     setSubmitting(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return navigate("/auth");
-    const { error } = await supabase.from("psychometric_results").insert({
-      user_id: user.id, answers: finalAnswers, scores: { ...graded.scores, Overall: graded.percent }, recommended_departments: recommendedDepartments,
-    });
+    void recommendedDepartments; // server recomputes scores and recommendation from the answers
+    const { error } = await (supabase.rpc as any)("submit_psychometric_exam", { _answers: finalAnswers });
     setSubmitting(false);
     if (error) return toast.error(error.message);
     await finishSecure();

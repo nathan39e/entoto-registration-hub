@@ -49,7 +49,8 @@ const MAX = 5 * 1024 * 1024;
 const isImg = (f: File) => f.type.startsWith("image/");
 const isDoc = (f: File) => isImg(f) || f.type === "application/pdf";
 const EXTRA_KEYS = ["emergencySex", "motherFirstName", "motherMiddleName", "motherLastName", "emergencyRegion", "emergencySubcity", "emergencyWereda", "emergencyHouseNumber", "disability", "disabilityDetail", "highSchoolName", "grade8Result", "grade8Year", "stream", "receiptNo", ...SUBJECTS.map(([k]) => k)];
-export const DEFAULT_PASSWORD = "123456789";
+/** Fresh random password per staff-created account; staff share it with the student. */
+export const randomPassword = () => { const a = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"; const b = crypto.getRandomValues(new Uint32Array(12)); return Array.from(b, (x) => a[x % a.length]).join(""); };
 export const autoEmail = (first: string) => { const b = first.toLowerCase().replace(/[^a-z0-9]/g, ""); return b ? `${b}@gmail.com` : ""; };
 const ageFrom = (dob?: string) => { if (!dob) return ""; const d = new Date(dob); if (isNaN(+d)) return ""; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a >= 0 ? String(a) : ""; };
 
@@ -60,7 +61,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [doneTarget, setDoneTarget] = useState<string | null>(null);
-  const initial = (): Record<string, string> => ({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa", ...(staffMode ? { password: DEFAULT_PASSWORD } : {}) });
+  const initial = (): Record<string, string> => ({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa", ...(staffMode ? { password: randomPassword() } : {}) });
   const [v, setV] = useState<Record<string, string>>(initial);
   const [resultDoc, setResultDoc] = useState<File | null>(null);
   const [docScan, setDocScan] = useState<{ file: File; extracted: number | null; isDocument: boolean; source: "ai" | "browser" } | null>(null);
@@ -393,7 +394,7 @@ let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { 
         const key = id === "resultDoc" ? "grade12" : id;
         const path = existing?.documents?.[key] ?? (key === "grade12" ? existing?.result_doc_path : null);
         return path ? <Button type="button" variant="link" size="sm" onClick={async () => {
-          const { data, error } = await supabase.storage.from("result-docs").createSignedUrl(path, 600);
+          const { data, error } = await supabase.storage.from("result-docs").createSignedUrl(path, 60);
           if (error) toast.error(error.message); else if (data) window.open(data.signedUrl, "_blank", "noopener,noreferrer");
         }}>View current document</Button> : null;
       })()}

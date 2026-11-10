@@ -260,7 +260,7 @@ const AdminDashboard = () => {
 
   const viewDoc = async (path?: string | null) => {
     if (!path) return toast({ title: "No document", description: "This application has no uploaded result photo." });
-    const { data, error } = await supabase.storage.from("result-docs").createSignedUrl(path, 600);
+    const { data, error } = await supabase.storage.from("result-docs").createSignedUrl(path, 60);
     if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
     setDocUrl(data.signedUrl);
   };

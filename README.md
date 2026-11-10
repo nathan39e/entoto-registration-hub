@@ -1,73 +1,24 @@
-# Welcome to your Lovable project
+# Entoto Registration Hub
 
-## Project info
+I need you to build for me a website for a college registration called “Entoto Polytechnic College”. The home page should be in blue and white theme and very engaging for the user. In the home page, add the logo on the top left and top right conner and in the center the college name. add fav icon same as the logo. The logo should take us to the homepage. The navigation bar should be in the center. And on the right side, add login and signup page buttons, the login and signup page should be on the same page and they will transfer from one page to another like cube style when the signup and login button is pressed . the website should have a registration form containing their grade 12 exit result, their personal picture profile, the 3 department they going to choose. the students should take psychometric test after they register. Generate special code for every students that they will enter in the exam. The code will also be used to identify the students. The exam will only be used to suggest the students which department they should choose. add a payment page  in the home page add expensible image slider gallery. Add about us page, news page, application page. Add statics of how many students are there, how many departments. Add the departments showing their details and how many years it going to take. Include key features. Add students testimonials. Include contact page and footer. Include admin page in different path. The admin should control all the activities and have a dashboard for the students and all other things
 
-**URL**: https://lovable.dev/projects/813b587f-bf72-44da-ad24-4b4123495f66
+This project was built with [Lovable](https://lovable.dev).
 
-## How can I edit this code?
+## Build with Lovable
 
-There are several ways of editing your application.
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/813b587f-bf72-44da-ad24-4b4123495f66).
 
-**Use Lovable**
+- **Ship faster**: describe what you want to build and Lovable handles the code.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/813b587f-bf72-44da-ad24-4b4123495f66) and start prompting.
+## Development
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
+git clone <this-repository-url>
+cd <repository-name>
 npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/813b587f-bf72-44da-ad24-4b4123495f66) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)

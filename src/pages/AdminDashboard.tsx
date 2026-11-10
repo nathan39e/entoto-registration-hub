@@ -194,7 +194,7 @@ const AdminDashboard = () => {
       }
       knownPaymentIds.current = new Set(data.map((p) => p.id));
       const ids = data.map((p) => p.user_id);
-      const { data: profiles } = ids.length ? await fetchAll(() => supabase.from("profiles").select("id, full_name, email, student_code").order("id")).in("id", ids) : { data: [] };
+      const { data: profiles } = ids.length ? await supabase.from("profiles").select("id, full_name, email, student_code").in("id", ids) : { data: [] };
       const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
       setPayments(data.map((p) => ({ ...p, profiles: byId.get(p.user_id) ?? { full_name: "Unknown", email: "", student_code: "-" } })));
     };

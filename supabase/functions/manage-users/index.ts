@@ -58,6 +58,11 @@ Deno.serve(async (req) => {
       if (staff?.length) return json({ error: "Select a student account" }, 400);
       const { data: application, error: lookupError } = await admin.from("applications").select("id, documents").eq("user_id", id).maybeSingle();
       if (lookupError || !application) return json({ error: "Student has no application" }, 400);
+      if (!isAdmin) {
+        // Sub-admins may only attach forms for students they registered themselves.
+        const { data: owner } = await admin.from("profiles").select("registered_by").eq("id", id).maybeSingle();
+        if (owner?.registered_by !== user.id) return json({ error: "You can only attach forms for students you registered." }, 403);
+      }
       const mime = str(body.mime, 40);
       const encoded = typeof body.content === "string" ? body.content : "";
       if (!/^[A-Za-z0-9+/]*={0,2}$/.test(encoded) || encoded.length > 7_000_000 || encoded.length < 4) return json({ error: "Invalid or oversized document" }, 400);
@@ -210,6 +215,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "admin_block_status") {
+      if (!isAdmin) return json({ error: "Admins only" }, 403);
       const { data: ids } = await admin.from("user_roles").select("user_id").in("role", ["admin", "viewer"]);
       const blocked: string[] = [];
       for (const r of ids ?? []) {

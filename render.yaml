@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: tafarimakonnenn
+    runtime: static
+    autoDeploy: true
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_SUPABASE_URL
+        value: https://xunieqwsmrkvibpzbjho.supabase.co
+      - key: VITE_SUPABASE_PROJECT_ID
+        value: xunieqwsmrkvibpzbjho
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1bmllcXdzbXJrdmlicHpiamhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1NTMzMDksImV4cCI6MjA3OTEyOTMwOX0.0gLVePJ3LdvtyRNJwMu52VFQeeqbcoYr8oPOQtZG4us

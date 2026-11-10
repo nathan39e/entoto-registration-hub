@@ -31,7 +31,7 @@ const Payment = () => {
       ]);
       if (app?.program) setProgram(app.program);
       setSubmitted(data?.status === "pending" || data?.status === "completed");
-      setAllowed(!!app && !!result && !["waiting_list", "rejected"].includes(app.status ?? "pending"));
+      setAllowed(!!app && !!result && !["waiting_list", "rejected", "pending"].includes(app.status ?? "pending"));
     });
   }, [navigate]);
 

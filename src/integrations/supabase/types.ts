@@ -536,6 +536,24 @@ export type Database = {
         }
         Relationships: []
       }
+      psych_answer_key: {
+        Row: {
+          answer: number | null
+          cat: string
+          n: number
+        }
+        Insert: {
+          answer?: number | null
+          cat: string
+          n: number
+        }
+        Update: {
+          answer?: number | null
+          cat?: string
+          n?: number
+        }
+        Relationships: []
+      }
       psychometric_results: {
         Row: {
           answers: Json
@@ -882,6 +900,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      submit_psychometric_exam: { Args: { _answers: Json }; Returns: undefined }
       telegram_account_by_phone: {
         Args: { _phone: string }
         Returns: {

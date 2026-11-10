@@ -96,7 +96,7 @@ export async function readSlipInBrowser(file: File) {
       preserve_interword_spaces: "1",
     });
     const { data } = await worker.recognize(canvas);
-    return { ...parseSlipText(data.text ?? ""), rawText: data.text ?? "" };
+    return parseSlipText(data.text ?? "");
   } finally {
     await worker.terminate();
   }

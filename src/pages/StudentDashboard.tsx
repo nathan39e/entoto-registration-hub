@@ -124,7 +124,7 @@ const StudentDashboard = () => {
               <Card className="border-primary/40">
                 <CardHeader>
                   <CardTitle>Documents Under Review</CardTitle>
-                  <CardDescription>You may continue while an admin manually checks that your uploaded documents are genuine.</CardDescription>
+                  <CardDescription>An admin is checking your Grade 12 result slip. Exams and payment open once your application is approved.</CardDescription>
                 </CardHeader>
               </Card>
             )}

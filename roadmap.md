@@ -31,5 +31,5 @@
 - [x] Add own-contact-only student email lookup, secure password recovery and five-minute account-message deletion; 8 unit tests and simulated full bot flow passed; deployed.
 - [x] Add free on-device Grade 12 slip OCR and verify real-certificate subject and total autofill in the shared form.
 - [x] Use Gemini 2.5 Flash for application-form and Grade 12 image extraction, retain browser OCR fallback, and verify both deployed readers with authenticated sample uploads.
-- [ ] Fix and verify admin/sub-admin student registration end to end.
+- [x] Fix staff-issued passwords rejected by leaked-password protection; verified full admin registration with document upload and saved application end to end.
 - [ ] Allow the Render password-recovery return address in auth settings; blocked on owner adding https://tafarimakonnenn.onrender.com/**. Real Telegram/email delivery remains unverified.

@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetchAll";
 import { privateDocUrl } from "@/lib/privateDoc";
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
@@ -66,9 +67,9 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
 
   const load = async () => {
     const [{ data }, { data: roles }, apps] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }),
-      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]),
-      supabase.from("applications").select("*"),
+      fetchAll(() => supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }).order("id")),
+      fetchAll(() => supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]).order("id")),
+      fetchAll(() => supabase.from("applications").select("*").order("id")),
     ]);
     if (apps.error) return toast.error("Could not load application filters");
     setApplications(apps.data ?? []);
@@ -95,7 +96,7 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
   const exportExcel = async () => {
     if (from && to && from > to) return toast.error("End date must be on or after start date");
     toast.info("Preparing Excel file...");
-    const { data: apps } = await supabase.from("applications").select("*");
+    const { data: apps } = await fetchAll(() => supabase.from("applications").select("*").order("id"));
     const byUser = new Map((apps ?? []).map((a: any) => [a.user_id, a]));
     const names = new Map(students.map((s) => [s.id, s.full_name]));
     // No bearer links in exported files; staff open documents in the portal.

@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetchAll";
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,9 +21,9 @@ const StudentFilterList = () => {
   const load = async () => {
     setLoading(true);
     const [{ data: profs }, { data: apps }, { data: staff }] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at"),
-      supabase.from("applications").select("user_id, first_choice, first_department, program, status"),
-      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]),
+      fetchAll(() => supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at").order("id")),
+      fetchAll(() => supabase.from("applications").select("user_id, first_choice, first_department, program, status").order("user_id")),
+      fetchAll(() => supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]).order("id")),
     ]);
     const ex = new Set((staff ?? []).map((r) => r.user_id));
     const byUser = new Map((apps ?? []).map((a) => [a.user_id, a]));

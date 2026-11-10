@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetchAll";
 import { privateDocUrl } from "@/lib/privateDoc";
 import GenderStats from "@/components/GenderStats";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -141,12 +142,12 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const [appsResponse, resultsResponse, paymentsResponse, profilesResponse, settingsResponse, staffResponse] = await Promise.all([
-        supabase.from("applications").select("*").order("submitted_at", { ascending: false }),
-        supabase.from("psychometric_results").select("*").order("completed_at", { ascending: false }),
-        supabase.from("payments").select("*").order("created_at", { ascending: false }),
-        supabase.from("profiles").select("id, full_name, email, student_code"),
+        fetchAll(() => supabase.from("applications").select("*").order("submitted_at", { ascending: false }).order("id")),
+        fetchAll(() => supabase.from("psychometric_results").select("*").order("completed_at", { ascending: false }).order("id")),
+        fetchAll(() => supabase.from("payments").select("*").order("created_at", { ascending: false }).order("id")),
+        fetchAll(() => supabase.from("profiles").select("id, full_name, email, student_code").order("id")),
         supabase.from("admission_settings").select("grade_12_cutoff, female_grade_12_cutoff, exam_start, exam_end").eq("id", true).maybeSingle(),
-        supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]),
+        fetchAll(() => supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]).order("id")),
       ]);
       const map = new Map((profilesResponse.data ?? []).map((p) => [p.id, p]));
       const staffIds = new Set((staffResponse.data ?? []).map((r) => r.user_id));
@@ -185,7 +186,7 @@ const AdminDashboard = () => {
     if (loading) return;
     const refreshPayments = async () => {
       if (document.visibilityState !== "visible") return;
-      const { data, error } = await supabase.from("payments").select("*").order("created_at", { ascending: false });
+      const { data, error } = await fetchAll(() => supabase.from("payments").select("*").order("created_at", { ascending: false }).order("id"));
       if (error || !data) return;
       const newReceipts = data.filter((p) => p.status === "pending" && !knownPaymentIds.current?.has(p.id));
       if (newReceipts.length) {
@@ -193,7 +194,7 @@ const AdminDashboard = () => {
       }
       knownPaymentIds.current = new Set(data.map((p) => p.id));
       const ids = data.map((p) => p.user_id);
-      const { data: profiles } = ids.length ? await supabase.from("profiles").select("id, full_name, email, student_code").in("id", ids) : { data: [] };
+      const { data: profiles } = ids.length ? await fetchAll(() => supabase.from("profiles").select("id, full_name, email, student_code").order("id")).in("id", ids) : { data: [] };
       const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
       setPayments(data.map((p) => ({ ...p, profiles: byId.get(p.user_id) ?? { full_name: "Unknown", email: "", student_code: "-" } })));
     };

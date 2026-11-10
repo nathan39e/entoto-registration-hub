@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetchAll";
 import GenderStats from "@/components/GenderStats";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,7 +26,7 @@ export default function ViewerDashboard() {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return navigate("/auth");
-    const { data, error } = await supabase.rpc("viewer_student_overview");
+    const { data, error } = await fetchAll(() => supabase.rpc("viewer_student_overview").order("student_code"));
     setLoading(false);
     if (error) { toast.error("You don't have permission to view this page."); return navigate("/"); }
     setRows((data ?? []) as Row[]);

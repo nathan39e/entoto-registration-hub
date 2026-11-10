@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetchAll";
 import GenderStats from "@/components/GenderStats";
 import FilterCounts from "@/components/FilterCounts";
 import { useEffect, useState } from "react";
@@ -50,9 +51,9 @@ const DepartmentHeadDashboard = () => {
 
   const loadStudents = async (d: string) => {
     const [{ data: apps }, { data: profs }, { data: pls }] = await Promise.all([
-      supabase.from("applications").select("*").order("submitted_at", { ascending: false }),
-      supabase.from("profiles").select("id, full_name, email, phone, student_code"),
-      supabase.from("department_placements").select("*"),
+      fetchAll(() => supabase.from("applications").select("*").order("submitted_at", { ascending: false }).order("id")),
+      fetchAll(() => supabase.from("profiles").select("id, full_name, email, phone, student_code").order("id")),
+      fetchAll(() => supabase.from("department_placements").select("*").order("application_id")),
     ]);
     const rows = (apps ?? []).map((a) => {
       const pl = pls?.find((x) => x.application_id === a.id);

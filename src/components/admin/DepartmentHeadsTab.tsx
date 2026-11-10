@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetchAll";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,8 +21,8 @@ const DepartmentHeadsTab = () => {
   const load = async () => {
     const [{ data: h }, { data: profs }, { data: apps }] = await Promise.all([
       supabase.from("department_heads").select("user_id, department"),
-      supabase.from("profiles").select("id, full_name, email"),
-      supabase.from("applications").select("first_department"),
+      fetchAll(() => supabase.from("profiles").select("id, full_name, email").order("id")),
+      fetchAll(() => supabase.from("applications").select("id, first_department").order("id")),
     ]);
     setHeads((h ?? []).map((r) => {
       const p = profs?.find((x) => x.id === r.user_id);

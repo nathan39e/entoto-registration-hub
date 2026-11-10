@@ -1,0 +1,1 @@
+ALTER TABLE public.telegram_private_replies ALTER COLUMN delete_at SET DEFAULT now()+interval '9 minutes';

@@ -260,6 +260,13 @@
       "when": 1794308226384,
       "tag": "0036_require_staff_score_review",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794309905230,
+      "tag": "0037_telegram_password_reply_ten_minutes",
+      "breakpoints": true
     }
   ]
 }

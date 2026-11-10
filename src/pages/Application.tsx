@@ -50,7 +50,7 @@ const isImg = (f: File) => f.type.startsWith("image/");
 const isDoc = (f: File) => isImg(f) || f.type === "application/pdf";
 const EXTRA_KEYS = ["emergencySex", "motherFirstName", "motherMiddleName", "motherLastName", "emergencyRegion", "emergencySubcity", "emergencyWereda", "emergencyHouseNumber", "disability", "disabilityDetail", "highSchoolName", "grade8Result", "grade8Year", "stream", "receiptNo", ...SUBJECTS.map(([k]) => k)];
 /** Fresh random password per staff-created account; staff share it with the student. */
-export const randomPassword = () => { const a = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"; const b = crypto.getRandomValues(new Uint32Array(12)); return Array.from(b, (x) => a[x % a.length]).join(""); };
+export const randomPassword = () => { const sets = ["ABCDEFGHJKMNPQRSTUVWXYZ", "abcdefghjkmnpqrstuvwxyz", "23456789", "#@$%&*!?"]; const all = sets.join(""); const b = crypto.getRandomValues(new Uint32Array(14)); return Array.from(b, (x, i) => { const set = i < 4 ? sets[i] : all; return set[x % set.length]; }).join(""); };
 export const autoEmail = (first: string) => { const b = first.toLowerCase().replace(/[^a-z0-9]/g, ""); return b ? `${b}@gmail.com` : ""; };
 const ageFrom = (dob?: string) => { if (!dob) return ""; const d = new Date(dob); if (isNaN(+d)) return ""; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a >= 0 ? String(a) : ""; };
 
@@ -240,8 +240,8 @@ let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { 
         // If the AI checker is unavailable, accept the typed score; staff verify the slip image manually.
         ver = verErr || scanned?.error ? { match: true, isDocument: true, extracted: null } : scanned;
       }
-      if (!ver.isDocument) throw new Error("The uploaded file doesn't look like a Grade 12 result document.");
-      if (!ver.match) throw new Error(`Entered result (${parsed.data.grade12}) does not match the document (${ver.extracted ?? "unreadable"}).`);
+      // Never block registration on the reader: every application is reviewed by staff before approval.
+      if (!ver.isDocument || !ver.match) toast.info("We couldn't confirm your mark from the photo automatically. Staff will check your result slip.");
 
       }
 
@@ -289,7 +289,7 @@ let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { 
       const { choice1: c1, choice2: c2, choice3: c3, field1, field2, field3, grade12, ...personal } = parsed.data;
       const form_details = Object.fromEntries(EXTRA_KEYS.filter((k) => editMode || (v[k] ?? "").trim()).map((k) => [k, (v[k] ?? "").trim().slice(0, 300)]));
       const appRow = {
-        grade_12_results: { score: grade12, verified: true, verified_score: ver.extracted, personal_info: { ...personal, ...form_details }, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
+        grade_12_results: { score: grade12, verified: ver.isDocument && ver.match, verified_score: ver.extracted, personal_info: { ...personal, ...form_details }, sub_fields: [field1, field2, field3], ...(staffMode ? { registered_by_staff: true } : {}) },
         first_choice: `${c1} — ${field1}`, second_choice: `${c2} — ${field2}`, third_choice: `${c3} — ${field3}`,
         result_doc_path: path,
         documents,

@@ -29,4 +29,5 @@
 - [x] Restrict psychometric recommendations to real departments, map exam section aliases, and verify regression tests (29 passed).
 - [x] Add Telegram emergency-contact lookup, program display and verified name-only editing; deployed, unit tests and real-record rollback checks passed; live student Telegram conversation remains unverified.
 - [x] Add own-contact-only student email lookup, secure password recovery and five-minute account-message deletion; 8 unit tests and simulated full bot flow passed; deployed.
+- [x] Add free on-device Grade 12 slip OCR and verify real-certificate subject and total autofill in the shared form.
 - [ ] Allow the Render password-recovery return address in auth settings; blocked on owner adding https://tafarimakonnenn.onrender.com/**. Real Telegram/email delivery remains unverified.

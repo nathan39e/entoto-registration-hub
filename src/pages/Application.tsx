@@ -63,7 +63,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
   const initial = (): Record<string, string> => ({ country: "Ethiopia", region: "Addis Ababa", city: "Addis Ababa", ...(staffMode ? { password: DEFAULT_PASSWORD } : {}) });
   const [v, setV] = useState<Record<string, string>>(initial);
   const [resultDoc, setResultDoc] = useState<File | null>(null);
-  const [docScan, setDocScan] = useState<{ file: File; extracted: number | null; isDocument: boolean } | null>(null);
+  const [docScan, setDocScan] = useState<{ file: File; extracted: number | null; isDocument: boolean; source: "ai" | "browser" } | null>(null);
   const [markReading, setMarkReading] = useState(false);
   const resultScanVersion = useRef(0);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -164,17 +164,19 @@ const pickResultDoc = async (f: File | null) => {
     setMarkReading(true);
     try {
       let scan: { extracted?: number | null; isDocument?: boolean; subjects?: Record<string, number>; error?: string } | null = null;
+      let source: "ai" | "browser" = "ai";
       try {
         const res = await supabase.functions.invoke("verify-grade", { body: { image: await toDataUrl(f) } });
-        if (res.error || res.data?.error) throw new Error("ai failed");
+        if (res.error || res.data?.error || !res.data?.isDocument) throw new Error("AI reader unavailable or could not read the document");
         scan = res.data;
       } catch {
+        source = "browser";
         toast.info("Reading your slip on this device… this can take a few seconds.");
         scan = await readSlipInBrowser(f);
       }
       if (version !== resultScanVersion.current) return;
       if (!scan) throw new Error("Could not read the document");
-      setDocScan({ file: f, extracted: scan.extracted ?? null, isDocument: !!scan.isDocument });
+      setDocScan({ file: f, extracted: scan.extracted ?? null, isDocument: !!scan.isDocument, source });
       const result = normalizeGradeResult({ is_result_document: scan.isDocument, score: scan.extracted, subject_marks: scan.subjects });
       const subjectCount = Object.keys(result.subjects).length;
       if (result.isDocument && (result.extracted !== null || subjectCount > 0)) {
@@ -223,7 +225,10 @@ const pickResultDoc = async (f: File | null) => {
 
 let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { match: true, isDocument: true };
       if (resultDoc) {
-      if (docScan && docScan.file === resultDoc && docScan.isDocument && docScan.extracted != null) {
+      if (docScan && docScan.file === resultDoc && docScan.source === "browser" && docScan.isDocument) {
+        // On-device OCR assists with typing; staff remain responsible for checking the slip and corrected marks.
+        ver = { match: true, extracted: docScan.extracted, isDocument: true };
+      } else if (docScan && docScan.file === resultDoc && docScan.isDocument && docScan.extracted != null) {
         ver = { match: Math.abs(docScan.extracted - parsed.data.grade12) < 0.01, extracted: docScan.extracted, isDocument: true };
       } else {
         toast.info("Verifying your result document...");

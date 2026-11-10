@@ -1,3 +1,5 @@
+import { GatewayError, generateChatCompletion } from "npm:@lovable.dev/ai-gateway@0.1.11";
+
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -44,28 +46,25 @@ Rules:
 - dept1..3 = department choices in order; occupation1..3 = the occupation/sub field written next to each.
 - Handwritten digits: distinguish 1/7, 4/9, 5/6, 0/6 using the surrounding context.
 - Use null for empty, crossed out, or truly unreadable fields. Do not invent values.`;
-    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${Deno.env.get("GEMINI_API_KEY")}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "gemini-2.5-flash",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: [{ type: "text", text: "Read every handwritten value on this form and report it with the report_form tool." }, { type: "image_url", image_url: { url: image } }] },
-        ],
-        tools: [{ type: "function", function: { name: "report_form", description: "Report the values read from the form", parameters: { type: "object", properties, required: FIELDS } } }],
-        tool_choice: { type: "function", function: { name: "report_form" } },
-      }),
+    const completion = await generateChatCompletion({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: [{ type: "text", text: "Read every handwritten value on this form and report it with the report_form tool." }, { type: "image_url", image_url: { url: image } }] },
+      ],
+      tools: [{ type: "function", function: { name: "report_form", description: "Report the values read from the form", parameters: { type: "object", properties, required: FIELDS } } }],
+      tool_choice: { type: "function", function: { name: "report_form" } },
     });
-    if (res.status === 429) return json({ error: "Too many requests, try again shortly." }, 429);
-    if (res.status === 402) return json({ error: "AI credits exhausted." }, 402);
-    if (!res.ok) return json({ error: "Could not read the form." }, res.status);
-    const data = await res.json();
-    const args = JSON.parse(data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments ?? "{}");
+    const args = JSON.parse(completion.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments ?? "{}");
     const fields: Record<string, string> = {};
     for (const f of FIELDS) if (args[f] != null && String(args[f]).trim()) fields[f] = String(args[f]).trim().slice(0, 300);
     return json({ fields });
   } catch (e) {
-    return json({ error: String(e) }, 500);
+    if (e instanceof GatewayError) {
+      console.error("Form extraction failed", e.toJSON());
+      if (e.code === "payment_required") return json({ error: "AI credits exhausted." }, 402);
+      if (e.code === "rate_limit") return json({ error: "Too many requests, try again shortly." }, 429);
+    }
+    return json({ error: "Could not read the form. Please fill in the fields manually." }, 500);
   }
 });

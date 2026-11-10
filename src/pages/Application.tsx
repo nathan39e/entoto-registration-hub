@@ -21,6 +21,9 @@ import { validManualForm } from "../../supabase/functions/manage-users/record-ru
 import EthiopianDatePicker from "@/components/EthiopianDatePicker";
 import { SUBJECTS, normalizeGradeResult } from "../../supabase/functions/verify-grade/grade-results";
 import { readSlipInBrowser } from "@/lib/slipOcr";
+import { randomPassword } from "@/lib/staffPassword";
+
+export { randomPassword } from "@/lib/staffPassword";
 
 const text = (max = 100) => z.string().trim().min(1, "Required").max(max);
 const currentYear = new Date().getFullYear();
@@ -49,8 +52,6 @@ const MAX = 5 * 1024 * 1024;
 const isImg = (f: File) => f.type.startsWith("image/");
 const isDoc = (f: File) => isImg(f) || f.type === "application/pdf";
 const EXTRA_KEYS = ["emergencySex", "motherFirstName", "motherMiddleName", "motherLastName", "emergencyRegion", "emergencySubcity", "emergencyWereda", "emergencyHouseNumber", "disability", "disabilityDetail", "highSchoolName", "grade8Result", "grade8Year", "stream", "receiptNo", ...SUBJECTS.map(([k]) => k)];
-/** Fresh random password per staff-created account; staff share it with the student. */
-export const randomPassword = () => { const sets = ["ABCDEFGHJKMNPQRSTUVWXYZ", "abcdefghjkmnpqrstuvwxyz", "23456789", "#@$%&*!?"]; const all = sets.join(""); const b = crypto.getRandomValues(new Uint32Array(14)); return Array.from(b, (x, i) => { const set = i < 4 ? sets[i] : all; return set[x % set.length]; }).join(""); };
 export const autoEmail = (first: string) => { const b = first.toLowerCase().replace(/[^a-z0-9]/g, ""); return b ? `${b}@gmail.com` : ""; };
 const ageFrom = (dob?: string) => { if (!dob) return ""; const d = new Date(dob); if (isNaN(+d)) return ""; const n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a >= 0 ? String(a) : ""; };
 
@@ -252,7 +253,8 @@ let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { 
           action: "register_student", full_name: `${d.firstName} ${d.middleName} ${d.lastName}`, email: d.email,
           password: v.password, phone: d.phone, program: d.program,
         } });
-        if (regErr || reg?.error) throw new Error(reg?.error || "Could not create the student account");
+        const detail = regErr?.context instanceof Response ? await regErr.context.json().catch(() => null) : null;
+        if (regErr || reg?.error) throw new Error(reg?.error || detail?.error || regErr?.message || "Could not create the student account");
         ownerId = reg.id;
         setNewCode(reg.student_code);
       }

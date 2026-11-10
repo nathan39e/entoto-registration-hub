@@ -22,8 +22,9 @@ const RegisterStudentForm = ({ onDone }: { onDone?: () => void }) => {
     if (v.choice1 && new Set([v.choice1, v.choice2, v.choice3]).size < 3) return toast.error("Choose 3 different departments.");
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("manage-users", { body: { action: "register_student", ...v } });
+    const detail = error?.context instanceof Response ? await error.context.json().catch(() => null) : null;
     setBusy(false);
-    if (error || data?.error) return toast.error(data?.error || error?.message || "Failed");
+    if (error || data?.error) return toast.error(data?.error || detail?.error || error?.message || "Failed");
     setCode(data.student_code);
     toast.success("Student registered");
     setV({ program: "Regular", password: randomPassword() });

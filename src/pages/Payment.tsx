@@ -27,10 +27,9 @@ const Payment = () => {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return navigate("/auth");
-      const [{ data }, { data: app }, { data: result }] = await Promise.all([
+      const [{ data }, { data: app }] = await Promise.all([
         supabase.from("payments").select("status, payment_method").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("applications").select("status, program").eq("user_id", user.id).maybeSingle(),
-        supabase.from("psychometric_results").select("id").eq("user_id", user.id).limit(1).maybeSingle(),
       ]);
       if (app?.program) setProgram(app.program);
       setSubmitted(data?.status === "completed" || (data?.status === "pending" && data?.payment_method !== "chapa"));
@@ -41,7 +40,8 @@ const Payment = () => {
         else if (v?.status === "failed") toast.error("Chapa payment failed. Please try again.");
         else toast.info("Payment not confirmed yet. Refresh in a moment.");
       }
-      setAllowed(!!app && !!result && !["waiting_list", "rejected", "pending"].includes(app.status ?? "pending"));
+      // Students who already paid at CBE may upload their receipt as soon as they have an application.
+      setAllowed(!!app && !["waiting_list", "rejected"].includes(app.status ?? ""));
     });
   }, [navigate, params]);
 
@@ -59,7 +59,7 @@ const Payment = () => {
   };
 
   const handleTelebirrPayment = async () => {
-    if (!allowed) return toast.error("Complete an eligible application and the exam before submitting payment.");
+    if (!allowed) return toast.error("Submit your application before uploading a payment receipt.");
     if (!/^0[79][0-9]{8}$/.test(phoneNumber)) return toast.error("Please enter a valid phone number (09XXXXXXXX)");
     const tx = txId.trim();
     if (!/^[A-Za-z0-9]{6,30}$/.test(tx)) return toast.error("Please enter the CBE transaction / reference number from your receipt");
@@ -91,7 +91,7 @@ const Payment = () => {
   if (allowed === false) return (
     <div className="min-h-screen flex flex-col"><Header />
       <main className="flex-grow flex items-center justify-center px-4"><Card className="max-w-lg w-full">
-        <CardHeader><CardTitle>Payment Not Available</CardTitle><CardDescription>Complete an eligible application and the psychometric exam before submitting a receipt.</CardDescription></CardHeader>
+        <CardHeader><CardTitle>Payment Not Available</CardTitle><CardDescription>Submit your application first. Receipts are not accepted for waiting-listed or rejected applications.</CardDescription></CardHeader>
         <CardContent><Button onClick={() => navigate("/student-dashboard")}>Back to Dashboard</Button></CardContent>
       </Card></main><Footer /></div>
   );
@@ -147,7 +147,7 @@ const Payment = () => {
                 </Button>
               </CardContent>
             </Card>
-            <p className="text-center text-sm text-muted-foreground mb-6">Or pay manually and upload your receipt:</p>
+            <p className="text-center text-sm text-muted-foreground mb-6">Already paid at CBE? Just upload your receipt below:</p>
 
             {/* CBE Payment */}
             <Card>
@@ -158,7 +158,7 @@ const Payment = () => {
                   </div>
                   <div>
                     <CardTitle>Payment Receipt Verification</CardTitle>
-                    <CardDescription>Upload the receipt of the payment you made</CardDescription>
+                    <CardDescription>Already paid? Upload your CBE receipt and the finance office will verify it</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -196,7 +196,7 @@ const Payment = () => {
                     <li>Pay {paymentAmount} ETB to CBE account <span className="font-mono font-semibold text-foreground">{cbeAccount}</span> (Teferi Mekonnen Polytechnic College) at a CBE branch or with CBE Birr / Mobile Banking</li>
                     <li>Write your Student ID as the reason and keep the transaction number</li>
                     <li>Enter your phone number, the transaction ID and upload the receipt photo</li>
-                    <li>An admin checks the receipt and verifies your payment</li>
+                    <li>The finance office checks the receipt and verifies your payment</li>
                     <li>Download your registration slip from your dashboard once approved</li>
                   </ol>
                 </div>

@@ -25,6 +25,7 @@ export default function FinanceDashboard() {
   const [names, setNames] = useState<Record<string, { full_name: string; student_code: string }>>({});
   const [selected, setSelected] = useState<string[]>([]);
   const [q, setQ] = useState("");
+  const [pq, setPq] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
@@ -83,6 +84,8 @@ export default function FinanceDashboard() {
 
   const term = q.trim().toLowerCase();
   const shown = students.filter((s) => !term || [s.full_name, s.student_code, s.phone ?? ""].some((x) => x.toLowerCase().includes(term)));
+  const pterm = pq.trim().toLowerCase();
+  const paidList = payments.filter((p) => p.status === "completed").filter((p) => !pterm || [names[p.user_id]?.full_name ?? "", names[p.user_id]?.student_code ?? "", (names[p.user_id] as any)?.phone ?? "", p.transaction_id ?? ""].some((x) => x.toLowerCase().includes(pterm)));
   const queue = payments.filter((p) => p.status === "pending" && p.payment_method !== "chapa");
   if (!ok) return null;
 
@@ -106,6 +109,17 @@ export default function FinanceDashboard() {
             <Button size="sm" onClick={() => review(p.id, "completed")}>Verify</Button><Button size="sm" variant="destructive" onClick={() => review(p.id, "rejected")}>Reject</Button></div>
         </div>)}
         {!queue.length && <p className="py-3 text-sm text-muted-foreground">No receipts waiting.</p>}
+      </CardContent></Card>
+
+      <Card><CardHeader><CardTitle>Paid students ({payments.filter((p) => p.status === "completed").length})</CardTitle></CardHeader><CardContent className="space-y-3">
+        <Input placeholder="Search name, Student ID, phone or reference" value={pq} onChange={(e) => setPq(e.target.value)} className="max-w-sm" />
+        <div className="divide-y">{paidList.slice(0, 300).map((p) => <div key={p.id} className="py-3 flex flex-wrap items-center justify-between gap-2">
+          <div><p className="font-medium">{names[p.user_id]?.full_name ?? "Student"} <span className="text-muted-foreground text-sm">{names[p.user_id]?.student_code}</span></p>
+            <p className="text-sm text-muted-foreground">{p.amount} ETB · {p.program ?? "Regular"} · {p.payment_method === "chapa" ? "Chapa" : "CBE"} · Ref: {p.transaction_id ?? "—"} · {new Date(p.created_at).toLocaleDateString()}</p></div>
+          <div className="flex items-center gap-2"><Badge>Verified</Badge>{p.receipt_path && <Button size="sm" variant="outline" onClick={() => openReceipt(p.receipt_path!)}>View receipt</Button>}</div>
+        </div>)}
+        {!paidList.length && <p className="py-3 text-sm text-muted-foreground">No paid students found.</p>}
+        {paidList.length > 300 && <p className="text-xs text-muted-foreground py-2">Showing first 300 — search to narrow.</p>}</div>
       </CardContent></Card>
 
       <Card><CardHeader><CardTitle>Unpaid students ({students.length})</CardTitle></CardHeader><CardContent className="space-y-3">

@@ -191,7 +191,7 @@ const StudentDashboard = () => {
             <div className="flex flex-wrap gap-4 justify-center">
               <Button size="lg" onClick={() => navigate("/application")}>{app ? "View My Application" : "Apply Now"}</Button>
               {canContinue && !result && <Button size="lg" variant="outline" onClick={() => navigate("/psychometric-exam")}>Take Psychometric Exam</Button>}
-              {canContinue && result && (!payment || payment.status === "rejected") && <Button size="lg" variant="outline" onClick={() => navigate("/payment")}>Proceed to Payment</Button>}
+              {app && !["waiting_list", "rejected"].includes(app.status) && (!payment || payment.status === "rejected") && <Button size="lg" variant="outline" onClick={() => navigate("/payment")}>Upload Payment Receipt</Button>}
               <Button size="lg" variant="outline" onClick={() => navigate("/portfolio")}>View Portfolio</Button>
             </div>
           </div>

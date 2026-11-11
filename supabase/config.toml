@@ -7,3 +7,6 @@ verify_jwt = false
 
 [functions.chapa-pay]
 verify_jwt = false
+
+[functions.copilot]
+verify_jwt = false

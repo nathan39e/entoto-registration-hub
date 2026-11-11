@@ -24,6 +24,7 @@ import { LanguageProvider } from "./lib/i18n";
 import { ThemeProvider } from "./lib/theme";
 import { HelmetProvider } from "react-helmet-async";
 import ViewerDashboard from "./pages/ViewerDashboard";
+import FinanceDashboard from "./pages/FinanceDashboard";
 import RouteMeta from "./components/RouteMeta";
 import DepartmentExam from "./pages/DepartmentExam";
 import HowToApply from "./pages/HowToApply";
@@ -61,6 +62,7 @@ const App = () => (
           <Route path="/staff/apply" element={<Application staffMode />} />
           <Route path="/staff/students/:studentId/edit" element={<Application staffMode editMode />} />
           <Route path="/viewer" element={<ViewerDashboard />} />
+          <Route path="/finance" element={<FinanceDashboard />} />
           <Route path="/department-head" element={<DepartmentHeadDashboard />} />
           <Route path="/department-exam/:examId" element={<DepartmentExam />} />
           <Route path="/account" element={<AccountSettings />} />

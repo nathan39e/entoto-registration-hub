@@ -21,7 +21,7 @@ const ApplyReminder = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { if (alive) setPending(false); return; }
       const [{ data: roles }, { data: app }] = await Promise.all([
-        supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin", "department_head", "viewer"]),
+        supabase.from("user_roles").select("role").eq("user_id", user.id).in("role", ["admin", "sub_admin", "department_head", "viewer", "finance"]),
         supabase.from("applications").select("id").eq("user_id", user.id).maybeSingle(),
       ]);
       if (!alive) return;

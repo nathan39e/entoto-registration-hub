@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { ownContact, validFullName } from "./rules.ts";
 import { ACCOUNT_REQUEST_TTL_MS, recoverOwnAccount } from "./recovery.ts";
+import { cbeFor } from "../_shared/cbe.ts";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
 
@@ -24,7 +25,7 @@ const APPLY_WARNING = "እባክዎ ሳይን አፕ (Sign Up) ካደረጉ በ�
 
 const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
-  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nUse /account to see your website email and get a new password.\nMenu: /status /account /editname /departments /contact /website /help";
+  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nUse /account to see your website email and get a new password.\nMenu: /status /pay /account /editname /departments /contact /website /help";
 
 const SITE = "https://tafarimakonnenn.onrender.com";
 
@@ -40,6 +41,7 @@ const HELP =
   "/departments — ዲፓርትመንቶች / Departments & programs\n" +
   "/contact — አድራሻ / Contact the college\n" +
   "/website — ድረ-ገጽ / Portal links\n" +
+  "/pay — የክፍያ መረጃ / CBE payment details\n" +
   "/help — ይህ መልዕክት / This message\n\n" +
   "💡 Send your Student ID, or tap 📱 Share My Phone Number to look up your record with your own Telegram number. Typed phone numbers are not accepted for privacy.\nTo change your name: /editname YOUR-STUDENT-ID, share your own Telegram contact, then send your full name. Emergency contacts cannot authorize name changes. /cancel cancels an edit.";
 
@@ -265,6 +267,24 @@ Deno.serve(async (req) => {
       }
       return json({ ok: true });
     }
+  }
+  if (contactPhone) {
+    // Link this private chat to the student whose personal phone matches, so finance can send payment requests.
+    const owners = await rpc("telegram_account_by_phone", { _phone: contactPhone });
+    if (owners?.length === 1) await db.from("telegram_student_chats").upsert({ user_id: owners[0].id, chat_id: chatId, linked_at: new Date().toISOString() });
+  }
+  if (cmd === "/pay") {
+    const { data: link } = await db.from("telegram_student_chats").select("user_id").eq("chat_id", chatId).maybeSingle();
+    if (!link) { await send(chatId, "🔒 Tap <b>📱 Share My Phone Number</b> first so we can find your record, then send /pay again.", SHARE_KB); return json({ ok: true }); }
+    const [{ data: p }, { data: a }, { data: pay }] = await Promise.all([
+      db.from("profiles").select("full_name, student_code").eq("id", link.user_id).maybeSingle(),
+      db.from("applications").select("program").eq("user_id", link.user_id).maybeSingle(),
+      db.from("payments").select("status").eq("user_id", link.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    if (pay?.status === "completed") { await send(chatId, "✅ Your payment is already verified. / ክፍያዎ ተረጋግጧል።"); return json({ ok: true }); }
+    const program = a?.program ?? "Regular"; const { account, amount } = cbeFor(program);
+    await send(chatId, `💳 <b>Payment details / የክፍያ መረጃ</b>\n\n👤 ${esc(p?.full_name ?? "")}\n🆔 ${esc(p?.student_code ?? "")}\n📚 Program: ${esc(program)}\n💰 Amount: <b>${amount} ETB</b>\n🏦 CBE Account: <code>${account}</code>\n\nWrite your Student ID as the reason, then upload the receipt at ${SITE}/payment${pay?.status === "pending" ? "\n\n⏳ A receipt is already awaiting review." : ""}`);
+    return json({ ok: true });
   }
   let input = text;
   if (contactPhone) input = contactPhone;

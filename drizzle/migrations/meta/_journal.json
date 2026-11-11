@@ -274,6 +274,13 @@
       "when": 1794383928629,
       "tag": "0038_keep_approved_on_cutoff_change",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794396599269,
+      "tag": "0039_add_finance_role",
+      "breakpoints": true
     }
   ]
 }

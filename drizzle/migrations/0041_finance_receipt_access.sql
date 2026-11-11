@@ -1,0 +1,2 @@
+CREATE POLICY "Finance read payment receipts" ON storage.objects FOR SELECT TO authenticated
+USING (bucket_id = 'result-docs' AND public.has_role(auth.uid(),'finance') AND EXISTS (SELECT 1 FROM public.payments p WHERE p.receipt_path = storage.objects.name));

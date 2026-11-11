@@ -288,6 +288,13 @@
       "when": 1794396613662,
       "tag": "0040_finance_dashboard",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1794396745369,
+      "tag": "0041_finance_receipt_access",
+      "breakpoints": true
     }
   ]
 }

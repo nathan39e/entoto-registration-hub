@@ -25,7 +25,7 @@ const APPLY_WARNING = "እባክዎ ሳይን አፕ (Sign Up) ካደረጉ በ�
 
 const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
-  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nUse /account to see your website email and get a new password.\nMenu: /status /pay /account /editname /departments /contact /website /help";
+  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nUse /account to see your website email and get a new password.\nMenu: /status /pay /receipt /account /editname /departments /contact /website /help";
 
 const SITE = "https://tafarimakonnenn.onrender.com";
 
@@ -42,6 +42,7 @@ const HELP =
   "/contact — አድራሻ / Contact the college\n" +
   "/website — ድረ-ገጽ / Portal links\n" +
   "/pay — የክፍያ መረጃ / CBE payment details\n" +
+  "/receipt — Receipt review status (send a receipt photo to submit)\n" +
   "/help — ይህ መልዕክት / This message\n\n" +
   "💡 Send your Student ID, or tap 📱 Share My Phone Number to look up your record with your own Telegram number. Typed phone numbers are not accepted for privacy.\nTo change your name: /editname YOUR-STUDENT-ID, share your own Telegram contact, then send your full name. Emergency contacts cannot authorize name changes. /cancel cancels an edit.";
 
@@ -273,6 +274,43 @@ Deno.serve(async (req) => {
     const owners = await rpc("telegram_account_by_phone", { _phone: contactPhone });
     if (owners?.length === 1) await db.from("telegram_student_chats").upsert({ user_id: owners[0].id, chat_id: chatId, linked_at: new Date().toISOString() });
   }
+  const photo = Array.isArray(msg.photo) && msg.photo.length ? msg.photo[msg.photo.length - 1] : null;
+  const doc = msg.document && /^image\/(jpeg|png|webp)$/.test(msg.document.mime_type ?? "") ? msg.document : null;
+  if (photo || doc) {
+    const { data: link } = await db.from("telegram_student_chats").select("user_id").eq("chat_id", chatId).maybeSingle();
+    if (!link) { await send(chatId, "🔒 Tap <b>📱 Share My Phone Number</b> first so we can find your record, then send the receipt photo again.", SHARE_KB); return json({ ok: true }); }
+    const [{ data: a }, { data: prior }] = await Promise.all([
+      db.from("applications").select("program, status").eq("user_id", link.user_id).maybeSingle(),
+      db.from("payments").select("status").eq("user_id", link.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+    if (!a) { await send(chatId, `📝 Please complete your application first at ${SITE}/application`); return json({ ok: true }); }
+    if (["waiting_list", "rejected"].includes(a.status ?? "")) { await send(chatId, "⚠️ Receipts cannot be accepted for your current application status. Please contact the college."); return json({ ok: true }); }
+    if (prior?.status === "completed") { await send(chatId, "✅ Your payment is already verified. / ክፍያዎ ተረጋግጧል።"); return json({ ok: true }); }
+    if (prior?.status === "pending") { await send(chatId, "⏳ A receipt is already awaiting review by the finance office. / ደረሰኝዎ በግምገማ ላይ ነው።"); return json({ ok: true }); }
+    const file = photo ?? doc;
+    if ((file.file_size ?? 0) > 5 * 1024 * 1024) { await send(chatId, "⚠️ The image is larger than 5 MB. Please send a smaller photo."); return json({ ok: true }); }
+    const info = await telegram("getFile", { file_id: file.file_id });
+    const dl = await fetch(`${GATEWAY_URL}/file/${info.file_path}`, { headers: { Authorization: `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`, "X-Connection-Api-Key": key } });
+    if (!dl.ok) throw new Error(`Receipt download failed [${dl.status}]`);
+    const bytes = new Uint8Array(await dl.arrayBuffer());
+    const type = doc?.mime_type ?? "image/jpeg"; const ext = type.split("/")[1].replace("jpeg", "jpg");
+    const receipt_path = `${link.user_id}/receipt-${Date.now()}.${ext}`;
+    const { error: upErr } = await db.storage.from("result-docs").upload(receipt_path, bytes, { contentType: type });
+    if (upErr) throw upErr;
+    const caption = String(msg.caption ?? "").replace(/[^A-Za-z0-9]/g, "").slice(0, 30);
+    const program = a.program ?? "Regular"; const { amount } = cbeFor(program);
+    const { error: insErr } = await db.from("payments").insert({ user_id: link.user_id, receipt_path, amount, program, transaction_id: caption.length >= 6 ? caption : null, payment_method: "cbe" });
+    if (insErr) throw insErr;
+    await send(chatId, `📥 <b>Receipt received / ደረሰኝዎ ደርሷል</b>\n\n💰 ${amount} ETB (${esc(program)})\nThe finance office will review it. You will get a message here once it is verified.\nየፋይናንስ ክፍሉ ካረጋገጠ በኋላ እዚህ መልዕክት ይደርስዎታል።`);
+    return json({ ok: true });
+  }
+  if (cmd === "/receipt") {
+    const { data: link } = await db.from("telegram_student_chats").select("user_id").eq("chat_id", chatId).maybeSingle();
+    if (!link) { await send(chatId, "🔒 Tap <b>📱 Share My Phone Number</b> first, then send /receipt again.", SHARE_KB); return json({ ok: true }); }
+    const { data: pay } = await db.from("payments").select("status").eq("user_id", link.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const m = !pay ? "📸 No receipt yet. Send a photo of your CBE receipt here (add the transaction number as the caption)." : pay.status === "completed" ? "✅ Your payment is verified." : pay.status === "rejected" ? "❌ Your last receipt was rejected. Please send a clear photo of a valid receipt." : "⏳ Your receipt is awaiting review.";
+    await send(chatId, m); return json({ ok: true });
+  }
   if (cmd === "/pay") {
     const { data: link } = await db.from("telegram_student_chats").select("user_id").eq("chat_id", chatId).maybeSingle();
     if (!link) { await send(chatId, "🔒 Tap <b>📱 Share My Phone Number</b> first so we can find your record, then send /pay again.", SHARE_KB); return json({ ok: true }); }
@@ -283,7 +321,7 @@ Deno.serve(async (req) => {
     ]);
     if (pay?.status === "completed") { await send(chatId, "✅ Your payment is already verified. / ክፍያዎ ተረጋግጧል።"); return json({ ok: true }); }
     const program = a?.program ?? "Regular"; const { account, amount } = cbeFor(program);
-    await send(chatId, `💳 <b>Payment details / የክፍያ መረጃ</b>\n\n👤 ${esc(p?.full_name ?? "")}\n🆔 ${esc(p?.student_code ?? "")}\n📚 Program: ${esc(program)}\n💰 Amount: <b>${amount} ETB</b>\n🏦 CBE Account: <code>${account}</code>\n\nWrite your Student ID as the reason, then upload the receipt at ${SITE}/payment${pay?.status === "pending" ? "\n\n⏳ A receipt is already awaiting review." : ""}`);
+    await send(chatId, `💳 <b>Payment details / የክፍያ መረጃ</b>\n\n👤 ${esc(p?.full_name ?? "")}\n🆔 ${esc(p?.student_code ?? "")}\n📚 Program: ${esc(program)}\n💰 Amount: <b>${amount} ETB</b>\n🏦 CBE Account: <code>${account}</code>\n\nWrite your Student ID as the reason, then send a photo of the receipt here (transaction number as caption) or upload it at ${SITE}/payment${pay?.status === "pending" ? "\n\n⏳ A receipt is already awaiting review." : ""}`);
     return json({ ok: true });
   }
   let input = text;

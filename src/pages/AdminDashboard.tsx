@@ -255,6 +255,7 @@ const AdminDashboard = () => {
   const setPaymentStatus = async (id: string, status: string) => {
     const paid_at = status === "completed" ? new Date().toISOString() : null;
     const { error } = await supabase.from("payments").update({ status, paid_at }).eq("id", id);
+    if (!error) supabase.functions.invoke("finance-request", { body: { action: "notify", payment_id: id } }).catch(() => {});
     if (error) return toast({ title: "Error", description: error.message, variant: "destructive" });
     setPayments((p) => p.map((x) => (x.id === id ? { ...x, status, paid_at } : x)));
     toast({ title: status === "completed" ? "Payment verified" : "Payment rejected" });

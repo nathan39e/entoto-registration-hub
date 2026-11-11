@@ -67,6 +67,7 @@ export default function FinanceDashboard() {
 
   const review = async (id: string, status: "completed" | "rejected") => {
     const { error } = await supabase.from("payments").update({ status, paid_at: status === "completed" ? new Date().toISOString() : null }).eq("id", id);
+    if (!error) supabase.functions.invoke("finance-request", { body: { action: "notify", payment_id: id } }).catch(() => {});
     if (error) return toast.error("Could not update payment");
     toast.success(status === "completed" ? "Payment verified" : "Payment rejected"); load();
   };

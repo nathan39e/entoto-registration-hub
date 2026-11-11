@@ -281,6 +281,13 @@
       "when": 1794396599269,
       "tag": "0039_add_finance_role",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794396613662,
+      "tag": "0040_finance_dashboard",
+      "breakpoints": true
     }
   ]
 }

@@ -289,6 +289,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_requests: {
+        Row: {
+          account: string
+          amount: number
+          created_at: string
+          delivered: boolean
+          id: string
+          sent_by: string
+          user_id: string
+        }
+        Insert: {
+          account: string
+          amount: number
+          created_at?: string
+          delivered?: boolean
+          id?: string
+          sent_by: string
+          user_id: string
+        }
+        Update: {
+          account?: string
+          amount?: number
+          created_at?: string
+          delivered?: boolean
+          id?: string
+          sent_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -776,6 +806,32 @@ export type Database = {
           message_id?: number
         }
         Relationships: []
+      }
+      telegram_student_chats: {
+        Row: {
+          chat_id: number
+          linked_at: string
+          user_id: string
+        }
+        Insert: {
+          chat_id: number
+          linked_at?: string
+          user_id: string
+        }
+        Update: {
+          chat_id?: number
+          linked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_student_chats_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

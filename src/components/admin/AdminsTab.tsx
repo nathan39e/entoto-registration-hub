@@ -29,7 +29,12 @@ export default function AdminsTab() {
   useEffect(() => { load(); }, []);
   const call = async (body: Record<string, unknown>, msg: string) => {
     setBusy(true); const { data, error } = await supabase.functions.invoke("manage-users", { body }); setBusy(false);
-    if (error || data?.error) { toast.error(data?.error ?? error?.message); return false; }
+    if (error || data?.error) {
+      let msg = data?.error ?? error?.message ?? "Request failed";
+      try { msg = (await (error as any)?.context?.json())?.error ?? msg; } catch { /* keep message */ }
+      if (/weak|easy to guess|pwned|leaked/i.test(msg)) msg = "That password is too common. Use a longer, unique password (mix letters, numbers and symbols).";
+      toast.error(msg); return false;
+    }
     toast.success(msg); load(); return true;
   };
   const term = q.trim().toLowerCase();

@@ -14,6 +14,8 @@ OTHER PAGES: /about, /news, /how-to-apply, /contact, /account (change password).
 STAFF (only if the user is staff): admins review applications and documents and approve students in the admin dashboard; department heads evaluate and place students; finance verifies receipts at /finance and sends CBE payment requests via Telegram; viewers only see counts and records; Excel exports follow the active filters.
 Use markdown links like [Open Application](/application) when pointing to pages.`;
 
+const MODELS = ["openai/gpt-oss-120b", "llama-3.3-70b-versatile", "meta-llama/llama-4-scout-17b-16e-instruct", "llama-3.1-8b-instant"];
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const json = (b: unknown, s = 200) =>
@@ -29,20 +31,24 @@ Deno.serve(async (req) => {
       .map((m: any) => ({ role: m.role, content: m.content.slice(0, 2000) }))
       .slice(-20);
     const page = typeof body?.page === "string" ? body.page.slice(0, 100) : "";
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    let res!: Response; let data: any;
+    for (const model of MODELS) {
+    res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model,
         temperature: 0.3,
         max_tokens: 600,
         messages: [{ role: "system", content: KNOWLEDGE + (page ? `\nUser is on page: ${page}` : "") }, ...clean],
       }),
     });
-    const data = await res.json();
+    data = await res.json();
+    if (res.status !== 404 && res.status !== 400) break;
+    }
     if (!res.ok) {
       console.error("groq", res.status, JSON.stringify(data).slice(0, 300));
-      return json({ error: res.status === 429 ? "Too many questions right now, try again shortly." : "Assistant unavailable", code: res.status, detail: data?.error?.message?.slice(0, 120) }, 502);
+      return json({ error: res.status === 429 ? "Too many questions right now, try again shortly." : "Assistant unavailable" }, 502);
     }
     return json({ reply: data.choices?.[0]?.message?.content ?? "" });
   } catch (e) {

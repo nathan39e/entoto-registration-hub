@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     const data = await res.json();
     if (!res.ok) {
       console.error("groq", res.status, JSON.stringify(data).slice(0, 300));
-      return json({ error: res.status === 429 ? "Too many questions right now, try again shortly." : "Assistant unavailable" }, 502);
+      return json({ error: res.status === 429 ? "Too many questions right now, try again shortly." : "Assistant unavailable", code: res.status, detail: data?.error?.message?.slice(0, 120) }, 502);
     }
     return json({ reply: data.choices?.[0]?.message?.content ?? "" });
   } catch (e) {

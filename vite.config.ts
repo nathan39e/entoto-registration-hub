@@ -21,5 +21,8 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // Force one React copy so stale prebundled chunks can't load a second instance.
+    dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
+  optimizeDeps: { include: ["react", "react-dom", "react/jsx-runtime"] },
 }));

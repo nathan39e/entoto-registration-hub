@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Payment = () => {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const [chapaBusy, setChapaBusy] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [txId, setTxId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -25,15 +27,35 @@ const Payment = () => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return navigate("/auth");
       const [{ data }, { data: app }, { data: result }] = await Promise.all([
-        supabase.from("payments").select("status").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("payments").select("status, payment_method").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("applications").select("status, program").eq("user_id", user.id).maybeSingle(),
         supabase.from("psychometric_results").select("id").eq("user_id", user.id).limit(1).maybeSingle(),
       ]);
       if (app?.program) setProgram(app.program);
-      setSubmitted(data?.status === "pending" || data?.status === "completed");
+      setSubmitted(data?.status === "completed" || (data?.status === "pending" && data?.payment_method !== "chapa"));
+      const ref = params.get("tx_ref");
+      if (ref) {
+        const { data: v } = await supabase.functions.invoke("chapa-pay", { body: { action: "verify", tx_ref: ref } });
+        if (v?.status === "completed") { toast.success("Payment confirmed by Chapa!"); setTimeout(() => navigate("/student-dashboard"), 1200); }
+        else if (v?.status === "failed") toast.error("Chapa payment failed. Please try again.");
+        else toast.info("Payment not confirmed yet. Refresh in a moment.");
+      }
       setAllowed(!!app && !!result && !["waiting_list", "rejected", "pending"].includes(app.status ?? "pending"));
     });
-  }, [navigate]);
+  }, [navigate, params]);
+
+  const payWithChapa = async () => {
+    setChapaBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("chapa-pay", { body: { action: "init", origin: window.location.origin } });
+      if (error || !data?.checkout_url) {
+        let msg = "Could not start online payment.";
+        try { msg = (await (error as any)?.context?.json())?.error ?? msg; } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      window.location.href = data.checkout_url;
+    } catch (e) { toast.error((e as Error).message); setChapaBusy(false); }
+  };
 
   const handleTelebirrPayment = async () => {
     if (!allowed) return toast.error("Complete an eligible application and the exam before submitting payment.");
@@ -111,6 +133,20 @@ const Payment = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="mb-6 border-primary">
+              <CardHeader>
+                <CardTitle>Pay Online with Chapa</CardTitle>
+                <CardDescription>Telebirr, CBE Birr, M-Pesa or bank card. Confirmed instantly, no receipt needed.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" size="lg" onClick={payWithChapa} disabled={chapaBusy || submitted}>
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  {chapaBusy ? "Opening Chapa..." : submitted ? "Payment already submitted" : `Pay ${paymentAmount} ETB with Chapa`}
+                </Button>
+              </CardContent>
+            </Card>
+            <p className="text-center text-sm text-muted-foreground mb-6">Or pay manually and upload your receipt:</p>
 
             {/* Telebirr Payment */}
             <Card>

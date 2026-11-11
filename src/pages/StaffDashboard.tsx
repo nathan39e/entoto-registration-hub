@@ -57,7 +57,7 @@ const StaffDashboard = () => {
       supabase.from("profiles").select("*").ilike("student_code", term).limit(20),
       supabase.from("profiles").select("*").ilike("full_name", `%${term}%`).limit(20),
       phone.length >= 3 ? supabase.from("profiles").select("*").ilike("phone", `%${phone}%`).limit(20) : Promise.resolve({ data: [] as any[] }),
-      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer"]),
+      supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer", "finance"]),
     ]);
     if (error) return toast.error(error.message);
     const excluded = new Set((staff ?? []).map((r) => r.user_id));

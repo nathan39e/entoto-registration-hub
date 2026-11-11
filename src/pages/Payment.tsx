@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { CreditCard, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { cbeFor } from "@/lib/cbe";
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ const Payment = () => {
   const [submitted, setSubmitted] = useState(false);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [program, setProgram] = useState<string>("Regular");
-  const paymentAmount = program === "Extension" || program === "Weekend" ? 1700 : 350; // ETB
+  const { amount: paymentAmount, account: cbeAccount } = cbeFor(program); // ETB
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -61,7 +62,7 @@ const Payment = () => {
     if (!allowed) return toast.error("Complete an eligible application and the exam before submitting payment.");
     if (!/^0[79][0-9]{8}$/.test(phoneNumber)) return toast.error("Please enter a valid phone number (09XXXXXXXX)");
     const tx = txId.trim();
-    if (!/^[A-Za-z0-9]{6,30}$/.test(tx)) return toast.error("Please enter the Telebirr transaction ID from your SMS");
+    if (!/^[A-Za-z0-9]{6,30}$/.test(tx)) return toast.error("Please enter the CBE transaction / reference number from your receipt");
     if (!receipt || !receipt.type.startsWith("image/") || receipt.size > 5 * 1024 * 1024) return toast.error("Please upload a photo/screenshot of your receipt (image under 5MB).");
     setIsProcessing(true);
     try {
@@ -74,7 +75,7 @@ const Payment = () => {
       const { error: upErr } = await supabase.storage.from("result-docs").upload(receipt_path, receipt, { contentType: receipt.type });
       if (upErr) throw upErr;
       const { error } = await supabase.from("payments").insert({
-        user_id: user.id, receipt_path, amount: paymentAmount, transaction_id: tx, payment_method: "telebirr",
+        user_id: user.id, receipt_path, amount: paymentAmount, transaction_id: tx, payment_method: "cbe",
       });
       if (error) throw error;
       setSubmitted(true);
@@ -148,7 +149,7 @@ const Payment = () => {
             </Card>
             <p className="text-center text-sm text-muted-foreground mb-6">Or pay manually and upload your receipt:</p>
 
-            {/* Telebirr Payment */}
+            {/* CBE Payment */}
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -163,7 +164,7 @@ const Payment = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Telebirr Phone Number</Label>
+                  <Label htmlFor="phone">Your Phone Number</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -173,12 +174,12 @@ const Payment = () => {
                     maxLength={10}
                   />
                   <p className="text-sm text-muted-foreground">
-                    Enter your Telebirr registered phone number
+                    Enter the phone number you used for the payment
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="tx">Telebirr Transaction ID</Label>
+                  <Label htmlFor="tx">CBE Transaction / Reference Number</Label>
                   <Input id="tx" placeholder="e.g., CHK12AB34CD" value={txId} maxLength={30}
                     onChange={(e) => setTxId(e.target.value)} />
                 </div>
@@ -186,14 +187,14 @@ const Payment = () => {
                 <div className="space-y-2">
                   <Label htmlFor="receipt">Receipt Photo *</Label>
                   <Input id="receipt" type="file" accept="image/*" onChange={(e) => setReceipt(e.target.files?.[0] ?? null)} />
-                  <p className="text-sm text-muted-foreground">A clear photo or screenshot of the Telebirr / bank receipt (under 5MB).</p>
+                  <p className="text-sm text-muted-foreground">A clear photo or screenshot of the CBE receipt (under 5MB).</p>
                 </div>
 
                 <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                   <h4 className="font-semibold text-sm">Payment Instructions:</h4>
                   <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                    <li>Send {paymentAmount} ETB to the college's Telebirr account</li>
-                    <li>Copy the transaction ID from the Telebirr SMS</li>
+                    <li>Pay {paymentAmount} ETB to CBE account <span className="font-mono font-semibold text-foreground">{cbeAccount}</span> (Teferi Mekonnen Polytechnic College) at a CBE branch or with CBE Birr / Mobile Banking</li>
+                    <li>Write your Student ID as the reason and keep the transaction number</li>
                     <li>Enter your phone number, the transaction ID and upload the receipt photo</li>
                     <li>An admin checks the receipt and verifies your payment</li>
                     <li>Download your registration slip from your dashboard once approved</li>

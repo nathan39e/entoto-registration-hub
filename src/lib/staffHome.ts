@@ -8,5 +8,6 @@ export const staffHome = async (uid: string): Promise<string | null> => {
   if (roles.includes("sub_admin")) return "/staff";
   if (roles.includes("department_head")) return "/department-head";
   if (roles.includes("viewer")) return "/viewer";
+  if (roles.includes("finance")) return "/finance";
   return null;
 };

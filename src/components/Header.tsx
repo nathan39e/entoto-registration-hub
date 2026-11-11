@@ -18,6 +18,7 @@ const Header = () => {
   const [isStaff, setIsStaff] = useState(false);
   const [isHead, setIsHead] = useState(false);
   const [isViewer, setIsViewer] = useState(false);
+  const [isFinance, setIsFinance] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -56,6 +57,7 @@ const Header = () => {
     setIsStaff(roles.includes("sub_admin"));
     setIsHead(roles.includes("department_head"));
     setIsViewer(roles.includes("viewer"));
+    setIsFinance(roles.includes("finance"));
   };
 
   return (
@@ -153,7 +155,7 @@ const Header = () => {
                 <DarkModeToggle />
               </div>
               <nav className="mt-8 flex flex-col gap-1">
-                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/how-to-apply", "How to Apply"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(isHead ? [["/department-head", "My Department"]] : []), ...(isViewer ? [["/viewer", "Viewer Dashboard"]] : []), ...((isAdmin || isStaff || isHead) ? [["/account", "Profile & Settings"]] : []), ...(user ? ((isAdmin || isStaff || isHead || isViewer) ? [] : [["/student-dashboard", "Dashboard"]]) : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
+                {[["/", "Home"], ["/about", "About Us"], ["/departments", "Departments"], ["/application", "Apply Now"], ["/how-to-apply", "How to Apply"], ["/news", "News"], ["/contact", "Contact"], ...(isAdmin ? [["/admin-dashboard", "Admin Dashboard"]] : []), ...((isAdmin || isStaff) ? [["/staff", "Staff"]] : []), ...(isHead ? [["/department-head", "My Department"]] : []), ...(isViewer ? [["/viewer", "Viewer Dashboard"]] : []), ...((isFinance || isAdmin) ? [["/finance", "Finance"]] : []), ...((isAdmin || isStaff || isHead) ? [["/account", "Profile & Settings"]] : []), ...(user ? ((isAdmin || isStaff || isHead || isViewer || isFinance) ? [] : [["/student-dashboard", "Dashboard"]]) : [["/auth", "Login"], ["/auth?mode=signup", "Sign Up"]])].map(([to, label]) => (
                   <SheetClose asChild key={to}><Link to={to} className="block rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{label}</Link></SheetClose>
                 ))}
                 {user && <Button variant="outline" className="mt-3 justify-start" onClick={async () => { setMenuOpen(false); await supabase.auth.signOut(); navigate("/"); }}>Logout</Button>}

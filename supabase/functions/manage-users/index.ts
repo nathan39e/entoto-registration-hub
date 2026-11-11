@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
 
     if (action === "admin_block_status") {
       if (!isAdmin) return json({ error: "Admins only" }, 403);
-      const { data: ids } = await admin.from("user_roles").select("user_id").in("role", ["admin", "viewer"]);
+      const { data: ids } = await admin.from("user_roles").select("user_id").in("role", ["admin", "viewer", "finance"]);
       const blocked: string[] = [];
       for (const r of ids ?? []) {
         const { data } = await admin.auth.admin.getUserById(r.user_id);
@@ -224,6 +224,22 @@ Deno.serve(async (req) => {
         if (until && new Date(until) > new Date()) blocked.push(r.user_id);
       }
       return json({ blocked });
+    }
+
+    if (action === "create_finance") {
+      const { data: authority } = await admin.from("admin_creation_authority").select("user_id").eq("user_id", user.id).maybeSingle();
+      if (!authority) return json({ error: "Only the main admin can create finance accounts." }, 403);
+      const full_name = str(body.full_name, 100), email = str(body.email, 255).toLowerCase();
+      const password = typeof body.password === "string" ? body.password : "";
+      if (!full_name || !/^\S+@\S+\.\S+$/.test(email) || password.length < 8) return json({ error: "Name, valid email and password of at least 8 characters required." }, 400);
+      const { data: created, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name } });
+      if (error) return json({ error: error.message }, 400);
+      const id = created.user.id;
+      const { error: roleError } = await admin.from("user_roles").insert({ user_id: id, role: "finance" });
+      if (roleError) { await admin.auth.admin.deleteUser(id); return json({ error: "Could not assign finance role" }, 500); }
+      await admin.from("user_roles").delete().eq("user_id", id).eq("role", "student");
+      await admin.from("profiles").update({ registered_by: user.id }).eq("id", id);
+      return json({ ok: true });
     }
 
     if (action === "create_viewer" || action === "set_viewer") {
@@ -257,7 +273,7 @@ Deno.serve(async (req) => {
       if (!id || id === user.id) return json({ error: "Use Account settings to change your own account." }, 400);
       const [{ data: target }, { data: role }] = await Promise.all([
         admin.from("profiles").select("registered_by").eq("id", id).maybeSingle(),
-        admin.from("user_roles").select("user_id").eq("user_id", id).in("role", ["admin", "viewer"]).limit(1).maybeSingle(),
+        admin.from("user_roles").select("user_id").eq("user_id", id).in("role", ["admin", "viewer", "finance"]).limit(1).maybeSingle(),
       ]);
       const { data: authority } = await admin.from("admin_creation_authority").select("user_id").eq("user_id", user.id).maybeSingle();
       if (!role || !canManageAdmin(user.id, target?.registered_by ?? null, !!authority)) return json({ error: "You can only manage admins you created." }, 403);

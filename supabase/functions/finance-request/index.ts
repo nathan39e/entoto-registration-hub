@@ -19,6 +19,27 @@ Deno.serve(async (req) => {
     const { data: roles } = await db.from("user_roles").select("role").eq("user_id", user.id).in("role", ["finance", "admin"]);
     if (!roles?.length) return json({ error: "Finance staff only" }, 403);
     const body = await req.json().catch(() => ({}));
+    if (body.action === "notify") {
+      const pid = typeof body.payment_id === "string" && /^[0-9a-f-]{36}$/i.test(body.payment_id) ? body.payment_id : null;
+      if (!pid) return json({ error: "Invalid payment" }, 400);
+      const { data: pay } = await db.from("payments").select("user_id, status, amount").eq("id", pid).maybeSingle();
+      if (!pay || !["completed", "rejected"].includes(pay.status ?? "")) return json({ sent: false });
+      const [{ data: chat }, { data: p }] = await Promise.all([
+        db.from("telegram_student_chats").select("chat_id").eq("user_id", pay.user_id).maybeSingle(),
+        db.from("profiles").select("full_name, student_code").eq("id", pay.user_id).maybeSingle(),
+      ]);
+      if (!chat) return json({ sent: false });
+      const name = esc(p?.full_name ?? "");
+      const text = pay.status === "completed"
+        ? `✅ <b>ክፍያዎ ተረጋግጧል / Payment Verified</b>\n\nውድ ${name}፣ የ ${pay.amount} ብር ክፍያዎ በፋይናንስ ክፍል ተረጋግጧል። እናመሰግናለን!\nDear ${name} (${esc(p?.student_code ?? "")}), your payment of <b>${pay.amount} ETB</b> has been verified by the finance office. Thank you!`
+        : `❌ <b>ደረሰኝ ተቀባይነት አላገኘም / Receipt Rejected</b>\n\nውድ ${name}፣ የላኩት ደረሰኝ ሊረጋገጥ አልቻለም። እባክዎ ግልጽ ደረሰኝ እንደገና ይላኩ።\nDear ${name}, your receipt could not be verified. Please send a clear photo of a valid receipt here.`;
+      const r = await fetch("https://connector-gateway.lovable.dev/telegram/sendMessage", {
+        method: "POST", headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": tg, "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chat.chat_id, text, parse_mode: "HTML" }),
+      });
+      if (!r.ok) console.error("Telegram notify failed", r.status, await r.text());
+      return json({ sent: r.ok });
+    }
     const ids: string[] = Array.isArray(body.user_ids) ? body.user_ids.filter((x: unknown) => typeof x === "string" && /^[0-9a-f-]{36}$/i.test(x)).slice(0, 200) : [];
     if (!ids.length) return json({ error: "Select at least one student" }, 400);
     const [{ data: chats }, { data: profiles }, { data: apps }, { data: paid }] = await Promise.all([

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { randomPassword } from "@/lib/staffPassword";
 
 type Row = { id: string; full_name: string; email: string; phone: string | null; registered_by: string | null; viewer?: boolean; finance?: boolean };
 
@@ -29,14 +30,19 @@ export default function AdminsTab() {
   useEffect(() => { load(); }, []);
   const call = async (body: Record<string, unknown>, msg: string) => {
     setBusy(true); const { data, error } = await supabase.functions.invoke("manage-users", { body }); setBusy(false);
-    if (error || data?.error) { toast.error(data?.error ?? error?.message); return false; }
+    if (error || data?.error) {
+      let msg = data?.error ?? error?.message ?? "Request failed";
+      try { msg = (await (error as any)?.context?.json())?.error ?? msg; } catch { /* keep message */ }
+      if (/weak|easy to guess|pwned|leaked/i.test(msg)) msg = "That password is too common. Use a longer, unique password (mix letters, numbers and symbols).";
+      toast.error(msg); return false;
+    }
     toast.success(msg); load(); return true;
   };
   const term = q.trim().toLowerCase();
   const shown = rows.filter((r) => !term || [r.full_name, r.email, r.phone ?? ""].some((x) => x.toLowerCase().includes(term)));
   return <section className="space-y-5"><h2 className="text-xl font-semibold">Admins, Viewers &amp; Finance ({rows.length})</h2>{allowed && <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end" onSubmit={async (e) => {
     e.preventDefault(); if (await call({ action: `create_${kind}`, ...form }, kind === "viewer" ? "Viewer created" : kind === "finance" ? "Finance account created" : "Admin created without admin-creation permission")) setForm({ full_name: "", email: "", password: "" });
-  }}><div><Label htmlFor="admin-name">Full name</Label><Input id="admin-name" required maxLength={100} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div><div><Label htmlFor="admin-email">Email</Label><Input id="admin-email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div><div><Label htmlFor="admin-password">Password (minimum 8)</Label><Input id="admin-password" type="password" autoComplete="new-password" required minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div><div className="flex gap-2"><select aria-label="Account type" className="h-10 rounded-md border border-input bg-background px-2 text-sm" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}><option value="admin">Admin</option><option value="viewer">Viewer</option><option value="finance">Finance</option></select><Button disabled={busy} type="submit">Create</Button></div></form>}
+  }}><div><Label htmlFor="admin-name">Full name</Label><Input id="admin-name" required maxLength={100} value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div><div><Label htmlFor="admin-email">Email</Label><Input id="admin-email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div><div><Label htmlFor="admin-password">Password (minimum 8)</Label><div className="flex gap-1"><Input id="admin-password" type="text" autoComplete="new-password" required minLength={8} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /><Button type="button" variant="outline" onClick={() => setForm({ ...form, password: randomPassword().slice(0, 16) })}>Generate</Button></div></div><div className="flex gap-2"><select aria-label="Account type" className="h-10 rounded-md border border-input bg-background px-2 text-sm" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}><option value="admin">Admin</option><option value="viewer">Viewer</option><option value="finance">Finance</option></select><Button disabled={busy} type="submit">Create</Button></div></form>}
     <Input aria-label="Search admins" placeholder="Search admins by name, email or phone" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm" />
     <div className="divide-y">{shown.map((r) => <div key={r.id} className="py-3 space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-medium">{r.full_name}{blocked.includes(r.id) && <span className="ml-2 rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">Blocked</span>}{r.viewer && <span className="ml-2 rounded bg-primary/10 px-2 py-0.5 text-xs text-primary">Viewer</span>}{r.finance && <span className="ml-2 rounded bg-secondary px-2 py-0.5 text-xs">Finance</span>}</p><p className="text-sm text-muted-foreground">{r.email}{r.phone ? ` · ${r.phone}` : ""}</p></div>

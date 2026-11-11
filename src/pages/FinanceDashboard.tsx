@@ -28,14 +28,14 @@ export default function FinanceDashboard() {
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
-    const [pays, profs, apps, roles, chats, reqs] = await Promise.all([
+    const [pays, profs, apps, roles, chats, reqs] = (await Promise.all([
       fetchAll(() => supabase.from("payments").select("id, user_id, amount, status, transaction_id, payment_method, receipt_path, created_at, program").order("created_at", { ascending: false })),
       fetchAll(() => supabase.from("profiles").select("id, full_name, student_code, phone").order("id")),
       fetchAll(() => supabase.from("applications").select("user_id, program, status").order("id")),
       fetchAll(() => supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer", "finance"]).order("id")),
       fetchAll(() => supabase.from("telegram_student_chats").select("user_id").order("user_id")),
       fetchAll(() => supabase.from("payment_requests").select("user_id, created_at").order("created_at", { ascending: false })),
-    ]);
+    ])).map((r) => { if (r.error) throw r.error; return r.data; });
     const p = pays as Payment[]; setPayments(p);
     const prof = profs as { id: string; full_name: string; student_code: string; phone: string | null }[];
     setNames(Object.fromEntries(prof.map((x) => [x.id, x])));

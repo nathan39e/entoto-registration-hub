@@ -34,6 +34,6 @@
 - [x] Fix staff-issued passwords rejected by leaked-password protection; verified full admin registration with document upload and saved application end to end.
 - [ ] Allow the Render password-recovery return address in auth settings; blocked on owner adding https://tafarimakonnenn.onrender.com/**. Real Telegram/email delivery remains unverified.
 
-- [ ] Pause new Chapa checkouts while retaining settlement of existing payments.
-- [ ] Store contact messages and add admin inbox with private visitor replies.
-- [ ] Verify contact submission, admin reply, visitor readback and access restrictions.
+- [x] Pause new Chapa checkouts while retaining settlement of existing payments.
+- [x] Store contact messages and add admin inbox with private visitor replies.
+- [x] Verify contact submission, admin reply, visitor readback and access restrictions.

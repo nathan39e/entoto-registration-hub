@@ -25,6 +25,7 @@ import DepartmentHeadsTab from "@/components/admin/DepartmentHeadsTab";
 import NewsTab from "@/components/admin/NewsTab";
 import StudentQRScanner from "@/components/StudentQRScanner";
 import AdminsTab from "@/components/admin/AdminsTab";
+import ContactInbox from "@/components/admin/ContactInbox";
 
 interface Application {
   id: string;
@@ -418,6 +419,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="heads" className="flex-1 min-w-[7rem]">Dept Heads</TabsTrigger>
             <TabsTrigger value="news" className="flex-1 min-w-[7rem]">News</TabsTrigger>
             <TabsTrigger value="visitors" className="flex-1 min-w-[7rem]">Visitors</TabsTrigger>
+            <TabsTrigger value="messages" className="flex-1 min-w-[7rem]">Messages</TabsTrigger>
             <TabsTrigger value="payments" className="flex-1 min-w-[7rem]">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
           </TabsList>
 
@@ -428,6 +430,7 @@ const AdminDashboard = () => {
           <TabsContent value="heads" className="mt-6"><DepartmentHeadsTab /></TabsContent>
           <TabsContent value="news" className="mt-6"><NewsTab /></TabsContent>
           <TabsContent value="visitors" className="mt-6"><VisitorsTab /></TabsContent>
+          <TabsContent value="messages" className="mt-6"><ContactInbox /></TabsContent>
 
 
           <TabsContent value="applications" className="mt-6">

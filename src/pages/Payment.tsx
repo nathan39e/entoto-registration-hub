@@ -14,7 +14,6 @@ import { cbeFor } from "@/lib/cbe";
 const Payment = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const [chapaBusy, setChapaBusy] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [txId, setTxId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -44,19 +43,6 @@ const Payment = () => {
       setAllowed(!!app && !["waiting_list", "rejected"].includes(app.status ?? ""));
     });
   }, [navigate, params]);
-
-  const payWithChapa = async () => {
-    setChapaBusy(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("chapa-pay", { body: { action: "init", origin: window.location.origin } });
-      if (error || !data?.checkout_url) {
-        let msg = "Could not start online payment.";
-        try { msg = (await (error as any)?.context?.json())?.error ?? msg; } catch { /* ignore */ }
-        throw new Error(msg);
-      }
-      window.location.href = data.checkout_url;
-    } catch (e) { toast.error((e as Error).message); setChapaBusy(false); }
-  };
 
   const handleTelebirrPayment = async () => {
     if (!allowed) return toast.error("Submit your application before uploading a payment receipt.");
@@ -135,18 +121,6 @@ const Payment = () => {
               </CardContent>
             </Card>
 
-            <Card className="mb-6 border-primary">
-              <CardHeader>
-                <CardTitle>Pay Online with Chapa</CardTitle>
-                <CardDescription>Telebirr, CBE Birr, M-Pesa or bank card. Confirmed instantly, no receipt needed.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full" size="lg" onClick={payWithChapa} disabled={chapaBusy || submitted}>
-                  <CreditCard className="mr-2 h-5 w-5" />
-                  {chapaBusy ? "Opening Chapa..." : submitted ? "Payment already submitted" : `Pay ${paymentAmount} ETB with Chapa`}
-                </Button>
-              </CardContent>
-            </Card>
             <p className="text-center text-sm text-muted-foreground mb-6">Already paid at CBE? Just upload your receipt below:</p>
 
             {/* CBE Payment */}

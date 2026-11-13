@@ -295,6 +295,13 @@
       "when": 1794396745369,
       "tag": "0041_finance_receipt_access",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1794569831064,
+      "tag": "0042_contact_inbox",
+      "breakpoints": true
     }
   ]
 }

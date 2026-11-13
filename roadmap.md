@@ -33,3 +33,7 @@
 - [x] Use Gemini 2.5 Flash for application-form and Grade 12 image extraction, retain browser OCR fallback, and verify both deployed readers with authenticated sample uploads.
 - [x] Fix staff-issued passwords rejected by leaked-password protection; verified full admin registration with document upload and saved application end to end.
 - [ ] Allow the Render password-recovery return address in auth settings; blocked on owner adding https://tafarimakonnenn.onrender.com/**. Real Telegram/email delivery remains unverified.
+
+- [ ] Pause new Chapa checkouts while retaining settlement of existing payments.
+- [ ] Store contact messages and add admin inbox with private visitor replies.
+- [ ] Verify contact submission, admin reply, visitor readback and access restrictions.

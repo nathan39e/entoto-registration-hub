@@ -104,6 +104,48 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          read_at: string | null
+          replied_at: string | null
+          replied_by: string | null
+          reply: string | null
+          subject: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          read_at?: string | null
+          replied_at?: string | null
+          replied_by?: string | null
+          reply?: string | null
+          subject: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          read_at?: string | null
+          replied_at?: string | null
+          replied_by?: string | null
+          reply?: string | null
+          subject?: string
+          token_hash?: string
+        }
+        Relationships: []
+      }
       department_exams: {
         Row: {
           created_at: string
@@ -907,6 +949,11 @@ export type Database = {
       is_referred_to_head: {
         Args: { _app_user: string; _user_id: string }
         Returns: boolean
+      }
+      mark_contact_read: { Args: { _id: string }; Returns: undefined }
+      reply_to_contact: {
+        Args: { _id: string; _reply: string }
+        Returns: undefined
       }
       save_portal_exam: {
         Args: { _definition: Json; _id: string }

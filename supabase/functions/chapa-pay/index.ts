@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { CHAPA_CHECKOUT_ENABLED } from "./policy.ts";
 
 const CHAPA = "https://api.chapa.co/v1";
 const json = (b: unknown, status = 200) =>
@@ -50,6 +51,7 @@ Deno.serve(async (req) => {
       return json(await settle(ref));
     }
     if (body?.action !== "init") return json({ error: "Unknown action" }, 400);
+    if (!CHAPA_CHECKOUT_ENABLED) return json({ error: "Chapa checkout is temporarily paused. Please use CBE receipt verification." }, 503);
     const origin = String(body.origin ?? "");
     if (!/^https?:\/\/[^\s/]+$/.test(origin)) return json({ error: "Invalid origin" }, 400);
 

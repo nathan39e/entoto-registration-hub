@@ -37,3 +37,4 @@
 - [x] Pause new Chapa checkouts while retaining settlement of existing payments.
 - [x] Store contact messages and add admin inbox with private visitor replies.
 - [x] Verify contact submission, admin reply, visitor readback and access restrictions.
+- [ ] Restore department-head student search, read-only full files and department-scoped document access; test isolation.

@@ -19,6 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import StudentQRScanner from "@/components/StudentQRScanner";
 import PortalExamManager from "@/components/department/PortalExamManager";
+import StudentFileDialog from "@/components/department/StudentFileDialog";
+import { belongsToDepartment, matchesDepartmentSearch } from "@/lib/departmentStudents";
 
 const DECISIONS: Record<string, string> = { under_review: "Under review", accepted: "Accepted", waitlisted: "Waitlisted", rejected: "Rejected" };
 
@@ -40,26 +42,34 @@ const DepartmentHeadDashboard = () => {
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [fileFor, setFileFor] = useState<any>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const refresh = async () => {
     if (!dept) return;
     setRefreshing(true);
-    await Promise.all([loadStudents(dept), loadExits(dept)]);
+    const [loaded] = await Promise.all([loadStudents(dept), loadExits(dept)]);
     setRefreshing(false);
-    toast.success("Student list refreshed");
+    if (loaded) toast.success("Student list refreshed");
   };
 
   const loadStudents = async (d: string) => {
-    const [{ data: apps }, { data: profs }, { data: pls }] = await Promise.all([
+    const [appResult, profileResult, placementResult] = await Promise.all([
       fetchAll(() => supabase.from("applications").select("*").order("submitted_at", { ascending: false }).order("id")),
       fetchAll(() => supabase.from("profiles").select("id, full_name, email, phone, student_code").order("id")),
       fetchAll(() => supabase.from("department_placements").select("*").order("application_id")),
     ]);
+    const error = appResult.error ?? profileResult.error ?? placementResult.error;
+    if (error) { setLoadError(error.message); toast.error("Could not load students: " + error.message); return false; }
+    setLoadError(null);
+    const apps = appResult.data, profs = profileResult.data, pls = placementResult.data;
     const rows = (apps ?? []).map((a) => {
       const pl = pls?.find((x) => x.application_id === a.id);
       return { ...a, profile: profs?.find((p) => p.id === a.user_id), placement: pl };
-    }).filter((a) => (a.placement ? a.placement.current_department === d || a.placement.placed_department === d : a.first_department === d));
+    }).filter((a) => belongsToDepartment(a, d));
     setStudents(rows);
+    return true;
   };
 
   const loadExams = async (d: string) => {
@@ -109,7 +119,7 @@ const DepartmentHeadDashboard = () => {
     setEvalFor(null); loadStudents(dept);
   };
   const fields = dept ? DEPARTMENT_FIELDS[dept] ?? [] : [];
-  const shown = students.filter((s) => (field === "All" || fieldOf(choiceOf(s)) === field) && (programFilter === "All" || s.program === programFilter) && (decisionFilter === "all" || decisionOf(s) === decisionFilter));
+  const shown = students.filter((s) => matchesDepartmentSearch(s, search) && (field === "All" || fieldOf(choiceOf(s)) === field) && (programFilter === "All" || s.program === programFilter) && (decisionFilter === "all" || decisionOf(s) === decisionFilter));
 
   const addExam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +142,6 @@ const DepartmentHeadDashboard = () => {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">{dept} Department</h1>
           <Button className="mt-3" onClick={() => navigate("/staff/apply")}>Register a Student</Button>
-          <p className="text-muted-foreground">Students who chose {dept} as their first choice</p>
         </div>
 
         {dept && <StudentQRScanner department={dept} />}
@@ -193,6 +202,8 @@ const DepartmentHeadDashboard = () => {
               <CardTitle>Students ({shown.length})</CardTitle>
               <Button variant="outline" size="sm" onClick={refresh} disabled={refreshing} aria-label="Refresh student list"><RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} />{refreshing ? "Refreshing..." : "Refresh"}</Button>
             </div>
+            <Input aria-label="Search department students" placeholder="Search name, student ID, phone or email" value={search} onChange={e => setSearch(e.target.value)} className="mt-3 max-w-lg" />
+            {loadError && <p className="text-sm text-destructive" role="alert">Students could not be loaded. {loadError}</p>}
             <div className="flex flex-wrap gap-2 pt-2">
               {["All", ...fields].map((f) => <Button key={f} size="sm" variant={field === f ? "default" : "outline"} onClick={() => setField(f)}>{f}</Button>)}
             </div>
@@ -222,14 +233,16 @@ const DepartmentHeadDashboard = () => {
                     <TableCell><Badge variant="outline">{s.status === "waiting_list" ? "Waiting list" : s.status}</Badge></TableCell>
                     <TableCell>{s.placement?.exam_score ?? "-"}</TableCell>
                     <TableCell><Badge variant={decisionOf(s) === "accepted" ? "default" : decisionOf(s) === "rejected" ? "destructive" : "secondary"}>{DECISIONS[decisionOf(s)]}</Badge></TableCell>
-                    <TableCell>{(!s.placement || s.placement.current_department === dept) && <Button size="sm" variant="outline" onClick={() => openEval(s)}>Score &amp; Place</Button>}</TableCell>
+                    <TableCell><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => setFileFor(s)}>View file</Button>{(!s.placement || s.placement.current_department === dept) && <Button size="sm" variant="outline" onClick={() => openEval(s)}>Score &amp; Place</Button>}</div></TableCell>
                   </TableRow>
                 ))}
+                {shown.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground">{loadError ? "Student list unavailable." : "No students match these filters."}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       </main>
+      {fileFor && <StudentFileDialog student={fileFor} onClose={() => setFileFor(null)} />}
       <Dialog open={!!evalFor} onOpenChange={(o) => !o && setEvalFor(null)}>
         <DialogContent>
           <DialogHeader>

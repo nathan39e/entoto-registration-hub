@@ -945,6 +945,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      head_can_view_student: { Args: { _student: string }; Returns: boolean }
       head_department: { Args: { _user_id: string }; Returns: string }
       is_referred_to_head: {
         Args: { _app_user: string; _user_id: string }

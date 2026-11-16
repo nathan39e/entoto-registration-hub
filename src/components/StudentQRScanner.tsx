@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { QrCode, Search, X } from "lucide-react";
+import { belongsToDepartment } from "@/lib/departmentStudents";
 
 /** Scans a student's QR (TMPC:<code>). Pass `department` to limit results to that department (department heads). */
 const StudentQRScanner = ({ department }: { department?: string }) => {
@@ -37,8 +38,7 @@ const StudentQRScanner = ({ department }: { department?: string }) => {
     ]);
     setLoading(false);
     if (department) {
-      const depts = [app?.first_department, pl?.current_department, pl?.placed_department];
-      if (!depts.includes(department)) return setError("This student is not under your department.");
+      if (!belongsToDepartment({ first_department: app?.first_department, placement: pl }, department)) return setError("This student is not under your department.");
     }
     setResult({ prof, app, pl, pay });
   };

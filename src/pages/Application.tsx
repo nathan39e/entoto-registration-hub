@@ -48,6 +48,21 @@ const schema = z.object({
 const toDataUrl = (f: File) => new Promise<string>((res, rej) => {
   const r = new FileReader(); r.onload = () => res(r.result as string); r.onerror = rej; r.readAsDataURL(f);
 });
+// Downscale images (max 1280px side) before sending to AI readers to cut vision tokens.
+const toAiDataUrl = async (f: File, maxDim = 1280): Promise<string> => {
+  if (!f.type.startsWith("image/")) return toDataUrl(f);
+  try {
+    const bmp = await createImageBitmap(f);
+    const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    const ctx = c.getContext("2d");
+    if (!ctx) { bmp.close?.(); return toDataUrl(f); }
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bmp, 0, 0, w, h); bmp.close?.();
+    return c.toDataURL("image/jpeg", 0.85);
+  } catch { return toDataUrl(f); }
+};
 const MAX = 5 * 1024 * 1024;
 const isImg = (f: File) => f.type.startsWith("image/");
 const isDoc = (f: File) => isImg(f) || f.type === "application/pdf";
@@ -135,7 +150,7 @@ const Application = ({ staffMode = false, editMode = false }: { staffMode?: bool
     if (!isImg(f) || f.size > MAX) return toast.error("Please upload a photo (JPG/PNG) of the form under 5MB.");
     setReading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("read-form", { body: { image: await toDataUrl(f) } });
+      const { data, error } = await supabase.functions.invoke("read-form", { body: { image: await toAiDataUrl(f) } });
       if (error || data?.error) throw new Error(data?.error || "Could not read the form");
       const x: Record<string, string> = data.fields ?? {};
       const matchDept = (s?: string) => s ? DEPARTMENTS.find((d) => d.toLowerCase().includes(s.toLowerCase().split(" ")[0]) || s.toLowerCase().includes(d.toLowerCase().split(" ")[0])) : undefined;
@@ -168,7 +183,7 @@ const pickResultDoc = async (f: File | null) => {
       let scan: { extracted?: number | null; isDocument?: boolean; subjects?: Record<string, number>; error?: string } | null = null;
       let source: "ai" | "browser" = "ai";
       try {
-        const res = await supabase.functions.invoke("verify-grade", { body: { image: await toDataUrl(f) } });
+        const res = await supabase.functions.invoke("verify-grade", { body: { image: await toAiDataUrl(f) } });
         if (res.error || res.data?.error || !res.data?.isDocument) throw new Error("AI reader unavailable or could not read the document");
         scan = res.data;
       } catch {
@@ -233,13 +248,9 @@ let ver: { match: boolean; extracted?: number | null; isDocument: boolean } = { 
       } else if (docScan && docScan.file === resultDoc && docScan.isDocument && docScan.extracted != null) {
         ver = { match: Math.abs(docScan.extracted - parsed.data.grade12) < 0.01, extracted: docScan.extracted, isDocument: true };
       } else {
-        toast.info("Verifying your result document...");
-        const image = await toDataUrl(resultDoc);
-        const { data: scanned, error: verErr } = await supabase.functions.invoke("verify-grade", {
-          body: { image, enteredScore: parsed.data.grade12 },
-        });
-        // If the AI checker is unavailable, accept the typed score; staff verify the slip image manually.
-        ver = verErr || scanned?.error ? { match: true, isDocument: true, extracted: null } : scanned;
+        // Reuse the upload-time scan; never call the AI reader a second time. Staff verify the slip manually.
+        const scanned = docScan && docScan.file === resultDoc ? docScan : null;
+        ver = { match: true, isDocument: scanned ? scanned.isDocument : true, extracted: scanned?.extracted ?? null };
       }
       // Never block registration on the reader: every application is reviewed by staff before approval.
       if (!ver.isDocument || !ver.match) toast.info("We couldn't confirm your mark from the photo automatically. Staff will check your result slip.");

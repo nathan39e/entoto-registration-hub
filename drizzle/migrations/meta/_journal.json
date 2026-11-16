@@ -309,6 +309,20 @@
       "when": 1794813642553,
       "tag": "0043_department_head_student_files",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1794820697048,
+      "tag": "0044_restrict_role_lookups_finance_self",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1794820706807,
+      "tag": "0045_anon_has_role_for_public_news",
+      "breakpoints": true
     }
   ]
 }

@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
   try {
     // Chapa callback (GET) or webhook (POST without auth)
     const cbRef = url.searchParams.get("trx_ref") || url.searchParams.get("tx_ref");
-    if (req.method === "GET") return json(cbRef ? await settle(cbRef) : { ok: true });
+    if (req.method === "GET") { if (cbRef) await settle(cbRef); return json({ ok: true }); }
 
     const body = await req.json().catch(() => ({}));
     if (!req.headers.get("Authorization") && (body?.tx_ref || body?.trx_ref)) return json(await settle(String(body.tx_ref ?? body.trx_ref)));

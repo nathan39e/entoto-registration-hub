@@ -30,7 +30,8 @@ Deno.serve(async (req) => {
       .filter((m: any) => (m?.role === "user" || m?.role === "assistant") && typeof m?.content === "string")
       .map((m: any) => ({ role: m.role, content: m.content.slice(0, 2000) }))
       .slice(-20);
-    const page = typeof body?.page === "string" ? body.page.slice(0, 100) : "";
+    const rawPage = typeof body?.page === "string" ? body.page : "";
+    const page = /^\/[a-z0-9\-\/]{0,60}$/i.test(rawPage) ? rawPage : "";
     let res!: Response; let data: any;
     for (const model of MODELS) {
     res = await fetch("https://api.groq.com/openai/v1/chat/completions", {

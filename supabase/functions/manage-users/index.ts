@@ -372,6 +372,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "delete_student") {
+      if (!isAdmin) return json({ error: "Admins only" }, 403);
       const id = str(body.id, 64);
       const { data: staff, error: roleLookupError } = await admin.from("user_roles").select("role").eq("user_id", id).in("role", ["admin", "sub_admin", "department_head"]);
       if (roleLookupError || staff?.length) return json({ error: "Select a student account, not a staff account." }, 403);
@@ -386,6 +387,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "set_sub_admin") {
+      if (!isAdmin) return json({ error: "Admins only" }, 403);
       const email = str(body.email, 255).toLowerCase();
       const { data: p } = await admin.from("profiles").select("id").ilike("email", email).maybeSingle();
       if (!p) return json({ error: "No account found with that email. They must sign up first." }, 404);

@@ -44,7 +44,7 @@ const StudentIDCard = ({ data }: { data: IDCardData }) => {
   const print = () => {
     const w = window.open("", "_blank", "width=900,height=700");
     if (!w || !ref.current) return;
-    w.document.write(`<html><head><title>ID Card - ${data.code}</title><style>@page{size:auto;margin:10mm}body{margin:0;display:flex;flex-direction:column;gap:8mm;align-items:center;padding:8mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${ref.current.innerHTML}</body></html>`);
+    w.document.write(`<html><head><title>ID Card - ${String(data.code).replace(/[^A-Za-z0-9-]/g, "")}</title><style>@page{size:auto;margin:10mm}body{margin:0;display:flex;flex-direction:column;gap:8mm;align-items:center;padding:8mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${ref.current.innerHTML}</body></html>`);
     w.document.close();
     const imgs = Array.from(w.document.images);
     Promise.all(imgs.map((i) => i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; })))

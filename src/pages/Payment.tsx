@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { CreditCard, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cbeFor } from "@/lib/cbe";
+import { receiptUploadBlocked } from "../../supabase/functions/_shared/paymentState";
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const Payment = () => {
         supabase.from("applications").select("status, program").eq("user_id", user.id).maybeSingle(),
       ]);
       if (app?.program) setProgram(app.program);
-      setSubmitted(data?.status === "completed" || (data?.status === "pending" && data?.payment_method !== "chapa"));
+      setSubmitted(receiptUploadBlocked(data));
       const ref = params.get("tx_ref");
       if (ref) {
         const { data: v } = await supabase.functions.invoke("chapa-pay", { body: { action: "verify", tx_ref: ref } });
@@ -54,8 +55,9 @@ const Payment = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate("/auth"); return; }
-      const { data: prior } = await supabase.from("payments").select("status").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (prior?.status === "pending" || prior?.status === "completed") { setSubmitted(true); toast.info("Your receipt has already been submitted."); return; }
+      const { data: prior, error: priorError } = await supabase.from("payments").select("status, payment_method").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (priorError) throw priorError;
+      if (receiptUploadBlocked(prior)) { setSubmitted(true); toast.info("Your receipt has already been submitted."); return; }
       const ext = receipt.name.split(".").pop() || "jpg";
       const receipt_path = `${user.id}/receipt-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("result-docs").upload(receipt_path, receipt, { contentType: receipt.type });

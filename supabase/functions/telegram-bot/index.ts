@@ -3,6 +3,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { ownContact, validFullName } from "./rules.ts";
 import { ACCOUNT_REQUEST_TTL_MS, recoverOwnAccount } from "./recovery.ts";
 import { cbeFor } from "../_shared/cbe.ts";
+import { receiptAwaitingReview } from "../_shared/paymentState.ts";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
 
@@ -281,12 +282,12 @@ Deno.serve(async (req) => {
     if (!link) { await send(chatId, "🔒 Tap <b>📱 Share My Phone Number</b> first so we can find your record, then send the receipt photo again.", SHARE_KB); return json({ ok: true }); }
     const [{ data: a }, { data: prior }] = await Promise.all([
       db.from("applications").select("program, status").eq("user_id", link.user_id).maybeSingle(),
-      db.from("payments").select("status").eq("user_id", link.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      db.from("payments").select("status, payment_method").eq("user_id", link.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
     if (!a) { await send(chatId, `📝 Please complete your application first at ${SITE}/application`); return json({ ok: true }); }
     if (["waiting_list", "rejected"].includes(a.status ?? "")) { await send(chatId, "⚠️ Receipts cannot be accepted for your current application status. Please contact the college."); return json({ ok: true }); }
     if (prior?.status === "completed") { await send(chatId, "✅ Your payment is already verified. / ክፍያዎ ተረጋግጧል።"); return json({ ok: true }); }
-    if (prior?.status === "pending") { await send(chatId, "⏳ A receipt is already awaiting review by the finance office. / ደረሰኝዎ በግምገማ ላይ ነው።"); return json({ ok: true }); }
+    if (receiptAwaitingReview(prior)) { await send(chatId, "⏳ A receipt is already awaiting review by the finance office. / ደረሰኝዎ በግምገማ ላይ ነው።"); return json({ ok: true }); }
     const file = photo ?? doc;
     if ((file.file_size ?? 0) > 5 * 1024 * 1024) { await send(chatId, "⚠️ The image is larger than 5 MB. Please send a smaller photo."); return json({ ok: true }); }
     const info = await telegram("getFile", { file_id: file.file_id });
@@ -307,8 +308,8 @@ Deno.serve(async (req) => {
   if (cmd === "/receipt") {
     const { data: link } = await db.from("telegram_student_chats").select("user_id").eq("chat_id", chatId).maybeSingle();
     if (!link) { await send(chatId, "🔒 Tap <b>📱 Share My Phone Number</b> first, then send /receipt again.", SHARE_KB); return json({ ok: true }); }
-    const { data: pay } = await db.from("payments").select("status").eq("user_id", link.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
-    const m = !pay ? "📸 No receipt yet. Send a photo of your CBE receipt here (add the transaction number as the caption)." : pay.status === "completed" ? "✅ Your payment is verified." : pay.status === "rejected" ? "❌ Your last receipt was rejected. Please send a clear photo of a valid receipt." : "⏳ Your receipt is awaiting review.";
+    const { data: pay } = await db.from("payments").select("status, payment_method").eq("user_id", link.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const m = pay?.status === "completed" ? "✅ Your payment is verified." : receiptAwaitingReview(pay) ? "⏳ Your receipt is awaiting review." : pay?.status === "rejected" ? "❌ Your last receipt was rejected. Please send a clear photo of a valid receipt." : "📸 No receipt submitted. Send a photo of your CBE receipt here (add the transaction number as the caption). An unfinished Chapa checkout does not block receipt uploads.";
     await send(chatId, m); return json({ ok: true });
   }
   if (cmd === "/pay") {
@@ -317,11 +318,11 @@ Deno.serve(async (req) => {
     const [{ data: p }, { data: a }, { data: pay }] = await Promise.all([
       db.from("profiles").select("full_name, student_code").eq("id", link.user_id).maybeSingle(),
       db.from("applications").select("program").eq("user_id", link.user_id).maybeSingle(),
-      db.from("payments").select("status").eq("user_id", link.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      db.from("payments").select("status, payment_method").eq("user_id", link.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     ]);
     if (pay?.status === "completed") { await send(chatId, "✅ Your payment is already verified. / ክፍያዎ ተረጋግጧል።"); return json({ ok: true }); }
     const program = a?.program ?? "Regular"; const { account, amount } = cbeFor(program);
-    await send(chatId, `💳 <b>Payment details / የክፍያ መረጃ</b>\n\n👤 ${esc(p?.full_name ?? "")}\n🆔 ${esc(p?.student_code ?? "")}\n📚 Program: ${esc(program)}\n💰 Amount: <b>${amount} ETB</b>\n🏦 CBE Account: <code>${account}</code>\n\nWrite your Student ID as the reason, then send a photo of the receipt here (transaction number as caption) or upload it at ${SITE}/payment${pay?.status === "pending" ? "\n\n⏳ A receipt is already awaiting review." : ""}`);
+    await send(chatId, `💳 <b>Payment details / የክፍያ መረጃ</b>\n\n👤 ${esc(p?.full_name ?? "")}\n🆔 ${esc(p?.student_code ?? "")}\n📚 Program: ${esc(program)}\n💰 Amount: <b>${amount} ETB</b>\n🏦 CBE Account: <code>${account}</code>\n\nWrite your Student ID as the reason, then send a photo of the receipt here (transaction number as caption) or upload it at ${SITE}/payment${receiptAwaitingReview(pay) ? "\n\n⏳ A receipt is already awaiting review." : ""}`);
     return json({ ok: true });
   }
   let input = text;

@@ -12,6 +12,7 @@ import RegistrationSlip from "@/components/RegistrationSlip";
 import StudentIDCard from "@/components/StudentIDCard";
 import { recommendPsychDepartments } from "@/lib/psychExam";
 import StudentPortalExams from "@/components/department/StudentPortalExams";
+import { paymentDisplayStatus, receiptUploadBlocked } from "../../supabase/functions/_shared/paymentState";
 
 const statusBadge = (s?: string | null) => {
   if (!s) return <Badge variant="outline">Not started</Badge>;
@@ -60,7 +61,7 @@ const StudentDashboard = () => {
   const bestFit = scores ? recommendPsychDepartments(scores)[0] ?? null : null;
   const approved = app?.status === "approved" && payment?.status === "completed";
   const canContinue = !!app && !["waiting_list", "rejected", "pending"].includes(app.status);
-  const payStatus = payment?.status === "completed" ? "completed" : payment?.status === "rejected" ? "rejected" : payment ? "awaiting verification" : null;
+  const payStatus = paymentDisplayStatus(payment);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -191,7 +192,7 @@ const StudentDashboard = () => {
             <div className="flex flex-wrap gap-4 justify-center">
               <Button size="lg" onClick={() => navigate("/application")}>{app ? "View My Application" : "Apply Now"}</Button>
               {canContinue && !result && <Button size="lg" variant="outline" onClick={() => navigate("/psychometric-exam")}>Take Psychometric Exam</Button>}
-              {app && !["waiting_list", "rejected"].includes(app.status) && (!payment || payment.status === "rejected") && <Button size="lg" variant="outline" onClick={() => navigate("/payment")}>Upload Payment Receipt</Button>}
+              {app && !["waiting_list", "rejected"].includes(app.status) && !receiptUploadBlocked(payment) && <Button size="lg" variant="outline" onClick={() => navigate("/payment")}>Upload Payment Receipt</Button>}
               <Button size="lg" variant="outline" onClick={() => navigate("/portfolio")}>View Portfolio</Button>
             </div>
           </div>

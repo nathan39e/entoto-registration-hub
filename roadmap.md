@@ -38,3 +38,4 @@
 - [x] Store contact messages and add admin inbox with private visitor replies.
 - [x] Verify contact submission, admin reply, visitor readback and access restrictions.
 - [x] Restore department-head student search, read-only full files and department-scoped document access; 25 tests passed, both heads' real file views verified, cross-department reads denied.
+- [x] Fix abandoned Chapa checkout receipt blockers in dashboard, website and Telegram; 6 tests and simulated authenticated upload passed; no affected live record available for a real checkout test.

@@ -25,5 +25,5 @@
 - Open private student documents via src/lib/privateDoc.ts (session download to blob URL), never signed URLs, so revoked staff lose access immediately.
 - Finance staff send CBE payment requests only via the student Telegram bot (finance-request function); chats are linked only when a student shares their own contact matching a unique personal phone, so requests never go to the wrong person. CBE account mapping lives in supabase/functions/_shared/cbe.ts and src/lib/cbe.ts (keep in sync; tested).
 - Contact submissions are validated and stored by contact-message; admins read via RLS and reply through role-checked RPCs, while visitors read only their conversation using a hashed bearer token because guests have no authenticated identity.
-- Chapa checkout availability is guarded server-side independently of callbacks and verification so pausing new payments never prevents settling an existing transaction.
+- Guard new Chapa checkouts separately from settlement; shared paymentState distinguishes pending checkouts from receipts so abandoned checkout never blocks CBE uploads.
 - Department-head student, profile, placement and document reads share head_can_view_student; frontend membership uses current/placed department with first-choice fallback only without placement, so search and files follow the same isolation rule.

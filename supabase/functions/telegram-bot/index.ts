@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
         await rpc("telegram_queue_private_reply", { _chat: chatId, _message: messageId, _url: `${url}/functions/v1/telegram-bot`, _secret: await deriveSecret(key) });
         await telegram("editMessageText", {
           chat_id: chatId, message_id: messageId, parse_mode: "HTML",
-          text: `🔒 <b>Your website account</b>\nEmail: <tg-spoiler>${esc(email)}</tg-spoiler>\n${password ? `New password: <tg-spoiler><code>${esc(password)}</code></tg-spoiler>\n\nTap to reveal. Your old password no longer works. Log in with this new password; you can change it later on the website.` : "\nThe new password could not be set. Contact the college."}\n\n⏱ This message is deleted after 10 minutes. To see it again, send /account and share your own contact again (a new password is created each time).\nይህ መልዕክት ከ10 ደቂቃ በኋላ ይጠፋል።`,
+          text: `🔒 <b>Your website account</b>\nEmail: <tg-spoiler>${esc(email)}</tg-spoiler>\n${password ? `New password: <tg-spoiler>${esc(password)}</tg-spoiler>\n\nTap to reveal. Your old password no longer works. Log in with this new password; you can change it later on the website.` : "\nThe new password could not be set. Contact the college."}\n\n⏱ This message is deleted after 10 minutes. To see it again, send /account and share your own contact again (a new password is created each time).\nይህ መልዕክት ከ10 ደቂቃ በኋላ ይጠፋል።`,
           reply_markup: { inline_keyboard: [[{ text: "Open college website", url: `${SITE}/auth` }]] },
         });
         await send(chatId, "Account recovery finished. /account requires sharing your own contact again.", { remove_keyboard: true });

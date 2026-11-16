@@ -728,6 +728,48 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_messages: {
+        Row: {
+          body: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_permissions: {
         Row: {
           can_edit_departments: boolean
@@ -983,6 +1025,19 @@ export type Database = {
       set_portal_exam_published: {
         Args: { _id: string; _published: boolean }
         Returns: undefined
+      }
+      staff_message_contacts: {
+        Args: never
+        Returns: {
+          department: string
+          full_name: string
+          role: string
+          user_id: string
+        }[]
+      }
+      staff_message_pair: {
+        Args: { _recipient: string; _sender: string }
+        Returns: boolean
       }
       start_portal_exam: {
         Args: { _exam: string }

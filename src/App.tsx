@@ -1,4 +1,5 @@
 import Copilot from "@/components/Copilot";
+import StaffMessages from "@/components/StaffMessages";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -47,6 +48,7 @@ const App = () => (
         <VisitTracker />
         <ApplyReminder />
         <Copilot />
+        <StaffMessages />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />

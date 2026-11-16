@@ -1,0 +1,1 @@
+- StaffMessages uses server-protected participant-only text records and polls only while a conversation is open, so sender permissions and file exclusion are not client-only rules.

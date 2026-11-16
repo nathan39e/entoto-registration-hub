@@ -323,6 +323,20 @@
       "when": 1794820706807,
       "tag": "0045_anon_has_role_for_public_news",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1794829452160,
+      "tag": "0046_staff_text_messages",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1794829597111,
+      "tag": "0047_restrict_staff_message_pair_lookup",
+      "breakpoints": true
     }
   ]
 }

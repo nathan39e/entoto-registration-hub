@@ -26,7 +26,7 @@ const APPLY_WARNING = "እባክዎ ሳይን አፕ (Sign Up) ካደረጉ በ�
 
 const WELCOME =
   "🎓 <b>እንኳን ወደ ተፈሪ መኮንን ፖሊ ቴክኒክ ኮሌጅ በደህና መጡ!</b>\nWelcome to Teferi Mekonnen Polytechnic College!\n\n" +
-  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nUse /account to see your website email and get a new password.\nMenu: /status /pay /receipt /account /editname /departments /contact /website /help";
+  "የማመልከቻዎን ሁኔታ ለማወቅ የተማሪ መለያ ቁጥርዎን (Student ID) ይላኩ።\nSend your <b>Student ID</b> or tap <b>📱 Share My Phone Number</b> to check your application status. For privacy, typed phone numbers are not accepted.\n\nUse /account to see your website email and get a new password.\nMenu: /status /pay /receipt /account /editname /changedepartment /departments /contact /website /help";
 
 const SITE = "https://tafarimakonnenn.onrender.com";
 
@@ -39,6 +39,7 @@ const HELP =
   "/status — የማመልከቻ ሁኔታ / Check application status\n" +
   "/account — Website email and a new password (shown for 10 minutes)\n" +
   "/editname — ሙሉ ስም ማስተካከል / Edit only your full name\n" +
+  "/changedepartment — ዲፓርትመንት መቀየር / Request a department change\n" +
   "/departments — ዲፓርትመንቶች / Departments & programs\n" +
   "/contact — አድራሻ / Contact the college\n" +
   "/website — ድረ-ገጽ / Portal links\n" +
@@ -330,6 +331,13 @@ Deno.serve(async (req) => {
   else if (!text || cmd === "/start") { await send(chatId, WELCOME, SHARE_KB); return Response.json({ ok: true }); }
   if (cmd === "/help") { await send(chatId, HELP); return Response.json({ ok: true }); }
   if (cmd === "/departments") { await send(chatId, DEPARTMENTS); return Response.json({ ok: true }); }
+  if (cmd === "/changedepartment" || cmd === "/changedept") {
+    await send(chatId,
+      "🏛 <b>Department change / ዲፓርትመንት መቀየር</b>\n\n" +
+      "Your request cannot be done right now. Department changes are reviewed and approved only by the college administration. Please wait patiently until an admin approves department changes — you will be informed here when your request can be processed.\n\n" +
+      "የዲፓርትመንት መቀየር ጥያቄዎ በአሁኑ ጊዜ መፈጸም አይችልም። ዲፓርትመንት መቀየር የሚችለው የኮሌጁ አስተዳደር (አድሚን) ብቻ ነው። እባክዎ አድሚኑ እስኪያጸድቅ ድረስ በትዕግስት ይጠብቁ፤ ጥያቄዎ ሲቀበል እዚሁ እናሳውቆታለን።");
+    return Response.json({ ok: true });
+  }
   if (cmd === "/contact") { await send(chatId, CONTACT); return Response.json({ ok: true }); }
   if (cmd === "/website") { await send(chatId, WEBSITE); return Response.json({ ok: true }); }
   if (contactPhone) {

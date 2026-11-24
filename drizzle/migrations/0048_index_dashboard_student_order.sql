@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS applications_submitted_at_id_idx ON public.applications (submitted_at DESC, id ASC);
+CREATE INDEX IF NOT EXISTS profiles_created_at_id_idx ON public.profiles (created_at DESC, id ASC);

@@ -42,3 +42,4 @@
 - [x] Add protected text-only admin/sub-admin ↔ department-head messaging with sender-only editing and deletion; verified real admin, sub-admin and head sessions, mobile layout, and server-side denial of recipient edits/deletes, spoofing and files.
 - [x] Correct Telegram password spoilers by removing incompatible nested code formatting; deployed, recovery tests pass; live Telegram rendering remains unverified.
 - [x] Fix excessive admin loading and incomplete staff lists; verified 2659 students, seven staff accounts, search, paging, refresh, reload and mobile layout with the signed-in admin; 24 tests passed.
+- [x] Index newest-first student queries and trim initial admin application downloads; 24 tests passed and signed-in admin counts, search, paging, document dialog and refresh verified.

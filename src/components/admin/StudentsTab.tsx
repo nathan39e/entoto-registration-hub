@@ -1,4 +1,5 @@
 import { fetchAll } from "@/lib/fetchAll";
+import { fetchAdminApplications, type AdminApplication } from "@/lib/adminApplications";
 import { privateDocUrl } from "@/lib/privateDoc";
 import { useEffect, useMemo, useState } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
@@ -22,13 +23,12 @@ import FilterCounts from "@/components/FilterCounts";
 import { occupationOf } from "@/lib/studentExport";
 import { matchesStudentExport } from "@/lib/studentExport";
 import { formatEthiopianDate } from "@/lib/ethiopianCalendar";
-import type { Database } from "@/integrations/supabase/types";
 
 type Profile = { id: string; full_name: string; email: string; phone: string | null; student_code: string; created_at: string; registered_by: string | null };
 
 export type StudentListData = {
   profiles: Profile[];
-  applications: Database["public"]["Tables"]["applications"]["Row"][];
+  applications: AdminApplication[];
   staffIds: string[];
 };
 
@@ -46,7 +46,7 @@ const StudentsTab = ({ statusPreset, initialData }: { statusPreset?: { value: st
   const [status, setStatus] = useState("All");
   useEffect(() => { if (statusPreset && statusPreset.n > 0) setStatus(statusPreset.value); }, [statusPreset]);
   const [occupation, setOccupation] = useState("All");
-  const [applications, setApplications] = useState<Database["public"]["Tables"]["applications"]["Row"][]>(initialData?.applications ?? []);
+  const [applications, setApplications] = useState<AdminApplication[]>(initialData?.applications ?? []);
   const [page, setPage] = useState(1);
   const [docs, setDocs] = useState<{ name: string; links: [string, string][] } | null>(null);
   const navigate = useNavigate();
@@ -77,7 +77,7 @@ const StudentsTab = ({ statusPreset, initialData }: { statusPreset?: { value: st
     const [profiles, roles, apps] = await Promise.all([
       fetchAll(() => supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }).order("id")),
       fetchAll(() => supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer", "finance"]).order("id")),
-      fetchAll(() => supabase.from("applications").select("*").order("id")),
+      fetchAdminApplications(),
     ]);
     if (profiles.error || roles.error || apps.error) { toast.error("Could not load students. Please try refreshing."); return false; }
     setApplications(apps.data ?? []);

@@ -1,4 +1,5 @@
 import { fetchAll } from "@/lib/fetchAll";
+import { fetchAdminApplications } from "@/lib/adminApplications";
 import { privateDocUrl } from "@/lib/privateDoc";
 import GenderStats from "@/components/GenderStats";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -150,7 +151,7 @@ const AdminDashboard = () => {
     setLoadError(false);
     try {
       const [appsResponse, resultsResponse, paymentsResponse, profilesResponse, settingsResponse, staffResponse] = await Promise.all([
-        fetchAll(() => supabase.from("applications").select("*").order("submitted_at", { ascending: false }).order("id")),
+        fetchAdminApplications(),
         fetchAll(() => supabase.from("psychometric_results").select("id, user_id, completed_at, scores, recommended_departments").order("completed_at", { ascending: false }).order("id")),
         fetchAll(() => supabase.from("payments").select("*").order("created_at", { ascending: false }).order("id")),
         fetchAll(() => supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }).order("id")),

@@ -1,1 +1,2 @@
 - StaffMessages uses server-protected participant-only text records and polls only while a conversation is open, so sender permissions and file exclusion are not client-only rules.
+- Admin student lists reuse the dashboard's initial records and page rendering after filtering, so totals/search/exports stay complete without duplicate downloads or thousands of mounted controls.

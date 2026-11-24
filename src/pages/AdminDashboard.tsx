@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import StudentsTab from "@/components/admin/StudentsTab";
+import StudentsTab, { type StudentListData } from "@/components/admin/StudentsTab";
 import ExamFormsTab from "@/components/admin/ExamFormsTab";
 import SubAdminsTab from "@/components/admin/SubAdminsTab";
 import DepartmentHeadsTab from "@/components/admin/DepartmentHeadsTab";
@@ -67,6 +67,8 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [studentData, setStudentData] = useState<StudentListData>();
   const [applications, setApplications] = useState<Application[]>([]);
   const [results, setResults] = useState<PsychometricResult[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -107,6 +109,8 @@ const AdminDashboard = () => {
   }, []);
 
   const checkAdminAccess = async () => {
+    setLoadError(false);
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -122,7 +126,8 @@ const AdminDashboard = () => {
         .eq("role", "admin")
         .maybeSingle();
 
-      if (error || !roleData) {
+      if (error) throw error;
+      if (!roleData) {
         toast({
           title: "Access Denied",
           description: "You don't have permission to access this page.",
@@ -135,21 +140,27 @@ const AdminDashboard = () => {
       await fetchData();
     } catch (error) {
       console.error("Error checking admin access:", error);
-      navigate("/");
+      setLoadError(true);
+      setLoading(false);
     }
   };
 
   const fetchData = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const [appsResponse, resultsResponse, paymentsResponse, profilesResponse, settingsResponse, staffResponse] = await Promise.all([
         fetchAll(() => supabase.from("applications").select("*").order("submitted_at", { ascending: false }).order("id")),
-        fetchAll(() => supabase.from("psychometric_results").select("*").order("completed_at", { ascending: false }).order("id")),
+        fetchAll(() => supabase.from("psychometric_results").select("id, user_id, completed_at, scores, recommended_departments").order("completed_at", { ascending: false }).order("id")),
         fetchAll(() => supabase.from("payments").select("*").order("created_at", { ascending: false }).order("id")),
-        fetchAll(() => supabase.from("profiles").select("id, full_name, email, student_code").order("id")),
+        fetchAll(() => supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }).order("id")),
         supabase.from("admission_settings").select("grade_12_cutoff, female_grade_12_cutoff, exam_start, exam_end").eq("id", true).maybeSingle(),
         fetchAll(() => supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer", "finance"]).order("id")),
       ]);
+      for (const response of [appsResponse, resultsResponse, paymentsResponse, profilesResponse, settingsResponse, staffResponse]) {
+        if (response.error) throw response.error;
+      }
+      setStudentData({ profiles: profilesResponse.data, applications: appsResponse.data, staffIds: staffResponse.data.map(r => r.user_id) });
       const map = new Map((profilesResponse.data ?? []).map((p) => [p.id, p]));
       const staffIds = new Set((staffResponse.data ?? []).map((r) => r.user_id));
       const appliedIds = new Set((appsResponse.data ?? []).map((a) => a.user_id));
@@ -177,6 +188,7 @@ const AdminDashboard = () => {
       knownPaymentIds.current = new Set((paymentsResponse.data ?? []).map((p) => p.id));
     } catch (error) {
       console.error("Error fetching data:", error);
+      setLoadError(true);
       toast({ title: "Error", description: "Failed to load dashboard data.", variant: "destructive" });
     } finally {
       setLoading(false);
@@ -184,9 +196,12 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || loadError) return;
+    let refreshing = false;
     const refreshPayments = async () => {
-      if (document.visibilityState !== "visible") return;
+      if (document.visibilityState !== "visible" || refreshing) return;
+      refreshing = true;
+      try {
       const { data, error } = await fetchAll(() => supabase.from("payments").select("*").order("created_at", { ascending: false }).order("id"));
       if (error || !data) return;
       const newReceipts = data.filter((p) => p.status === "pending" && !knownPaymentIds.current?.has(p.id));
@@ -194,15 +209,20 @@ const AdminDashboard = () => {
         toast({ title: "New payment receipt", description: `${newReceipts.length} student${newReceipts.length > 1 ? "s have" : " has"} submitted a receipt for approval.` });
       }
       knownPaymentIds.current = new Set(data.map((p) => p.id));
-      const ids = data.map((p) => p.user_id);
-      const { data: profiles } = ids.length ? await supabase.from("profiles").select("id, full_name, email, student_code").in("id", ids) : { data: [] };
-      const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+      const byId = new Map((studentData?.profiles ?? []).map((p) => [p.id, p]));
+      const missingIds = [...new Set(data.map(p => p.user_id))].filter(id => !byId.has(id));
+      if (missingIds.length) {
+        const { data: profiles } = await fetchAll(() => supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").in("id", missingIds).order("id"));
+        profiles.forEach(p => byId.set(p.id, p));
+      }
       setPayments(data.map((p) => ({ ...p, profiles: byId.get(p.user_id) ?? { full_name: "Unknown", email: "", student_code: "-" } })));
+      } catch (error) { console.error("Payment refresh failed:", error); }
+      finally { refreshing = false; }
     };
     const timer = window.setInterval(refreshPayments, 15000);
     document.addEventListener("visibilitychange", refreshPayments);
     return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", refreshPayments); };
-  }, [loading, toast]);
+  }, [loading, loadError, studentData, toast]);
 
   const [docUrl, setDocUrl] = useState<string | null>(null);
 
@@ -331,6 +351,17 @@ const AdminDashboard = () => {
     );
   }
 
+  if (loadError) {
+    return <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1 flex flex-col items-center justify-center gap-4 px-4">
+        <p className="text-muted-foreground">Could not load the admin dashboard. Please try again.</p>
+        <Button onClick={() => void checkAdminAccess()}>Retry</Button>
+      </main>
+      <Footer />
+    </div>;
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -350,7 +381,7 @@ const AdminDashboard = () => {
                 tabIndex={interactive ? 0 : undefined}
                 aria-label={interactive ? `${stat.title} — open the registered students list` : undefined}
                 onClick={stat.onSelect}
-                onKeyDown={interactive ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); stat.onSelect!(); } } : undefined}
+                onKeyDown={interactive ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); stat.onSelect?.(); } } : undefined}
                 className={interactive ? "cursor-pointer transition-all hover:border-primary/60 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""}
               >
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -423,7 +454,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="payments" className="flex-1 min-w-[7rem]">Payments {payments.filter((p) => p.status === "pending").length > 0 && <Badge variant="destructive" className="ml-2">{payments.filter((p) => p.status === "pending").length}</Badge>}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="students" className="mt-6"><div ref={studentsRef} id="registered-students" className="scroll-mt-28"><StudentsTab statusPreset={studentStatus} /></div></TabsContent>
+          <TabsContent value="students" className="mt-6"><div ref={studentsRef} id="registered-students" className="scroll-mt-28"><StudentsTab statusPreset={studentStatus} initialData={studentData} /></div></TabsContent>
           <TabsContent value="subadmins" className="mt-6"><SubAdminsTab /></TabsContent>
           <TabsContent value="admins" className="mt-6"><AdminsTab /></TabsContent>
           <TabsContent value="exams" className="mt-6"><ExamFormsTab /></TabsContent>

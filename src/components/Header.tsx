@@ -22,11 +22,19 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
+    let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const updateRoles = (userId: string) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { if (active) void checkAdminStatus(userId); }, 0);
+    };
     // Check initial auth state
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active) return;
+      const user = session?.user ?? null;
       setUser(user);
       if (user) {
-        checkAdminStatus(user.id);
+        updateRoles(user.id);
       }
     });
 
@@ -40,14 +48,17 @@ const Header = () => {
       }
       if (event === "SIGNED_OUT") sessionStorage.removeItem("tmpc-greeted");
       if (session?.user) {
-        checkAdminStatus(session.user.id);
+        updateRoles(session.user.id);
       } else {
         setIsAdmin(false);
         setIsStaff(false);
+        setIsHead(false);
+        setIsViewer(false);
+        setIsFinance(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => { active = false; clearTimeout(timer); subscription.unsubscribe(); };
   }, []);
 
   const checkAdminStatus = async (userId: string) => {

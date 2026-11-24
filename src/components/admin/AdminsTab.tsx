@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { randomPassword } from "@/lib/staffPassword";
+import { fetchAll } from "@/lib/fetchAll";
 
 type Row = { id: string; full_name: string; email: string; phone: string | null; registered_by: string | null; viewer?: boolean; finance?: boolean };
 
@@ -21,8 +22,11 @@ export default function AdminsTab() {
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser(); if (!user) return;
     setMe(user.id);
-    const [permission, roles, profiles] = await Promise.all([supabase.rpc("can_create_admin", { _user: user.id }), supabase.from("user_roles").select("user_id, role").in("role", ["admin", "viewer", "finance"]), supabase.from("profiles").select("id, full_name, email, phone, registered_by")]);
-    if (permission.error || roles.error || profiles.error) return toast.error("Could not load admins");
+    const [permission, roles] = await Promise.all([supabase.rpc("can_create_admin", { _user: user.id }), fetchAll(() => supabase.from("user_roles").select("user_id, role").in("role", ["admin", "viewer", "finance"]).order("id"))]);
+    if (permission.error || roles.error) return toast.error("Could not load admins");
+    const ids = [...new Set(roles.data.map(r => r.user_id))];
+    const profiles = ids.length ? await fetchAll(() => supabase.from("profiles").select("id, full_name, email, phone, registered_by").in("id", ids).order("id")) : { data: [], error: null };
+    if (profiles.error) return toast.error("Could not load admins");
     setAllowed(permission.data === true);
     if (permission.data === true) { const st = await supabase.functions.invoke("manage-users", { body: { action: "admin_block_status" } }); setBlocked(st.data?.blocked ?? []); }
     setRows((profiles.data ?? []).filter((p) => roles.data?.some((r) => r.user_id === p.id)).map((p) => ({ ...p, finance: roles.data?.some((r) => r.user_id === p.id && r.role === "finance"), viewer: roles.data?.some((r) => r.user_id === p.id && r.role === "viewer") && !roles.data?.some((r) => r.user_id === p.id && r.role === "admin") })));

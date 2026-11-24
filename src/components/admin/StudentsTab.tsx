@@ -1,7 +1,8 @@
 import { fetchAll } from "@/lib/fetchAll";
 import { privateDocUrl } from "@/lib/privateDoc";
-import { useEffect, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { listPage } from "@/lib/listPage";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,8 +26,14 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Profile = { id: string; full_name: string; email: string; phone: string | null; student_code: string; created_at: string; registered_by: string | null };
 
-const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: number } }) => {
-  const [students, setStudents] = useState<Profile[]>([]);
+export type StudentListData = {
+  profiles: Profile[];
+  applications: Database["public"]["Tables"]["applications"]["Row"][];
+  staffIds: string[];
+};
+
+const StudentsTab = ({ statusPreset, initialData }: { statusPreset?: { value: string; n: number }; initialData?: StudentListData }) => {
+  const [students, setStudents] = useState<Profile[]>(() => initialData?.profiles.filter(p => !initialData.staffIds.includes(p.id)) ?? []);
   const [q, setQ] = useState("");
   const [edit, setEdit] = useState<Profile | null>(null);
   const [del, setDel] = useState<Profile | null>(null);
@@ -39,7 +46,8 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
   const [status, setStatus] = useState("All");
   useEffect(() => { if (statusPreset && statusPreset.n > 0) setStatus(statusPreset.value); }, [statusPreset]);
   const [occupation, setOccupation] = useState("All");
-  const [applications, setApplications] = useState<Database["public"]["Tables"]["applications"]["Row"][]>([]);
+  const [applications, setApplications] = useState<Database["public"]["Tables"]["applications"]["Row"][]>(initialData?.applications ?? []);
+  const [page, setPage] = useState(1);
   const [docs, setDocs] = useState<{ name: string; links: [string, string][] } | null>(null);
   const navigate = useNavigate();
 
@@ -66,18 +74,30 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
   };
 
   const load = async () => {
-    const [{ data }, { data: roles }, apps] = await Promise.all([
+    const [profiles, roles, apps] = await Promise.all([
       fetchAll(() => supabase.from("profiles").select("id, full_name, email, phone, student_code, created_at, registered_by").order("created_at", { ascending: false }).order("id")),
       fetchAll(() => supabase.from("user_roles").select("user_id").in("role", ["admin", "sub_admin", "department_head", "viewer", "finance"]).order("id")),
       fetchAll(() => supabase.from("applications").select("*").order("id")),
     ]);
-    if (apps.error) return toast.error("Could not load application filters");
+    if (profiles.error || roles.error || apps.error) { toast.error("Could not load students. Please try refreshing."); return false; }
     setApplications(apps.data ?? []);
-    const admins = new Set((roles ?? []).map((r) => r.user_id));
-    setStudents(((data as Profile[]) ?? []).filter((p) => !admins.has(p.id)));
+    const admins = new Set((roles.data ?? []).map((r) => r.user_id));
+    setStudents(((profiles.data as Profile[]) ?? []).filter((p) => !admins.has(p.id)));
+    return true;
   };
-  useEffect(() => { load(); }, []);
-  const refresh = async () => { setRefreshing(true); await load(); setRefreshing(false); toast.success("Student list refreshed"); };
+  useEffect(() => {
+    if (initialData) {
+      const staff = new Set(initialData.staffIds);
+      setStudents(initialData.profiles.filter(p => !staff.has(p.id)));
+      setApplications(initialData.applications);
+    } else void load();
+  }, [initialData]);
+  const refresh = async () => {
+    setRefreshing(true);
+    try { if (await load()) toast.success("Student list refreshed"); }
+    catch { toast.error("Could not refresh students. Please try again."); }
+    finally { setRefreshing(false); }
+  };
   const [pickOpen, setPickOpen] = useState(false);
 
   const call = async (body: Record<string, unknown>) => {
@@ -135,7 +155,10 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
     XLSX.writeFile(wb, `students-${from || "start"}-to-${to || new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const filtered = students.filter((p) => matchesStudentExport(p, applications.find((x) => x.user_id === p.id), { from, to, department, program, status, search: q, occupation }));
+  const byUser = useMemo(() => new Map(applications.map(a => [a.user_id, a])), [applications]);
+  const filtered = useMemo(() => students.filter((p) => matchesStudentExport(p, byUser.get(p.id), { from, to, department, program, status, search: q, occupation })), [students, byUser, from, to, department, program, status, q, occupation]);
+  useEffect(() => { setPage(1); }, [from, to, department, program, status, q, occupation]);
+  const paged = listPage(filtered, page);
   const filterControls = <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
     <div><Label>Department</Label><Select value={department} onValueChange={(v) => { setDepartment(v); setOccupation("All"); }}><SelectTrigger aria-label="Export department"><SelectValue /></SelectTrigger><SelectContent>{["All", ...DEPARTMENTS].map((d) => <SelectItem key={d} value={d}>{d === "All" ? "All departments" : d}</SelectItem>)}</SelectContent></Select></div>
     <div><Label>Program</Label><Select value={program} onValueChange={setProgram}><SelectTrigger aria-label="Export program"><SelectValue /></SelectTrigger><SelectContent>{["All", "Regular", "Extension", "Weekend"].map((p) => <SelectItem key={p} value={p}>{p === "All" ? "All programs" : p}</SelectItem>)}</SelectContent></Select></div>
@@ -160,12 +183,12 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
           </div>
           <p className="text-xs text-muted-foreground">The list and the Excel download only include students registered in the chosen dates.</p>
           {filterControls}
-          <FilterCounts items={filtered.map((p) => { const a = applications.find((x) => x.user_id === p.id); return { program: a?.program, occupation: occupationOf(a?.first_choice) }; })} />
+          <FilterCounts items={filtered.map((p) => { const a = byUser.get(p.id); return { program: a?.program, occupation: occupationOf(a?.first_choice) }; })} />
         </CardHeader>
         <CardContent>
           <div className="sm:hidden max-h-[600px] overflow-y-auto space-y-3">
             {filtered.length === 0 && <p className="text-sm text-muted-foreground">No students match.</p>}
-            {filtered.map((p) => (
+            {paged.rows.map((p) => (
               <div key={p.id} className="rounded-md border p-3 space-y-1 text-sm">
                 <p className="font-semibold break-words">{p.full_name}</p>
                 <p className="text-muted-foreground break-all">{p.email}</p>
@@ -190,7 +213,7 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((p) => (
+                {paged.rows.map((p) => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.full_name}</TableCell>
                     <TableCell>{p.email}</TableCell>
@@ -208,6 +231,13 @@ const StudentsTab = ({ statusPreset }: { statusPreset?: { value: string; n: numb
                 ))}
               </TableBody>
             </Table>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
+            <p className="text-sm text-muted-foreground">{filtered.length} students · Page {paged.page} of {paged.pages}</p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon" aria-label="Previous student page" disabled={paged.page === 1} onClick={() => setPage(paged.page - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+              <Button variant="outline" size="icon" aria-label="Next student page" disabled={paged.page === paged.pages} onClick={() => setPage(paged.page + 1)}><ChevronRight className="h-4 w-4" /></Button>
+            </div>
           </div>
         </CardContent>
       </Card>

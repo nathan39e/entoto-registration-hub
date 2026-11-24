@@ -344,6 +344,13 @@
       "when": 1795502646698,
       "tag": "0048_index_dashboard_student_order",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1795504572895,
+      "tag": "0049_admin_dashboard_summary_pages",
+      "breakpoints": true
     }
   ]
 }

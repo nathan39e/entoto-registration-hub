@@ -940,6 +940,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_dashboard_summary: { Args: never; Returns: Json }
+      admin_filtered_students: {
+        Args: { _filters?: Json }
+        Returns: {
+          application: Json
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          registered_by: string
+          student_code: string
+        }[]
+      }
+      admin_student_page: {
+        Args: { _filters?: Json; _page?: number }
+        Returns: Json
+      }
       can_create_admin: { Args: { _user: string }; Returns: boolean }
       edit_student_choices: {
         Args: {

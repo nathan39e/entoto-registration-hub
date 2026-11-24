@@ -1,11 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 /** Shows how many applicants are male, female, or unspecified. */
-export default function GenderStats({ genders, className = "" }: { genders: (string | null | undefined)[]; className?: string }) {
+export default function GenderStats({ genders = [], counts, className = "" }: { genders?: (string | null | undefined)[]; counts?: { male: number; female: number; other: number }; className?: string }) {
   const norm = genders.map((g) => (g ?? "").toLowerCase());
-  const male = norm.filter((g) => g === "male").length;
-  const female = norm.filter((g) => g === "female").length;
-  const other = genders.length - male - female;
+  const male = counts?.male ?? norm.filter((g) => g === "male").length;
+  const female = counts?.female ?? norm.filter((g) => g === "female").length;
+  const other = counts?.other ?? genders.length - male - female;
+  const total = male + female + other;
   const items = [
     { label: "Male students", n: male },
     { label: "Female students", n: female },
@@ -17,7 +18,7 @@ export default function GenderStats({ genders, className = "" }: { genders: (str
         <Card key={i.label}>
           <CardContent className="p-4">
             <p className="text-2xl font-bold text-primary">{i.n}</p>
-            <p className="text-xs text-muted-foreground">{i.label} · {genders.length ? Math.round((i.n / genders.length) * 100) : 0}%</p>
+            <p className="text-xs text-muted-foreground">{i.label} · {total ? Math.round((i.n / total) * 100) : 0}%</p>
           </CardContent>
         </Card>
       ))}

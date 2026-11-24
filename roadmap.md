@@ -43,3 +43,4 @@
 - [x] Correct Telegram password spoilers by removing incompatible nested code formatting; deployed, recovery tests pass; live Telegram rendering remains unverified.
 - [x] Fix excessive admin loading and incomplete staff lists; verified 2659 students, seven staff accounts, search, paging, refresh, reload and mobile layout with the signed-in admin; 24 tests passed.
 - [x] Index newest-first student queries and trim initial admin application downloads; 24 tests passed and signed-in admin counts, search, paging, document dialog and refresh verified.
+- [x] Replace admin startup downloads with protected summary counts, server-paged student filters and on-demand tab data; 26 tests passed; verified 2659 students, 14 real filter combinations, paging, documents, filtered Excel, tab navigation and anonymous denial; dashboard opened in 1.4 seconds in the sandbox.
